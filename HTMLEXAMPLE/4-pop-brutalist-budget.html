@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo-Brutalist Pop - Gamified Finance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #FFE5E5; color: #000; }
+        
+        .neo-box {
+            background: white;
+            border: 3px solid #000;
+            box-shadow: 6px 6px 0px #000;
+            transition: all 0.1s ease;
+        }
+        .neo-box:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0px #000;
+        }
+        .neo-box:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
+        }
+        
+        .neo-btn {
+            background: #A388EE;
+            color: black;
+            font-weight: bold;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+        }
+        .neo-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px #000;
+        }
+
+        .neo-input {
+            border: 3px solid #000;
+            background: #fff;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+        }
+        .neo-input:focus {
+            outline: none;
+            background: #FFF9C4;
+        }
+
+        .tag {
+            border: 2px solid #000;
+            font-weight: bold;
+            box-shadow: 2px 2px 0px #000;
+        }
+    </style>
+</head>
+<body class="p-6 md:p-10 min-h-screen">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div class="bg-[#FF9F1C] neo-box px-6 py-4 -rotate-2">
+                <h1 class="text-4xl font-black uppercase">Money<br>Game 🎮</h1>
+            </div>
+            <div class="flex gap-4">
+                <div class="neo-box px-4 py-2 bg-white flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500 border-2 border-black"></div>
+                    <span class="font-bold">LIVE</span>
+                </div>
+                <div class="neo-box px-4 py-2 bg-[#2EC4B6]">
+                    <span class="font-bold">User: Ja-ho</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <!-- Big Asset Card -->
+            <div class="neo-box p-8 bg-[#CBF3F0]">
+                <div class="flex justify-between items-start mb-6">
+                    <h2 class="text-xl font-bold uppercase border-b-4 border-black inline-block">Total Assets</h2>
+                    <span class="text-4xl">💰</span>
+                </div>
+                <p class="text-6xl font-black mb-4">₩5.23<span class="text-3xl text-gray-600">억</span></p>
+                
+                <div class="flex gap-3 mt-8">
+                    <div class="bg-white border-2 border-black p-2 flex-1 text-center font-bold shadow-[4px_4px_0px_#000]">
+                        Stocks<br><span class="text-[#FF9F1C]">90%</span>
+                    </div>
+                    <div class="bg-white border-2 border-black p-2 flex-1 text-center font-bold shadow-[4px_4px_0px_#000]">
+                        Cash<br><span class="text-[#2EC4B6]">10%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS Card -->
+            <div class="neo-box p-8 bg-[#FFBF69] flex flex-col justify-center">
+                <h2 class="text-xl font-bold uppercase mb-6 text-center">This Month Battle</h2>
+                <div class="flex justify-between items-center px-4">
+                    <div class="text-center">
+                        <span class="text-3xl block">🛡️</span>
+                        <p class="font-bold text-lg mt-2">Income</p>
+                        <p class="text-2xl font-black bg-white border-2 border-black px-2 py-1 mt-1 transform -rotate-3">9.1M</p>
+                    </div>
+                    <div class="text-2xl font-black">VS</div>
+                    <div class="text-center">
+                        <span class="text-3xl block">⚔️</span>
+                        <p class="font-bold text-lg mt-2">Expense</p>
+                        <p class="text-2xl font-black bg-white border-2 border-black px-2 py-1 mt-1 transform rotate-3 text-red-600">3.1M</p>
+                    </div>
+                </div>
+                <div class="w-full bg-black h-6 mt-8 border-2 border-black rounded-full overflow-hidden relative">
+                    <div class="absolute top-0 left-0 h-full bg-[#2EC4B6] w-[70%]"></div>
+                    <div class="absolute top-0 right-0 h-full bg-[#FF9F1C] w-[30%]"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white tracking-widest">
+                        WINNING (+6.0M)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout 2: Stocks & Input -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            
+            <!-- Stock Marquee List -->
+            <div class="md:col-span-7 neo-box bg-white p-0 overflow-hidden flex flex-col">
+                <div class="bg-black text-white p-4 border-b-4 border-black flex justify-between items-center">
+                    <h3 class="font-bold text-xl uppercase">Stock Inventory</h3>
+                    <i data-lucide="bar-chart-2"></i>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center gap-4 p-4 border-2 border-black bg-[#F4F4F4] hover:bg-[#A388EE] transition-colors cursor-pointer shadow-[4px_4px_0px_#000]">
+                        <div class="w-12 h-12 bg-black text-white flex items-center justify-center font-bold text-xl rounded-full border-2 border-white">N</div>
+                        <div class="flex-1">
+                            <p class="font-black text-lg">NVDA</p>
+                            <p class="text-sm font-bold">140 ITEMS</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-xl">$19,600</p>
+                            <span class="tag bg-[#2EC4B6] px-2 text-xs">+2.4%</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 border-2 border-black bg-[#F4F4F4] hover:bg-[#FF9F1C] transition-colors cursor-pointer shadow-[4px_4px_0px_#000]">
+                        <div class="w-12 h-12 bg-black text-white flex items-center justify-center font-bold text-xl rounded-full border-2 border-white">T</div>
+                        <div class="flex-1">
+                            <p class="font-black text-lg">TSLA</p>
+                            <p class="text-sm font-bold">50 ITEMS</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-xl">$12,500</p>
+                            <span class="tag bg-[#FF6B6B] px-2 text-xs">-0.8%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Console -->
+            <div class="md:col-span-5 neo-box bg-[#FF6B6B] p-6 text-white">
+                <h3 class="font-black text-2xl mb-6 uppercase border-b-4 border-black pb-2 text-black">New Quest</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="font-bold text-black mb-1 block">TARGET (Category)</label>
+                        <select class="w-full p-3 neo-input text-black font-bold">
+                            <option>Food & Dining</option>
+                            <option>Transport</option>
+                            <option>Investment</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold text-black mb-1 block">COST (Amount)</label>
+                        <input type="text" placeholder="9999" class="w-full p-3 neo-input text-black font-bold text-xl">
+                    </div>
+                    
+                    <button class="w-full py-4 neo-btn text-xl uppercase mt-4 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                        SUBMIT RECORD
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

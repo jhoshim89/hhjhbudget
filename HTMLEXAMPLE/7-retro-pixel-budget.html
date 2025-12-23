@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>레트로 픽셀 가계부 - Retro OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DungGeunMo&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'DungGeunMo', sans-serif;
+            background-color: #008080; /* Windows 95 Teal */
+            padding: 20px;
+            color: black;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewport="0 0 24 24" fill="black" stroke="white" stroke-width="2"><path d="M0 0L12 12L8 14L14 24L10 26L4 16L0 20Z"/></svg>'), auto;
+        }
+
+        .window {
+            background: #C0C0C0;
+            border-top: 2px solid #FFFFFF;
+            border-left: 2px solid #FFFFFF;
+            border-right: 2px solid #000000;
+            border-bottom: 2px solid #000000;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        .title-bar {
+            background: #000080;
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .title-bar.active {
+            background: linear-gradient(90deg, #000080, #1084d0);
+        }
+
+        .btn-win {
+            background: #C0C0C0;
+            border-top: 2px solid #FFFFFF;
+            border-left: 2px solid #FFFFFF;
+            border-right: 2px solid #000000;
+            border-bottom: 2px solid #000000;
+            padding: 2px 8px;
+            font-size: 14px;
+        }
+        .btn-win:active {
+            border-top: 2px solid #000000;
+            border-left: 2px solid #000000;
+            border-right: 2px solid #FFFFFF;
+            border-bottom: 2px solid #FFFFFF;
+            transform: translate(1px, 1px);
+        }
+
+        .inset-panel {
+            background: #FFFFFF;
+            border-top: 2px solid #808080;
+            border-left: 2px solid #808080;
+            border-right: 2px solid #FFFFFF;
+            border-bottom: 2px solid #FFFFFF;
+            padding: 10px;
+        }
+
+        .pixel-icon {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center">
+
+    <!-- Main Window -->
+    <div class="window w-full max-w-4xl relative">
+        <div class="title-bar active">
+            <div class="flex items-center gap-2">
+                <span>🪙 내_지갑_관리자.exe</span>
+            </div>
+            <div class="flex gap-1">
+                <button class="btn-win w-6 h-6 flex items-center justify-center text-xs">_</button>
+                <button class="btn-win w-6 h-6 flex items-center justify-center text-xs">□</button>
+                <button class="btn-win w-6 h-6 flex items-center justify-center text-xs">X</button>
+            </div>
+        </div>
+
+        <!-- Menu Bar -->
+        <div class="flex gap-4 px-2 py-1 text-sm border-b border-gray-400 mb-4">
+            <span class="underline cursor-pointer">파</span>일(F)
+            <span class="underline cursor-pointer">편</span>집(E)
+            <span class="underline cursor-pointer">보</span>기(V)
+            <span class="underline cursor-pointer">도</span>움말(H)
+        </div>
+
+        <div class="p-4 grid grid-cols-1 md:grid-cols-12 gap-6">
+            
+            <!-- Sidebar Icons -->
+            <div class="md:col-span-2 flex flex-col items-center gap-6 text-center text-sm">
+                <div class="cursor-pointer group">
+                    <div class="w-12 h-12 bg-yellow-200 border-2 border-black mb-1 mx-auto group-hover:bg-blue-800 group-hover:text-white flex items-center justify-center text-2xl">💾</div>
+                    <span class="bg-white px-1">저장된_자산</span>
+                </div>
+                <div class="cursor-pointer group">
+                    <div class="w-12 h-12 bg-white border-2 border-black mb-1 mx-auto group-hover:bg-blue-800 group-hover:text-white flex items-center justify-center text-2xl">📉</div>
+                    <span class="bg-white px-1">주식_차트</span>
+                </div>
+                <div class="cursor-pointer group">
+                    <div class="w-12 h-12 bg-green-200 border-2 border-black mb-1 mx-auto group-hover:bg-blue-800 group-hover:text-white flex items-center justify-center text-2xl">🗑️</div>
+                    <span class="bg-white px-1">지출_휴지통</span>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="md:col-span-10">
+                
+                <!-- Status Bar Top -->
+                <div class="inset-panel mb-4 bg-gray-100 flex justify-between items-center">
+                    <div>
+                        <p class="text-xs text-gray-500">현재_총자산_상태</p>
+                        <h1 class="text-3xl font-bold text-blue-800">₩523,400,000</h1>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs">시스템_메모리: 90% (주식)</p>
+                        <div class="w-32 h-4 border border-gray-600 bg-white relative mt-1">
+                            <div class="absolute top-0 left-0 h-full bg-blue-800 w-[90%]"></div>
+                            <!-- Scanline stripes -->
+                            <div class="absolute inset-0" style="background: repeating-linear-gradient(90deg, transparent 0, transparent 2px, rgba(255,255,255,0.5) 2px, rgba(255,255,255,0.5) 4px);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <!-- Stock Panel -->
+                    <div class="window m-0">
+                        <div class="title-bar" style="background: #800000;">
+                            <span>📈 관심_종목.txt</span>
+                        </div>
+                        <div class="inset-panel h-48 overflow-y-scroll bg-white font-mono text-sm">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b-2 border-dashed border-gray-400">
+                                        <th class="py-1">종목명</th>
+                                        <th class="py-1 text-right">수량</th>
+                                        <th class="py-1 text-right">가격</th>
+                                        <th class="py-1 text-right">등락</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="py-1">엔비디아</td>
+                                        <td class="py-1 text-right">140</td>
+                                        <td class="py-1 text-right">$140.5</td>
+                                        <td class="py-1 text-right text-red-600">▲2.4%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-1">테슬라</td>
+                                        <td class="py-1 text-right">50</td>
+                                        <td class="py-1 text-right">$250.0</td>
+                                        <td class="py-1 text-right text-blue-600">▼0.8%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-1">애플</td>
+                                        <td class="py-1 text-right">20</td>
+                                        <td class="py-1 text-right">$195.0</td>
+                                        <td class="py-1 text-right text-red-600">▲1.2%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-1">마소</td>
+                                        <td class="py-1 text-right">5</td>
+                                        <td class="py-1 text-right">$430.0</td>
+                                        <td class="py-1 text-right text-red-600">▲0.1%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Input Form -->
+                    <div class="window m-0">
+                         <div class="title-bar">
+                            <span>✏️ 입력_콘솔</span>
+                        </div>
+                        <div class="p-4 bg-[#C0C0C0]">
+                            <div class="mb-2">
+                                <label class="block text-xs mb-1">카테고리 선택:</label>
+                                <select class="inset-panel w-full py-1 text-sm">
+                                    <option>식비 (Food)</option>
+                                    <option>교통비 (Transport)</option>
+                                    <option>투자 (Invest)</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-xs mb-1">금액 입력 (KRW):</label>
+                                <input type="text" class="inset-panel w-full py-1 text-sm" value="0">
+                            </div>
+                            <div class="flex justify-end gap-2">
+                                <button class="btn-win px-4">취소</button>
+                                <button class="btn-win px-4 font-bold">확인</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-gray-400 p-2 text-xs flex justify-between bg-[#C0C0C0]">
+            <span>도움말을 보려면 F1을 누르십시오</span>
+            <span>CAPS NUM</span>
+        </div>
+    </div>
+
+    <!-- Start Bar -->
+    <div class="fixed bottom-0 left-0 w-full h-10 bg-[#C0C0C0] border-t-2 border-white flex items-center p-1 gap-2 z-50">
+        <button class="btn-win h-full flex items-center gap-1 font-bold px-2">
+            <img src="https://win98icons.alexmeub.com/icons/png/windows-0.png" class="w-5 h-5">
+            시작
+        </button>
+        <div class="inset-panel flex-1 h-full bg-white flex items-center px-2 text-xs gap-2">
+            <span class="bg-blue-800 text-white px-2">내_지갑_관리자.exe</span>
+        </div>
+        <div class="inset-panel h-full w-24 flex items-center justify-center text-xs">
+            오후 2:30
+        </div>
+    </div>
+
+</body>
+</html>

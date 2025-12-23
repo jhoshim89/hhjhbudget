@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스페이셜 글래스 가계부 - Spatial UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            perspective: 1000px;
+            overflow-x: hidden;
+        }
+        
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 32px;
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.2),
+                inset 0 0 0 1px rgba(255,255,255,0.2);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .glass-panel:hover {
+            transform: translateZ(20px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.3),
+                inset 0 0 0 1px rgba(255,255,255,0.4);
+        }
+
+        .floating-action {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .depth-text {
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-8">
+
+    <div class="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 transform-style-3d">
+        
+        <!-- 왼쪽 패널: 프로필 및 요약 -->
+        <div class="glass-panel p-8 flex flex-col justify-between h-[600px] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center gap-4 mb-8">
+                    <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Felix" class="w-16 h-16 rounded-full border-2 border-white/50 shadow-lg">
+                    <div>
+                        <p class="text-sm text-white/70 font-medium">안녕하세요,</p>
+                        <h2 class="text-2xl font-bold depth-text">재호님</h2>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <p class="text-sm text-white/60 mb-1">총 순자산</p>
+                        <h1 class="text-5xl font-bold tracking-tight depth-text">₩5.23억</h1>
+                        <div class="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold backdrop-blur-md">
+                            <i data-lucide="trending-up" size="12"></i>
+                            <span>지난달 대비 +1,250만원</span>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-white/70">이번달 예산</span>
+                            <span class="font-bold">72% 사용</span>
+                        </div>
+                        <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-blue-400 to-purple-400 w-[72%] shadow-[0_0_15px_rgba(96,165,250,0.6)]"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-white/50 mt-2">
+                            <span>지출: 310만원</span>
+                            <span>남은돈: 140만원</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative z-10">
+                <button class="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg shadow-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="plus-circle"></i>
+                    자산 기록하기
+                </button>
+            </div>
+        </div>
+
+        <!-- 중앙 패널: 포트폴리오 (떠있는 카드들) -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- 상단: 주요 지표 -->
+            <div class="grid grid-cols-2 gap-6">
+                <div class="glass-panel p-6 floating-action" style="animation-delay: 0s;">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 rounded-xl bg-blue-500/20 text-blue-300"><i data-lucide="bar-chart-2"></i></div>
+                        <span class="font-semibold text-lg">해외 주식</span>
+                    </div>
+                    <p class="text-3xl font-bold">₩4.8억</p>
+                    <p class="text-sm text-white/60 mt-1">평가손익 <span class="text-emerald-400">+27.4%</span></p>
+                </div>
+                <div class="glass-panel p-6 floating-action" style="animation-delay: 1s;">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="p-2 rounded-xl bg-amber-500/20 text-amber-300"><i data-lucide="shield"></i></div>
+                        <span class="font-semibold text-lg">안전 자산 (채권)</span>
+                    </div>
+                    <p class="text-3xl font-bold">₩1,474만</p>
+                    <p class="text-sm text-white/60 mt-1">연 수익률 <span class="text-amber-400">4.2%</span></p>
+                </div>
+            </div>
+
+            <!-- 하단: 보유 종목 리스트 -->
+            <div class="glass-panel p-8 h-[360px] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6 sticky top-0 bg-transparent z-10">
+                    <h3 class="text-xl font-bold">보유 종목</h3>
+                    <button class="text-sm text-white/70 hover:text-white flex items-center gap-1">
+                        전체보기 <i data-lucide="chevron-right" size="16"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <!-- 리스트 아이템 -->
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-white/20 font-bold text-lg group-hover:scale-110 transition-transform">N</div>
+                            <div>
+                                <p class="font-bold text-lg">NVIDIA</p>
+                                <p class="text-xs text-white/50">140주 보유</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-xl">$19,670</p>
+                            <p class="text-sm text-emerald-400 font-medium">+2.45%</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center border border-white/20 font-bold text-lg group-hover:scale-110 transition-transform">T</div>
+                            <div>
+                                <p class="font-bold text-lg">TESLA</p>
+                                <p class="text-xs text-white/50">50주 보유</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-xl">$12,500</p>
+                            <p class="text-sm text-red-400 font-medium">-0.85%</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-gray-200 text-black flex items-center justify-center border border-white/20 font-bold text-lg group-hover:scale-110 transition-transform">A</div>
+                            <div>
+                                <p class="font-bold text-lg">APPLE</p>
+                                <p class="text-xs text-white/50">20주 보유</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-xl">$3,900</p>
+                            <p class="text-sm text-emerald-400 font-medium">+0.5%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

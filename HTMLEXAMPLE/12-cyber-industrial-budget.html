@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Industrial Budget - Technical Design</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0A0A0C;
+            color: #E2E8F0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .mono { font-family: 'Share Tech Mono', monospace; }
+
+        /* Neon Accents */
+        .neon-accent { color: #CBFE00; }
+        .border-neon { border-color: #CBFE00; }
+        .bg-neon { background-color: #CBFE00; }
+        
+        .technical-border {
+            border: 1px solid #333;
+            position: relative;
+            background: rgba(16, 16, 18, 0.8);
+            backdrop-filter: blur(4px);
+        }
+        .technical-border::before {
+            content: ''; position: absolute; top: -1px; left: -1px; width: 10px; height: 10px;
+            border-top: 2px solid #CBFE00; border-left: 2px solid #CBFE00;
+        }
+        .technical-border::after {
+            content: ''; position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px;
+            border-bottom: 2px solid #CBFE00; border-right: 2px solid #CBFE00;
+        }
+
+        /* Glitch Animation for text */
+        .glitch-text:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: #CBFE00;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        .marquee-container { overflow: hidden; white-space: nowrap; }
+        .marquee-content { display: inline-block; animation: marquee 20s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col">
+
+    <!-- Top Bar: Infinite Marquee -->
+    <div class="technical-border h-10 mb-8 flex items-center overflow-hidden">
+        <div class="bg-neon text-black px-4 h-full flex items-center font-bold mono text-xs shrink-0">
+            LIVE_FEED //
+        </div>
+        <div class="marquee-container mono text-xs text-gray-400 w-full">
+            <div class="marquee-content">
+                USD/KRW: 1,380.50 ▲  &nbsp;//&nbsp;  BTC: $98,420 ▲  &nbsp;//&nbsp;  NVDA: $140.50 ▲  &nbsp;//&nbsp;  TSLA: $250.00 ▼  &nbsp;//&nbsp;  SYSTEM_STATUS: OPTIMAL  &nbsp;//&nbsp;  USD/KRW: 1,380.50 ▲  &nbsp;//&nbsp;  BTC: $98,420 ▲  &nbsp;//&nbsp;  NVDA: $140.50 ▲  &nbsp;//&nbsp;  TSLA: $250.00 ▼  &nbsp;//&nbsp;  SYSTEM_STATUS: OPTIMAL
+            </div>
+        </div>
+    </div>
+
+    <main class="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1">
+        
+        <!-- Sidebar: Info Panel -->
+        <aside class="technical-border p-6 flex flex-col justify-between">
+            <div>
+                <div class="mono text-xs text-gray-500 mb-2">USER_ID</div>
+                <h1 class="text-3xl font-bold uppercase mb-8 glitch-text cursor-default">Jaeho.PF</h1>
+
+                <nav class="space-y-4">
+                    <a href="#" class="block p-3 border border-gray-800 hover:border-neon hover:text-neon transition-colors mono text-sm flex justify-between group">
+                        <span>[01] DASHBOARD</span>
+                        <span class="opacity-0 group-hover:opacity-100">&lt;</span>
+                    </a>
+                    <a href="#" class="block p-3 border border-gray-800 hover:border-neon hover:text-neon transition-colors mono text-sm flex justify-between group">
+                        <span>[02] ASSETS</span>
+                        <span class="opacity-0 group-hover:opacity-100">&lt;</span>
+                    </a>
+                    <a href="#" class="block p-3 border border-gray-800 hover:border-neon hover:text-neon transition-colors mono text-sm flex justify-between group">
+                        <span>[03] LOGS</span>
+                        <span class="opacity-0 group-hover:opacity-100">&lt;</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="mt-8 border-t border-gray-800 pt-6">
+                <div class="mono text-[10px] text-gray-500 mb-1">SECURE CONNECTION</div>
+                <div class="flex gap-1">
+                    <div class="w-1 h-4 bg-neon"></div>
+                    <div class="w-1 h-4 bg-neon"></div>
+                    <div class="w-1 h-4 bg-neon"></div>
+                    <div class="w-1 h-4 bg-gray-800"></div>
+                    <div class="w-1 h-4 bg-gray-800"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Display -->
+        <section class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6">
+            
+            <!-- Hero Metric (2x1) -->
+            <div class="md:col-span-2 technical-border p-8 relative overflow-hidden group">
+                <!-- Background Grid Animation -->
+                <div class="absolute inset-0 opacity-10 bg-[linear-gradient(0deg,transparent_24%,rgba(203,254,0,0.3)_25%,rgba(203,254,0,0.3)_26%,transparent_27%,transparent_74%,rgba(203,254,0,0.3)_75%,rgba(203,254,0,0.3)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(203,254,0,0.3)_25%,rgba(203,254,0,0.3)_26%,transparent_27%,transparent_74%,rgba(203,254,0,0.3)_75%,rgba(203,254,0,0.3)_76%,transparent_77%,transparent)] bg-[length:50px_50px]"></div>
+
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="mono text-xs text-neon border border-neon px-2 py-1">NET_WORTH_CALC</span>
+                        <i data-lucide="activity" class="text-gray-600"></i>
+                    </div>
+                    <h2 class="text-6xl md:text-7xl font-bold tracking-tighter mb-2">5.23<span class="text-3xl text-gray-600">B KRW</span></h2>
+                    <div class="flex items-center gap-4 mono text-sm">
+                        <span class="text-neon">▲ 27.4% YTD</span>
+                        <span class="text-gray-500">// UPDATED: 14:02:22</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stat (1x1) -->
+            <div class="technical-border p-6 flex flex-col justify-center">
+                <span class="mono text-xs text-gray-500 mb-2">BOND_YIELD</span>
+                <div class="text-4xl font-bold mb-1">4.2%</div>
+                <div class="w-full bg-gray-800 h-1 mt-4">
+                    <div class="bg-white h-full w-[42%]"></div>
+                </div>
+            </div>
+
+            <!-- Data Table (3x1) -->
+            <div class="md:col-span-3 technical-border p-6">
+                <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-2">
+                    <h3 class="mono text-sm font-bold text-neon">> ACTIVE_POSITIONS</h3>
+                    <div class="flex gap-2">
+                        <span class="w-2 h-2 bg-gray-600 rounded-full"></span>
+                        <span class="w-2 h-2 bg-gray-600 rounded-full"></span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Item -->
+                    <div class="bg-white/5 p-4 border border-white/10 hover:border-neon transition-colors group">
+                        <div class="flex justify-between mb-2">
+                            <span class="font-bold">NVDA</span>
+                            <span class="mono text-xs text-neon">BULL</span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">140</div>
+                        <div class="mono text-xs text-gray-500">QTY UNIT</div>
+                    </div>
+                    <!-- Item -->
+                    <div class="bg-white/5 p-4 border border-white/10 hover:border-neon transition-colors group">
+                        <div class="flex justify-between mb-2">
+                            <span class="font-bold">TSLA</span>
+                            <span class="mono text-xs text-red-500">BEAR</span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">50</div>
+                        <div class="mono text-xs text-gray-500">QTY UNIT</div>
+                    </div>
+                    <!-- Item -->
+                    <div class="bg-white/5 p-4 border border-white/10 hover:border-neon transition-colors group">
+                        <div class="flex justify-between mb-2">
+                            <span class="font-bold">AAPL</span>
+                            <span class="mono text-xs text-neon">HOLD</span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">20</div>
+                        <div class="mono text-xs text-gray-500">QTY UNIT</div>
+                    </div>
+                     <!-- Item -->
+                     <div class="bg-white/5 p-4 border border-white/10 hover:border-neon transition-colors group cursor-pointer flex items-center justify-center">
+                        <span class="mono text-xs group-hover:text-neon">+ ADD NEW</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

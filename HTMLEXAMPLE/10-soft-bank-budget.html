@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소프트 뱅크 가계부 - Easy & Soft</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { 
+            font-family: 'Spoqa Han Sans Neo', sans-serif; 
+            background-color: #F2F4F6; /* Toss/Kakao Style BG */
+            color: #191F28; 
+        }
+        
+        .soft-card {
+            background-color: #FFFFFF;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .soft-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .text-primary { color: #3182F6; } /* Toss Blue */
+        .bg-primary { background-color: #3182F6; }
+        
+        .text-secondary { color: #8B95A1; }
+        .bg-secondary { background-color: #F2F4F6; }
+
+        .icon-circle {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center p-4 md:py-8">
+
+    <main class="w-full max-w-[600px] space-y-6">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center px-2">
+            <h1 class="text-2xl font-bold text-gray-800">내 자산</h1>
+            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
+                <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Felix" class="w-full h-full object-cover">
+            </div>
+        </header>
+
+        <!-- Main Balance Card -->
+        <section class="soft-card p-6 md:p-8">
+            <p class="text-sm text-secondary font-medium mb-1">총 자산</p>
+            <h2 class="text-4xl font-bold mb-6">5억 2,340만원</h2>
+            
+            <div class="flex gap-3">
+                <button class="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-blue-600 transition text-sm">
+                    송금
+                </button>
+                <button class="flex-1 bg-secondary text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition text-sm">
+                    자산 분석
+                </button>
+            </div>
+        </section>
+
+        <!-- Quick Summary List -->
+        <section class="soft-card px-2 py-2">
+            
+            <!-- Item 1 -->
+            <div class="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl cursor-pointer transition">
+                <div class="flex items-center gap-4">
+                    <div class="icon-circle bg-blue-50 text-blue-500">
+                        <i data-lucide="globe"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">해외 주식</p>
+                        <p class="text-xs text-secondary">엔비디아 외 5종목</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-lg">4억 8,000만원</p>
+                    <p class="text-xs text-red-500 font-medium">+27.4%</p>
+                </div>
+            </div>
+
+            <div class="w-full h-[1px] bg-gray-100 mx-4"></div>
+
+            <!-- Item 2 -->
+            <div class="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl cursor-pointer transition">
+                <div class="flex items-center gap-4">
+                    <div class="icon-circle bg-yellow-50 text-yellow-500">
+                        <i data-lucide="piggy-bank"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">채권 (안전 자산)</p>
+                        <p class="text-xs text-secondary">만기 D-14</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-lg">1,474만원</p>
+                    <p class="text-xs text-secondary">연 4.2%</p>
+                </div>
+            </div>
+
+            <div class="w-full h-[1px] bg-gray-100 mx-4"></div>
+
+            <!-- Item 3 -->
+            <div class="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl cursor-pointer transition">
+                <div class="flex items-center gap-4">
+                    <div class="icon-circle bg-green-50 text-green-500">
+                        <i data-lucide="wallet"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">현금 잔고</p>
+                        <p class="text-xs text-secondary">입출금 통장</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-lg">2,866만원</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Consumption Report -->
+        <section class="soft-card p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl">12월 소비 리포트</h3>
+                <span class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">12.1 ~ 12.23</span>
+            </div>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-full border-[6px] border-blue-500 flex items-center justify-center text-sm font-bold text-blue-500">
+                    72%
+                </div>
+                <div>
+                    <p class="text-sm text-secondary">이번 달 쓴 돈</p>
+                    <p class="text-2xl font-bold">310만원</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center text-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-red-400"></div>
+                        <span>식비</span>
+                    </div>
+                    <span class="font-medium">85만원 (27%)</span>
+                </div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-red-400 h-full w-[27%]"></div>
+                </div>
+
+                <div class="flex justify-between items-center text-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                        <span>쇼핑</span>
+                    </div>
+                    <span class="font-medium">42만원 (13%)</span>
+                </div>
+                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-blue-400 h-full w-[13%]"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Floating Action Button (Mobile Style) -->
+        <div class="fixed bottom-6 right-6 md:right-[calc(50%-280px)]">
+            <button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition hover:scale-105 active:scale-95">
+                <i data-lucide="plus" size="28"></i>
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

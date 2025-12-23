@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Zen Budget - Calm Tech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;800&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #F5F5F0; color: #2D3436; }
+        h1, h2, .display-font { font-family: 'Playfair Display', serif; }
+        .card { background: #FFFFFF; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-5px); }
+        .sage-text { color: #4A6C58; }
+        .sage-bg { background-color: #E8F0EB; }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex justify-center">
+
+    <main class="w-full max-w-6xl">
+        <!-- Header: Minimal & Welcoming -->
+        <header class="flex justify-between items-end mb-12">
+            <div>
+                <p class="text-sm text-gray-500 mb-1">Dec 23, 2025</p>
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Financial<br><span class="sage-text italic">Wellness</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden md:block">
+                    <p class="text-sm text-gray-500">Total Assets</p>
+                    <p class="text-2xl font-serif font-bold text-gray-800">₩523,400,000</p>
+                </div>
+                <img src="https://api.dicebear.com/9.x/notionists/svg?seed=Felix" class="w-12 h-12 rounded-full border border-gray-200 bg-white p-1">
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            
+            <!-- Insight Card (Large) -->
+            <div class="col-span-1 md:col-span-8 card p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-[#E8F0EB] rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
+                <h2 class="text-2xl mb-6 relative z-10">Monthly Summary</h2>
+                <div class="grid grid-cols-2 gap-8 relative z-10">
+                    <div>
+                        <p class="text-gray-400 text-sm mb-1">Income</p>
+                        <p class="text-3xl display-font">₩9,100,000</p>
+                        <div class="mt-2 text-xs text-emerald-600 bg-emerald-50 inline-block px-2 py-1 rounded-full">+4.2% vs last month</div>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm mb-1">Expense</p>
+                        <p class="text-3xl display-font">₩3,100,000</p>
+                        <div class="mt-2 text-xs text-orange-400 bg-orange-50 inline-block px-2 py-1 rounded-full">Warning: Card limit</div>
+                    </div>
+                </div>
+                <div class="mt-8 h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                    <div class="h-full bg-[#4A6C58]" style="width: 70%"></div>
+                    <div class="h-full bg-[#D4A373]" style="width: 30%"></div>
+                </div>
+                <div class="flex justify-between mt-2 text-xs text-gray-400">
+                    <span>Savings (70%)</span>
+                    <span>Spending (30%)</span>
+                </div>
+            </div>
+
+            <!-- Bond/Safe Assets (Small) -->
+            <div class="col-span-1 md:col-span-4 card p-8 bg-[#2D3436] text-white flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-xl font-light">Bond Balance</h2>
+                        <i data-lucide="shield-check" class="text-[#D4A373]"></i>
+                    </div>
+                    <p class="text-3xl display-font text-[#D4A373]">₩14,744,359</p>
+                </div>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-400 mb-2">Next Maturity</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">📅</div>
+                        <div>
+                            <p class="text-sm font-medium">Korea Treasury 10Y</p>
+                            <p class="text-xs text-gray-500">D-14</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock List (Tall) -->
+            <div class="col-span-1 md:col-span-5 card p-6 md:p-8">
+                <h2 class="text-xl mb-6">Portfolio</h2>
+                <div class="space-y-4">
+                    <!-- Item -->
+                    <div class="flex justify-between items-center group cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-600 group-hover:bg-[#E8F0EB] group-hover:text-[#4A6C58] transition-colors">NVDA</div>
+                            <div>
+                                <p class="font-medium">NVIDIA</p>
+                                <p class="text-xs text-gray-400">140 Shares</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium">$19,600</p>
+                            <p class="text-xs text-emerald-500">+2.4%</p>
+                        </div>
+                    </div>
+                    <!-- Item -->
+                    <div class="flex justify-between items-center group cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-600 group-hover:bg-[#E8F0EB] group-hover:text-[#4A6C58] transition-colors">TSLA</div>
+                            <div>
+                                <p class="font-medium">Tesla</p>
+                                <p class="text-xs text-gray-400">50 Shares</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium">$12,500</p>
+                            <p class="text-xs text-red-400">-1.2%</p>
+                        </div>
+                    </div>
+                     <!-- Item -->
+                     <div class="flex justify-between items-center group cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-600 group-hover:bg-[#E8F0EB] group-hover:text-[#4A6C58] transition-colors">AAPL</div>
+                            <div>
+                                <p class="font-medium">Apple</p>
+                                <p class="text-xs text-gray-400">20 Shares</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium">$3,900</p>
+                            <p class="text-xs text-emerald-500">+0.5%</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="w-full mt-6 py-3 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition-colors">View All Stocks</button>
+            </div>
+
+            <!-- Input Area -->
+            <div class="col-span-1 md:col-span-7 card p-8 bg-[#FDFBF7] border border-[#F0EBE0]">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl">Quick Input</h2>
+                    <span class="text-xs text-gray-400 bg-white px-2 py-1 rounded border">September 2025</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-2 uppercase tracking-wide">Category</label>
+                        <select class="w-full p-3 bg-white border-none rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-[#4A6C58] outline-none">
+                            <option>Variable Expense</option>
+                            <option>Investment</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-2 uppercase tracking-wide">Amount</label>
+                        <input type="text" placeholder="₩0" class="w-full p-3 bg-white border-none rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-[#4A6C58] outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs text-gray-500 mb-2 uppercase tracking-wide">Memo</label>
+                        <input type="text" placeholder="Description..." class="w-full p-3 bg-white border-none rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-[#4A6C58] outline-none">
+                    </div>
+                </div>
+                <button class="w-full mt-4 bg-[#2D3436] text-white py-4 rounded-xl text-sm font-medium hover:bg-black transition-colors shadow-lg shadow-gray-200">
+                    Add Transaction
+                </button>
+            </div>
+            
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

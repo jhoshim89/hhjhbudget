@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에디토리얼 매거진 가계부 - Editorial Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Jost', sans-serif; background-color: #F8F5F2; color: #1A1A1A; }
+        .serif { font-family: 'Noto Serif KR', serif; }
+        
+        .border-line {
+            border-bottom: 1px solid #1A1A1A;
+        }
+        .border-double-line {
+            border-bottom: 3px double #1A1A1A;
+        }
+        .vertical-line {
+            border-right: 1px solid #1A1A1A;
+        }
+
+        .drop-cap::first-letter {
+            float: left;
+            font-size: 3.5rem;
+            line-height: 0.8;
+            font-weight: 900;
+            margin-right: 0.5rem;
+            margin-top: 0.2rem;
+            font-family: 'Noto Serif KR', serif;
+        }
+        
+        /* Noise Texture Overlay for Paper feel */
+        .paper-texture {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="p-6 md:p-12 min-h-screen">
+    <div class="paper-texture"></div>
+
+    <div class="max-w-5xl mx-auto border-t-4 border-black">
+        
+        <!-- Header: Newspaper Style -->
+        <header class="py-6 text-center border-double-line mb-8">
+            <div class="flex justify-between items-center text-xs uppercase tracking-widest mb-4 font-bold">
+                <span>Vol. 2025-12</span>
+                <span>The Daily Finance</span>
+                <span>서울, 대한민국</span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black serif tracking-tighter mb-2">THE WEALTH</h1>
+            <p class="text-xl serif italic text-gray-600">"당신의 자산, 하나의 이야기로 흐르다."</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-0 md:border-b border-black">
+            
+            <!-- Left Column: Main Article (Asset Summary) -->
+            <div class="md:col-span-8 md:pr-8 md:border-r border-black pb-8 md:pb-0">
+                <div class="mb-6">
+                    <span class="bg-black text-white px-2 py-1 text-xs font-bold uppercase">Headline</span>
+                    <h2 class="text-4xl serif font-bold mt-2 leading-tight">이번 달 총 자산,<br>역대 최고치 경신</h2>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <p class="text-5xl font-bold border-b-2 border-black pb-2 mb-2">₩5.23억</p>
+                        <p class="text-sm text-gray-600 font-serif leading-relaxed drop-cap">
+                            이번 달 재호님의 포트폴리오는 견고한 성장세를 보였습니다. 특히 기술주 중심의 해외 주식 자산이 전체 성장을 견인했으며, 안전 자산인 채권 또한 안정적인 수익을 창출하고 있습니다. 총 자산은 전월 대비 2.4% 증가하여 목표치를 상회했습니다.
+                        </p>
+                    </div>
+                    <div class="flex flex-col justify-end">
+                        <div class="border border-black p-4 bg-white shadow-[4px_4px_0px_#000]">
+                            <p class="text-xs font-bold uppercase text-gray-500 mb-1">Key Insight</p>
+                            <p class="serif text-lg">"안정성과 수익성, 두 마리 토끼를 잡은 균형 잡힌 12월."</p>
+                            <div class="mt-4 flex items-center gap-2 text-xs">
+                                <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                                <span>주식 비중 90%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Area (Minimalist Line) -->
+                <div class="mt-8 pt-8 border-t border-black">
+                    <h3 class="font-bold uppercase tracking-widest text-sm mb-4">Market Trend Analysis</h3>
+                    <div class="h-48 w-full flex items-end justify-between gap-1 border-b border-black pb-1">
+                        <!-- CSS Bar Chart simulating trend -->
+                        <div class="w-full bg-gray-200 h-[40%] hover:bg-black transition-colors"></div>
+                        <div class="w-full bg-gray-200 h-[50%] hover:bg-black transition-colors"></div>
+                        <div class="w-full bg-gray-200 h-[45%] hover:bg-black transition-colors"></div>
+                        <div class="w-full bg-gray-200 h-[60%] hover:bg-black transition-colors"></div>
+                        <div class="w-full bg-gray-200 h-[55%] hover:bg-black transition-colors"></div>
+                        <div class="w-full bg-gray-200 h-[70%] hover:bg-black transition-colors"></div>
+                        <div class="w-full bg-black h-[85%] relative group">
+                            <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold opacity-0 group-hover:opacity-100">Now</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-2 font-mono">
+                        <span>JUN</span><span>JUL</span><span>AUG</span><span>SEP</span><span>OCT</span><span>NOV</span><span>DEC</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Sidebar (Details) -->
+            <div class="md:col-span-4 md:pl-8 pt-8 md:pt-0">
+                
+                <!-- Stock Ticker Column -->
+                <div class="mb-10">
+                    <h3 class="serif font-bold text-xl border-b border-black pb-2 mb-4">Market Watch</h3>
+                    <ul class="space-y-4">
+                        <li class="flex justify-between items-baseline group cursor-pointer">
+                            <span class="font-bold text-lg group-hover:underline decoration-2">NVIDIA</span>
+                            <div class="text-right">
+                                <span class="block font-mono">$140.50</span>
+                                <span class="text-xs text-emerald-700">▲ 2.45%</span>
+                            </div>
+                        </li>
+                        <li class="flex justify-between items-baseline group cursor-pointer">
+                            <span class="font-bold text-lg group-hover:underline decoration-2">TESLA</span>
+                            <div class="text-right">
+                                <span class="block font-mono">$250.00</span>
+                                <span class="text-xs text-red-700">▼ 0.85%</span>
+                            </div>
+                        </li>
+                        <li class="flex justify-between items-baseline group cursor-pointer">
+                            <span class="font-bold text-lg group-hover:underline decoration-2">APPLE</span>
+                            <div class="text-right">
+                                <span class="block font-mono">$195.00</span>
+                                <span class="text-xs text-emerald-700">▲ 1.20%</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Quick Input (Minimal) -->
+                <div class="bg-gray-100 p-6">
+                    <h3 class="serif font-bold text-lg mb-4">Transaction Log</h3>
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-xs uppercase font-bold mb-1">Category</label>
+                            <select class="w-full bg-transparent border-b border-black py-1 outline-none text-sm">
+                                <option>Expense</option>
+                                <option>Income</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase font-bold mb-1">Amount</label>
+                            <input type="text" placeholder="₩" class="w-full bg-transparent border-b border-black py-1 outline-none font-mono">
+                        </div>
+                        <button class="w-full bg-black text-white py-3 text-sm font-bold uppercase tracking-widest hover:bg-gray-800 transition">
+                            Record
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Footer Quote -->
+                <div class="mt-10 pt-4 border-t border-black text-center">
+                    <p class="serif italic text-sm">"Price is what you pay.<br>Value is what you get."</p>
+                    <p class="text-xs font-bold mt-2">- Warren Buffett</p>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Footer -->
+        <footer class="py-6 text-center text-xs font-mono border-t-2 border-black mt-1">
+            <p>© 2025 THE WEALTH. All Rights Reserved.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

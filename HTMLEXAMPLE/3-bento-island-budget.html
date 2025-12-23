@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bento Island Budget - Modular Design</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'IBM Plex Sans KR', sans-serif; background-color: #F2F4F8; color: #111; }
+        .bento-card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+        }
+        .bento-card:hover {
+            transform: scale(1.01);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        }
+        .dynamic-island {
+            background: #1C1C1E;
+            color: white;
+            border-radius: 100px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <!-- Dynamic Island Header -->
+    <div class="fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
+        <div class="dynamic-island h-14 flex items-center px-6 gap-6 min-w-[320px] justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="font-medium text-sm">Real-time Sync</span>
+            </div>
+            <div class="flex items-center gap-4 text-sm text-gray-300">
+                <span class="hover:text-white cursor-pointer transition">USD 1,380</span>
+                <div class="w-[1px] h-4 bg-gray-600"></div>
+                <span class="hover:text-white cursor-pointer transition">S&P 595</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-6xl mx-auto mt-20">
+        
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">My Dashboard</h1>
+            <p class="text-gray-500">Welcome back, Ja-ho.</p>
+        </div>
+
+        <!-- Bento Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 grid-rows-4 gap-4 md:h-[800px]">
+            
+            <!-- Total Balance (2x2) -->
+            <div class="bento-card col-span-2 row-span-2 flex flex-col justify-between bg-black text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-br from-blue-600 to-purple-600 rounded-full blur-[80px] opacity-40 -mr-20 -mt-20"></div>
+                <div class="relative z-10">
+                    <p class="text-gray-400 mb-2">Total Net Worth</p>
+                    <h2 class="text-5xl font-bold tracking-tight">₩523M</h2>
+                </div>
+                <div class="relative z-10">
+                    <div class="flex gap-4 mb-6">
+                        <div>
+                            <p class="text-xs text-gray-400">Stock</p>
+                            <p class="text-xl font-semibold">₩480M</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">Bond</p>
+                            <p class="text-xl font-semibold">₩14M</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400">Cash</p>
+                            <p class="text-xl font-semibold">₩29M</p>
+                        </div>
+                    </div>
+                    <button class="w-full py-3 bg-white text-black rounded-xl font-semibold text-sm hover:bg-gray-100 transition">View Analysis</button>
+                </div>
+            </div>
+
+            <!-- Expense Tracker (1x2) -->
+            <div class="bento-card row-span-2 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold">Expenses</h3>
+                    <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                        <i data-lucide="plus" size="16"></i>
+                    </button>
+                </div>
+                
+                <div class="flex-1 flex flex-col justify-center items-center relative">
+                    <!-- Circular Chart Placeholder -->
+                    <div class="w-32 h-32 rounded-full border-[12px] border-gray-100 border-t-red-500 border-r-red-400 relative">
+                        <div class="absolute inset-0 flex items-center justify-center flex-col">
+                            <span class="text-2xl font-bold">72%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 mt-4">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Fixed</span>
+                        <span class="font-medium">₩1.4M</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Card</span>
+                        <span class="font-medium">₩2.3M</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stocks List (1x4 - Tall) -->
+            <div class="bento-card row-span-4 overflow-hidden flex flex-col bg-white">
+                <h3 class="font-bold mb-4">Watchlist</h3>
+                <div class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    <!-- Stock Item -->
+                    <div class="p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition cursor-pointer">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-sm">NVDA</span>
+                            <span class="text-emerald-600 text-xs font-bold">+2.4%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-gray-500">140 shares</span>
+                            <span class="font-medium text-sm">$140.50</span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition cursor-pointer">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-sm">TSLA</span>
+                            <span class="text-red-500 text-xs font-bold">-0.8%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-gray-500">50 shares</span>
+                            <span class="font-medium text-sm">$250.00</span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition cursor-pointer">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-sm">AAPL</span>
+                            <span class="text-emerald-600 text-xs font-bold">+1.2%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-gray-500">20 shares</span>
+                            <span class="font-medium text-sm">$195.00</span>
+                        </div>
+                    </div>
+                     <div class="p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition cursor-pointer">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-sm">GOOGL</span>
+                            <span class="text-emerald-600 text-xs font-bold">+0.5%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-gray-500">10 shares</span>
+                            <span class="font-medium text-sm">$175.00</span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition cursor-pointer">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-sm">MSFT</span>
+                            <span class="text-emerald-600 text-xs font-bold">+0.1%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-gray-500">5 shares</span>
+                            <span class="font-medium text-sm">$430.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Income (1x2) -->
+            <div class="bento-card col-span-1 row-span-1 bg-emerald-50 border-2 border-emerald-100">
+                <div class="flex flex-col h-full justify-between">
+                    <div class="flex items-center gap-2 text-emerald-800">
+                        <i data-lucide="arrow-down-left" size="18"></i>
+                        <span class="font-semibold text-sm">Income</span>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-bold text-emerald-900">₩9.1M</span>
+                        <p class="text-xs text-emerald-600 mt-1">Salary + Dividend</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bond (1x1) -->
+            <div class="bento-card col-span-1 row-span-1 bg-amber-50 border-2 border-amber-100">
+                 <div class="flex flex-col h-full justify-between">
+                    <div class="flex items-center gap-2 text-amber-800">
+                        <i data-lucide="shield" size="18"></i>
+                        <span class="font-semibold text-sm">Bonds</span>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold text-amber-900">₩14.7M</span>
+                    </div>
+                </div>
+            </div>
+            
+             <!-- Quick Action (1x1) -->
+             <div class="bento-card col-span-1 row-span-1 flex items-center justify-center cursor-pointer hover:bg-blue-50 group border-2 border-dashed border-gray-200">
+                <div class="text-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                        <i data-lucide="plus" size="20"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-600">Add Log</span>
+                </div>
+            </div>
+
+             <!-- Exchange Rate (1x1) -->
+             <div class="bento-card col-span-2 row-span-1 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 mb-1">USD/KRW</p>
+                    <p class="text-2xl font-bold">1,380.50</p>
+                </div>
+                <div class="h-10 w-32 bg-gray-100 rounded-lg flex items-end p-1 gap-1">
+                    <div class="w-1/5 bg-gray-300 h-[40%] rounded-sm"></div>
+                    <div class="w-1/5 bg-gray-300 h-[60%] rounded-sm"></div>
+                    <div class="w-1/5 bg-gray-300 h-[50%] rounded-sm"></div>
+                    <div class="w-1/5 bg-gray-300 h-[80%] rounded-sm"></div>
+                    <div class="w-1/5 bg-emerald-500 h-[70%] rounded-sm animate-pulse"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

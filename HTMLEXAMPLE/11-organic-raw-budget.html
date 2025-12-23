@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organic Raw Budget - Distinctive Design</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Fraunces', serif;
+            background-color: #F2EFE9;
+            color: #2C2825;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'Space Mono', monospace; }
+        
+        /* Grain Texture */
+        .texture-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 50;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            opacity: 0.6; mix-blend-mode: multiply;
+        }
+
+        /* Organic Shapes */
+        .organic-card {
+            background: #FFFCF5;
+            border: 1px solid #2C2825;
+            box-shadow: 4px 4px 0 #2C2825;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .organic-card:hover {
+            transform: translate(-2px, -2px) rotate(-1deg);
+            box-shadow: 8px 8px 0 #2C2825;
+        }
+
+        .blob-bg {
+            position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.6;
+        }
+
+        /* Typography */
+        .display-text {
+            font-variation-settings: 'SOFT' 100, 'WONK' 1;
+            letter-spacing: -0.04em;
+        }
+        
+        .torn-edge {
+            clip-path: polygon(0% 0%, 100% 0%, 100% 98%, 98% 99%, 95% 98%, 92% 99%, 88% 98%, 85% 99%, 82% 98%, 78% 99%, 75% 98%, 72% 99%, 68% 98%, 65% 99%, 62% 98%, 58% 99%, 55% 98%, 52% 99%, 48% 98%, 45% 99%, 42% 98%, 38% 99%, 35% 98%, 32% 99%, 28% 98%, 25% 99%, 22% 98%, 18% 99%, 15% 98%, 12% 99%, 8% 98%, 5% 99%, 2% 98%, 0% 100%);
+        }
+    </style>
+</head>
+<body class="p-6 md:p-12 min-h-screen relative">
+    <div class="texture-overlay"></div>
+    
+    <!-- Background Blobs -->
+    <div class="blob-bg bg-orange-200 w-96 h-96 top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="blob-bg bg-green-200 w-80 h-80 bottom-0 right-0 translate-x-1/3 translate-y-1/3"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
+            <div>
+                <span class="mono text-xs uppercase tracking-widest border border-black px-2 py-1 rounded-full mb-3 inline-block bg-white">Asset Log 2025</span>
+                <h1 class="text-6xl md:text-8xl font-black display-text leading-[0.9]">
+                    Organic<br><span class="text-[#BC4B3B] italic font-light">Growth</span>
+                </h1>
+            </div>
+            <div class="text-right">
+                <div class="mono text-sm mb-1">Total Net Worth</div>
+                <div class="text-4xl font-bold">₩5.23<span class="text-xl opacity-60">억</span></div>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            
+            <!-- Card 1: Main Balance (Torn Paper Style) -->
+            <div class="md:col-span-7 organic-card p-8 md:p-10 bg-[#E6E2DD] torn-edge min-h-[400px] flex flex-col justify-between relative overflow-hidden group">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-[#BC4B3B] rounded-full mix-blend-multiply opacity-20 group-hover:scale-150 transition-transform duration-700"></div>
+                
+                <div class="flex justify-between items-start">
+                    <h2 class="text-3xl font-bold italic">Monthly<br>Review</h2>
+                    <i data-lucide="arrow-up-right" class="w-8 h-8"></i>
+                </div>
+
+                <div class="space-y-6 mt-10">
+                    <div>
+                        <div class="flex justify-between items-end border-b border-black pb-2 mb-2">
+                            <span class="mono text-sm">Income Stream</span>
+                            <span class="text-2xl font-bold">₩9.1M</span>
+                        </div>
+                        <p class="text-xs mono opacity-60">Salary + Dividend + Side Project</p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-end border-b border-black pb-2 mb-2">
+                            <span class="mono text-sm">Expenses</span>
+                            <span class="text-2xl font-bold text-[#BC4B3B]">₩3.1M</span>
+                        </div>
+                        <p class="text-xs mono opacity-60">Within budget limit (72%)</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-black flex items-center gap-4">
+                    <div class="flex-1 bg-white h-12 border border-black rounded-full flex items-center px-4 gap-2 shadow-[2px_2px_0_#000]">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span class="mono text-xs">Healthy Flow</span>
+                    </div>
+                    <span class="text-4xl">🌿</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Stock Portfolio (Note Style) -->
+            <div class="md:col-span-5 organic-card bg-white p-8 relative -rotate-1 hover:rotate-0">
+                <!-- Pin -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#2C2825] shadow-lg z-20"></div>
+                
+                <h3 class="mono text-xs uppercase tracking-widest mb-6 text-center border-b border-dashed border-gray-300 pb-4">Portfolio Snapshot</h3>
+                
+                <div class="space-y-0">
+                    <!-- Item -->
+                    <div class="py-4 border-b border-gray-100 flex justify-between items-center group cursor-pointer hover:bg-gray-50 -mx-4 px-4 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 border border-black rounded-full flex items-center justify-center mono text-xs bg-[#F2F2F2]">1</span>
+                            <div>
+                                <div class="font-bold text-lg leading-none">NVIDIA</div>
+                                <div class="mono text-[10px] text-gray-500 mt-1">140 SHARES</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-lg">₩2.7억</div>
+                            <div class="mono text-xs text-green-600">+2.45%</div>
+                        </div>
+                    </div>
+
+                    <!-- Item -->
+                    <div class="py-4 border-b border-gray-100 flex justify-between items-center group cursor-pointer hover:bg-gray-50 -mx-4 px-4 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 border border-black rounded-full flex items-center justify-center mono text-xs bg-[#F2F2F2]">2</span>
+                            <div>
+                                <div class="font-bold text-lg leading-none">TESLA</div>
+                                <div class="mono text-[10px] text-gray-500 mt-1">50 SHARES</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-lg">₩1.7억</div>
+                            <div class="mono text-xs text-[#BC4B3B]">-0.85%</div>
+                        </div>
+                    </div>
+
+                    <!-- Item -->
+                    <div class="py-4 flex justify-between items-center group cursor-pointer hover:bg-gray-50 -mx-4 px-4 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 border border-black rounded-full flex items-center justify-center mono text-xs bg-[#F2F2F2]">3</span>
+                            <div>
+                                <div class="font-bold text-lg leading-none">APPLE</div>
+                                <div class="mono text-[10px] text-gray-500 mt-1">20 SHARES</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-lg">₩5,300만</div>
+                            <div class="mono text-xs text-green-600">+1.20%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="w-full mt-6 py-3 border border-black rounded-lg mono text-xs uppercase hover:bg-black hover:text-white transition-colors">
+                    View Full Report
+                </button>
+            </div>
+
+            <!-- Card 3: Quick Input (Sticky Note) -->
+            <div class="md:col-span-12 organic-card bg-[#E8F196] p-6 flex flex-col md:flex-row items-center gap-6 rotate-1">
+                <div class="flex-1 w-full">
+                    <label class="mono text-xs font-bold mb-2 block">QUICK NOTE</label>
+                    <input type="text" placeholder="What did you spend?" class="w-full bg-transparent text-2xl font-bold placeholder-gray-500 border-b-2 border-black/20 focus:border-black outline-none py-2">
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="mono text-xs font-bold mb-2 block">AMOUNT</label>
+                    <input type="text" placeholder="₩0" class="w-full bg-transparent text-2xl font-bold placeholder-gray-500 border-b-2 border-black/20 focus:border-black outline-none py-2">
+                </div>
+                <button class="bg-black text-[#E8F196] w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                    <i data-lucide="arrow-right"></i>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
