@@ -9,24 +9,22 @@ import React, { useState, useMemo, useEffect } from 'react';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
-import AssetSummary from './components/dashboard/AssetSummary';
-import KeyMetrics from './components/dashboard/KeyMetrics';
-import StockTable from './components/dashboard/StockTable';
-import InputConsole from './components/input/InputConsole';
 
-// Note: In a real app, this would come from an API or Google Sheets
-const rawData = [
-  { date: '2023-11', category: '수입', item: '고정수입', amount: 7670063 },
-  { date: '2023-11', category: '지출-고정월납', item: '대출 상환', amount: 1410000 },
-];
+// Tabs
+import OverviewTab from './components/tabs/OverviewTab';
+import StatusTab from './components/tabs/StatusTab';
+import InvestmentTab from './components/tabs/InvestmentTab';
+import AnnualTab from './components/tabs/AnnualTab';
+import InputTab from './components/tabs/InputTab';
 
 export default function Dashboard() {
-  const [tab, setTab] = useState('dashboard');
+  const [tab, setTab] = useState('overview');
   const [exchangeRate, setExchangeRate] = useState(1380);
   const [stockPrices, setStockPrices] = useState({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
   const [inputMonth, setInputMonth] = useState(new Date().toISOString().slice(0, 7));
 
-  // --- State from Legacy ---
+  // --- Global State ---
   const [stockList, setStockList] = useState([
     { ticker: 'NVDA', name: '엔비디아', qty: 140, avgPrice: '110' },
     { ticker: 'TSLA', name: '테슬라', qty: 50, avgPrice: '260' },
@@ -36,18 +34,17 @@ export default function Dashboard() {
   ]);
 
   const [manualAccounts, setManualAccounts] = useState({
-    향화카카오: '0', 
-    재호영웅문: '0'
+    향화카카오: '5200000', 
+    재호영웅문: '3800000'
   });
 
   const [assets, setAssets] = useState({
     재호잔고: 26276263,
-    향화잔고: 0,
+    향화잔고: 12500000,
     적금: 8020000
   });
 
   const [bondBalance, setBondBalance] = useState(14744359);
-  const [bondProfit, setBondProfit] = useState(0);
 
   const [fixedExpenses, setFixedExpenses] = useState([
     { name: '대출 상환', amount: 1410000, checked: true },
@@ -64,148 +61,153 @@ export default function Dashboard() {
     { name: '향화 운동', amount: 120000, checked: true },
   ]);
 
-  const [variableItems, setVariableItems] = useState(['관리비', '주유비', '기타']);
-  const [expenseInputs, setExpenseInputs] = useState({});
-  const [cardExpense, setCardExpense] = useState('');
-
   const [fixedIncomes, setFixedIncomes] = useState([
     { name: '학교월급', amount: 5618990 },
     { name: '연구비', amount: 0 },
     { name: '월세', amount: 0 }
   ]);
-  const [variableIncomes, setVariableIncomes] = useState([]);
   
-  const [actions, setActions] = useState({
-    저축한금액: 0,
-    투자한금액: 0
-  });
-
-  const [showFixedSettings, setShowFixedSettings] = useState(false);
+  const [variableIncomes, setVariableIncomes] = useState([
+    { name: '강의비', amount: 200000, memo: '특강' }
+  ]);
+  
+  const [cardExpense, setCardExpense] = useState('850000');
 
   // --- Calculations ---
-  const getYounghwaValueUSD = () => stockList.reduce((sum, s) => {
-    const price = stockPrices[s.ticker] || 0;
-    return sum + (s.qty * price);
-  }, 0);
+  const totalStockUSD = useMemo(() => {
+    return stockList.reduce((sum, s) => {
+      const price = stockPrices[s.ticker] || 0;
+      return sum + (s.qty * price);
+    }, 0);
+  }, [stockList, stockPrices]);
 
-  const getTotalValueKRW = () => {
-    const younghwaUSD = getYounghwaValueUSD();
-    const younghwaKRW = younghwaUSD * exchangeRate;
-    const kakao = parseFloat(manualAccounts.향화카카오.replace(/,/g,'')) || 0;
-    const jaeho = parseFloat(manualAccounts.재호영웅문.replace(/,/g,'')) || 0;
+  const totalStockKRW = useMemo(() => {
+    const younghwaKRW = totalStockUSD * exchangeRate;
+    const kakao = parseFloat(manualAccounts.향화카카오) || 0;
+    const jaeho = parseFloat(manualAccounts.재호영웅문) || 0;
     return younghwaKRW + kakao + jaeho;
-  };
+  }, [totalStockUSD, exchangeRate, manualAccounts]);
 
-  const totalAssetsValue = getTotalValueKRW() + bondBalance + Object.values(assets).reduce((a, b) => a + b, 0);
+  const cashTotal = Object.values(assets).reduce((a, b) => a + b, 0);
+  const totalAssetsValue = totalStockKRW + bondBalance + cashTotal;
 
   const thisMonthIncome = fixedIncomes.reduce((s, i) => s + i.amount, 0) + variableIncomes.reduce((s, i) => s + i.amount, 0);
   const thisMonthExpense = (parseInt(cardExpense.replace(/,/g,'')) || 0) + 
-    fixedExpenses.filter(e => e.checked).reduce((s, e) => s + e.amount, 0) + 
-    Object.values(expenseInputs).reduce((s, v) => s + (parseInt(v.replace(/,/g,'')) || 0), 0);
+    fixedExpenses.filter(e => e.checked).reduce((s, e) => s + e.amount, 0);
+
+  // --- Handlers ---
+  const handleManualAccountChange = (key, value) => {
+    setManualAccounts(prev => ({ ...prev, [key]: value.replace(/,/g, '') }));
+  };
+
+  const handleAssetChange = (key, value) => {
+    setAssets(prev => ({ ...prev, [key]: parseInt(value.replace(/,/g, '')) || 0 }));
+  };
+
+  const handleFixedIncomeChange = (index, value) => {
+    const newIncomes = [...fixedIncomes];
+    newIncomes[index].amount = parseInt(value.replace(/,/g, '')) || 0;
+    setFixedIncomes(newIncomes);
+  };
+
+  const handleCardExpenseChange = (value) => {
+    setCardExpense(value.replace(/,/g, ''));
+  };
+
+  const handleToggleFixedExpense = (index) => {
+    const newExpenses = [...fixedExpenses];
+    newExpenses[index].checked = !newExpenses[index].checked;
+    setFixedExpenses(newExpenses);
+  };
+
+  const handleExchangeRateChange = (value) => {
+    setExchangeRate(parseFloat(value) || 0);
+  };
 
   // --- Effects ---
   useEffect(() => {
     const demoPrices = {
       'NVDA': 140.50, 'TSLA': 250.00, 'AAPL': 195.00, 
-      'GOOGL': 175.00, 'MSFT': 430.00, 'SPY': 595.20, 'QQQ': 480.11
+      'GOOGL': 175.00, 'MSFT': 430.00, 'SPY': 595.20, 'QQQ': 480.11, 'TQQQ': 72.45
     };
     setStockPrices(demoPrices);
   }, []);
 
-  const inputConsoleProps = {
-    cardExpense, setCardExpense,
-    fixedExpenses, setFixedExpenses,
-    variableItems, setVariableItems,
-    expenseInputs, setExpenseInputs,
-    showFixedSettings, setShowFixedSettings,
-    fixedIncomes, setFixedIncomes,
-    variableIncomes, setVariableIncomes,
-    assets, setAssets,
-    manualAccounts, setManualAccounts,
-    bondBalance, setBondBalance,
-    actions, setActions
+  // --- Tab Data Mapping ---
+  const overviewStats = {
+    income: thisMonthIncome,
+    expense: thisMonthExpense,
+    totalAssets: totalAssetsValue,
+    stockAssets: totalStockKRW,
+    savingsRate: (((thisMonthIncome - thisMonthExpense) / thisMonthIncome) * 100).toFixed(1)
+  };
+
+  const statusData = {
+    incomes: { total: thisMonthIncome, fixed: fixedIncomes, variable: variableIncomes },
+    expenses: { total: thisMonthExpense, fixed: fixedExpenses.filter(e => e.checked), variable: [], card: parseInt(cardExpense) },
+    assets: { total: totalAssetsValue, cash: assets, stocks: { '주식 계좌 합계': totalStockKRW }, bonds: bondBalance }
+  };
+
+  const investmentData = {
+    exchangeRate,
+    stockPrices,
+    totalStockUSD,
+    totalStockKRW,
+    totalInvestmentKRW: totalStockKRW + bondBalance,
+    investedPrincipal: totalStockKRW * 0.8, // Mock
+    stocks: { list: stockList },
+    bonds: { balance: bondBalance },
+    benchmarks: { spy: stockPrices['SPY'] || 0, qqq: stockPrices['QQQ'] || 0, tqqq: stockPrices['TQQQ'] || 0 },
+    history: [
+      { date: '2023-06', value: 42000, principal: 40000 },
+      { date: '2023-07', value: 45000, principal: 41000 },
+      { date: '2023-08', value: 43000, principal: 42000 },
+      { date: '2023-09', value: 48000, principal: 42000 },
+      { date: '2023-10', value: 51000, principal: 43000 },
+      { date: '2023-11', value: 52300, principal: 43000 },
+    ],
+    manual: { kakao: parseFloat(manualAccounts.향화카카오), jaeho: parseFloat(manualAccounts.재호영웅문) }
+  };
+
+  const inputData = { manualAccounts, assets, fixedIncomes, fixedExpenses, cardExpense };
+  const inputHandlers = {
+    onManualAccountChange: handleManualAccountChange,
+    onAssetChange: handleAssetChange,
+    onFixedIncomeChange: handleFixedIncomeChange,
+    onCardExpenseChange: handleCardExpenseChange,
+    onToggleFixedExpense: handleToggleFixedExpense
+  };
+
+  const investmentHandlers = {
+    onExchangeRateChange: handleExchangeRateChange
   };
 
   return (
     <DashboardLayout>
-      <div className="flex h-full">
-        <Sidebar activeTab={tab} onTabChange={setTab} />
+      <Header 
+        exchangeRate={exchangeRate} 
+        indices={[
+          { name: 'SPY', value: stockPrices['SPY'] || 0, change: 'up' },
+          { name: 'QQQ', value: stockPrices['QQQ'] || 0, change: 'up' },
+          { name: 'TQQQ', value: stockPrices['TQQQ'] || 0, change: 'up' }
+        ]}
+        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
+      <div className="flex-1 flex overflow-hidden relative">
+        <Sidebar 
+            activeTab={tab} 
+            onTabChange={setTab} 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)} 
+        />
         
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <Header 
-            exchangeRate={exchangeRate} 
-            indices={[
-              { name: 'SPY', value: stockPrices['SPY'] || 0, change: 'up' },
-              { name: 'QQQ', value: stockPrices['QQQ'] || 0, change: 'up' }
-            ]} 
-          />
-          
-          <main className="flex-1 overflow-auto p-0.5 bg-border grid grid-cols-1 md:grid-cols-12 grid-rows-6 gap-0.5">
-            
-            {/* Conditional Rendering based on Tab */}
-            {tab === 'dashboard' && (
-              <>
-                <div className="col-span-12 md:col-span-8 row-span-2">
-                  <AssetSummary totalAssets={totalAssetsValue} prevAssets={totalAssetsValue * 0.98} />
-                </div>
-                <div className="col-span-12 md:col-span-4 row-span-2">
-                  <KeyMetrics bondBalance={bondBalance} income={thisMonthIncome} expense={thisMonthExpense} />
-                </div>
-                <div className="col-span-12 md:col-span-8 row-span-4 bg-panel border border-border flex flex-col">
-                  <div className="h-12 border-b border-border flex items-center px-6 bg-[#1A1D24] justify-between shrink-0">
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">보유 종목 현황</h3>
-                  </div>
-                  <StockTable stocks={stockList} prices={stockPrices} exchangeRate={exchangeRate} />
-                </div>
-                <div className="col-span-12 md:col-span-4 row-span-4 bg-panel border border-border p-6">
-                  <InputConsole {...inputConsoleProps} />
-                </div>
-              </>
-            )}
-
-            {tab === 'portfolio' && (
-              <div className="col-span-12 row-span-6 bg-panel border border-border flex flex-col">
-                <div className="h-12 border-b border-border flex items-center px-6 bg-[#1A1D24] justify-between shrink-0">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">전체 포트폴리오 상세</h3>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-                   <div className="bg-background p-4 rounded-lg border border-border">
-                      <p className="text-xs font-bold text-slate-500 uppercase mb-1">주식 평가액</p>
-                      <p className="text-2xl font-bold text-white">{new Intl.NumberFormat('ko-KR').format(getTotalValueKRW())}원</p>
-                   </div>
-                   <div className="bg-background p-4 rounded-lg border border-border">
-                      <p className="text-xs font-bold text-slate-500 uppercase mb-1">안전 자산</p>
-                      <p className="text-2xl font-bold text-white">{new Intl.NumberFormat('ko-KR').format(bondBalance)}원</p>
-                   </div>
-                   <div className="bg-background p-4 rounded-lg border border-border">
-                      <p className="text-xs font-bold text-slate-500 uppercase mb-1">현금 비중</p>
-                      <p className="text-2xl font-bold text-white">{((Object.values(assets).reduce((a,b)=>a+b,0) / totalAssetsValue) * 100).toFixed(1)}%</p>
-                   </div>
-                </div>
-                <StockTable stocks={stockList} prices={stockPrices} exchangeRate={exchangeRate} />
-              </div>
-            )}
-
-            {tab === 'input' && (
-              <div className="col-span-12 row-span-6 bg-panel border border-border p-8 flex justify-center">
-                <div className="max-w-2xl w-full">
-                  <InputConsole {...inputConsoleProps} />
-                </div>
-              </div>
-            )}
-
-            {(tab === 'transactions' || tab === 'analysis' || tab === 'report') && (
-              <div className="col-span-12 row-span-6 bg-panel border border-border p-12 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 bg-blue-900/20 text-blue-500 rounded-full flex items-center justify-center mb-4">
-                   <i data-lucide="construction" size={32}></i>
-                </div>
-                <h2 className="text-2xl font-bold text-white mb-2">{tab.toUpperCase()} 준비 중</h2>
-                <p className="text-slate-400">해당 기능은 다음 업데이트에서 제공될 예정입니다.</p>
-              </div>
-            )}
-
-          </main>
-        </div>
+        <main className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+          {tab === 'overview' && <OverviewTab stats={overviewStats} />}
+          {tab === 'status' && <StatusTab data={statusData} />}
+          {tab === 'investment' && <InvestmentTab data={investmentData} handlers={investmentHandlers} />}
+          {tab === 'annual' && <AnnualTab />}
+          {tab === 'input' && <InputTab data={inputData} handlers={inputHandlers} />}
+        </main>
       </div>
     </DashboardLayout>
   );
