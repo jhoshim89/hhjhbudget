@@ -9,6 +9,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import MobileNav from './components/layout/MobileNav';
 
 // Tabs
 import OverviewTab from './components/tabs/OverviewTab';
@@ -16,6 +17,7 @@ import StatusTab from './components/tabs/StatusTab';
 import InvestmentTab from './components/tabs/InvestmentTab';
 import AnnualTab from './components/tabs/AnnualTab';
 import InputTab from './components/tabs/InputTab';
+import AddVariableExpenseModal from './components/expense/AddVariableExpenseModal';
 
 export default function Dashboard() {
   const [tab, setTab] = useState('overview');
@@ -44,7 +46,17 @@ export default function Dashboard() {
     적금: 8020000
   });
 
-  const [bondBalance, setBondBalance] = useState(14744359);
+  // 채권 (단일 채권 정보)
+  const [bond, setBond] = useState({
+    balance: 14744359,
+    purchaseDate: '2024-06-15',
+    yieldRate: 4.2,
+    maturityMonths: 12,
+  });
+
+  // 변동 지출
+  const [variableExpenses, setVariableExpenses] = useState([]);
+  const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
 
   const [fixedExpenses, setFixedExpenses] = useState([
     { name: '대출 상환', amount: 1410000, checked: true },
@@ -89,11 +101,22 @@ export default function Dashboard() {
   }, [totalStockUSD, exchangeRate, manualAccounts]);
 
   const cashTotal = Object.values(assets).reduce((a, b) => a + b, 0);
-  const totalAssetsValue = totalStockKRW + bondBalance + cashTotal;
+  const totalAssetsValue = totalStockKRW + bond.balance + cashTotal;
+
+  // 채권 만기 계산
+  const getBondMaturity = () => {
+    const purchase = new Date(bond.purchaseDate);
+    const maturity = new Date(purchase);
+    maturity.setMonth(maturity.getMonth() + bond.maturityMonths);
+    const today = new Date();
+    const monthsLeft = Math.max(0, Math.ceil((maturity - today) / (30 * 24 * 60 * 60 * 1000)));
+    return { maturityDate: maturity, monthsLeft, isMatured: monthsLeft === 0 };
+  };
 
   const thisMonthIncome = fixedIncomes.reduce((s, i) => s + i.amount, 0) + variableIncomes.reduce((s, i) => s + i.amount, 0);
-  const thisMonthExpense = (parseInt(cardExpense.replace(/,/g,'')) || 0) + 
-    fixedExpenses.filter(e => e.checked).reduce((s, e) => s + e.amount, 0);
+  const thisMonthExpense = (parseInt(cardExpense.replace(/,/g,'')) || 0) +
+    fixedExpenses.filter(e => e.checked).reduce((s, e) => s + e.amount, 0) +
+    variableExpenses.reduce((s, e) => s + e.amount, 0);
 
   // --- Handlers ---
   const handleManualAccountChange = (key, value) => {
@@ -124,6 +147,43 @@ export default function Dashboard() {
     setExchangeRate(parseFloat(value) || 0);
   };
 
+  // --- Reorder Handlers ---
+  const handleReorderFixedIncomes = (newOrder) => {
+    setFixedIncomes(newOrder);
+  };
+
+  const handleReorderVariableIncomes = (newOrder) => {
+    setVariableIncomes(newOrder);
+  };
+
+  const handleReorderFixedExpenses = (newOrder) => {
+    setFixedExpenses(newOrder);
+  };
+
+  // --- Variable Expense Handlers ---
+  const handleAddVariableExpense = (expense) => {
+    setVariableExpenses(prev => [...prev, expense]);
+  };
+
+  const handleDeleteVariableExpense = (index) => {
+    setVariableExpenses(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // --- Stock Management Handlers ---
+  const handleAddStock = (newStock) => {
+    setStockList(prev => [...prev, newStock]);
+  };
+
+  const handleDeleteStock = (ticker) => {
+    setStockList(prev => prev.filter(s => s.ticker !== ticker));
+  };
+
+  const handleUpdateStock = (ticker, updates) => {
+    setStockList(prev => prev.map(s =>
+      s.ticker === ticker ? { ...s, ...updates } : s
+    ));
+  };
+
   // --- Effects ---
   useEffect(() => {
     const demoPrices = {
@@ -144,8 +204,15 @@ export default function Dashboard() {
 
   const statusData = {
     incomes: { total: thisMonthIncome, fixed: fixedIncomes, variable: variableIncomes },
-    expenses: { total: thisMonthExpense, fixed: fixedExpenses.filter(e => e.checked), variable: [], card: parseInt(cardExpense) },
-    assets: { total: totalAssetsValue, cash: assets, stocks: { '주식 계좌 합계': totalStockKRW }, bonds: bondBalance }
+    expenses: { total: thisMonthExpense, fixed: fixedExpenses.filter(e => e.checked), variable: variableExpenses, card: parseInt(cardExpense) },
+    assets: { total: totalAssetsValue, cash: assets, stocks: { '주식 계좌 합계': totalStockKRW }, bonds: bond.balance },
+    handlers: {
+      onReorderFixedIncomes: handleReorderFixedIncomes,
+      onReorderVariableIncomes: handleReorderVariableIncomes,
+      onReorderFixedExpenses: handleReorderFixedExpenses,
+      onOpenAddVariableExpense: () => setIsAddExpenseModalOpen(true),
+      onDeleteVariableExpense: handleDeleteVariableExpense,
+    }
   };
 
   const investmentData = {
@@ -153,10 +220,10 @@ export default function Dashboard() {
     stockPrices,
     totalStockUSD,
     totalStockKRW,
-    totalInvestmentKRW: totalStockKRW + bondBalance,
+    totalInvestmentKRW: totalStockKRW + bond.balance,
     investedPrincipal: totalStockKRW * 0.8, // Mock
     stocks: { list: stockList },
-    bonds: { balance: bondBalance },
+    bonds: { ...bond, ...getBondMaturity() },
     benchmarks: { spy: stockPrices['SPY'] || 0, qqq: stockPrices['QQQ'] || 0, tqqq: stockPrices['TQQQ'] || 0 },
     history: [
       { date: '2023-06', value: 42000, principal: 40000 },
@@ -166,7 +233,11 @@ export default function Dashboard() {
       { date: '2023-10', value: 51000, principal: 43000 },
       { date: '2023-11', value: 52300, principal: 43000 },
     ],
-    manual: { kakao: parseFloat(manualAccounts.향화카카오), jaeho: parseFloat(manualAccounts.재호영웅문) }
+    manual: {
+      kakao: parseFloat(manualAccounts.향화카카오),
+      jaeho: parseFloat(manualAccounts.재호영웅문),
+      younghwa: totalStockUSD * exchangeRate  // 향화 영웅문 (실시간 계산)
+    }
   };
 
   const inputData = { manualAccounts, assets, fixedIncomes, fixedExpenses, cardExpense };
@@ -179,36 +250,51 @@ export default function Dashboard() {
   };
 
   const investmentHandlers = {
-    onExchangeRateChange: handleExchangeRateChange
+    onExchangeRateChange: handleExchangeRateChange,
+    onAddStock: handleAddStock,
+    onDeleteStock: handleDeleteStock,
+    onUpdateStock: handleUpdateStock,
   };
 
   return (
     <DashboardLayout>
-      <Header 
-        exchangeRate={exchangeRate} 
+      <Header
+        exchangeRate={exchangeRate}
         indices={[
           { name: 'SPY', value: stockPrices['SPY'] || 0, change: 'up' },
           { name: 'QQQ', value: stockPrices['QQQ'] || 0, change: 'up' },
           { name: 'TQQQ', value: stockPrices['TQQQ'] || 0, change: 'up' }
         ]}
-        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
       />
       <div className="flex-1 flex overflow-hidden relative">
-        <Sidebar 
-            activeTab={tab} 
-            onTabChange={setTab} 
-            isOpen={isSidebarOpen} 
-            onClose={() => setIsSidebarOpen(false)} 
-        />
-        
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block">
+          <Sidebar
+              activeTab={tab}
+              onTabChange={setTab}
+              isOpen={true}
+              onClose={() => {}}
+          />
+        </div>
+
+        <main className="flex-1 flex flex-col overflow-auto bg-background pb-16 md:pb-0">
           {tab === 'overview' && <OverviewTab stats={overviewStats} />}
           {tab === 'status' && <StatusTab data={statusData} />}
           {tab === 'investment' && <InvestmentTab data={investmentData} handlers={investmentHandlers} />}
-          {tab === 'annual' && <AnnualTab />}
+          {tab === 'annual' && <AnnualTab currentData={{ income: thisMonthIncome, expense: thisMonthExpense }} />}
           {tab === 'input' && <InputTab data={inputData} handlers={inputHandlers} />}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav activeTab={tab} onTabChange={setTab} />
+
+      {/* Variable Expense Modal */}
+      <AddVariableExpenseModal
+        isOpen={isAddExpenseModalOpen}
+        onClose={() => setIsAddExpenseModalOpen(false)}
+        onAdd={handleAddVariableExpense}
+      />
     </DashboardLayout>
   );
 }
