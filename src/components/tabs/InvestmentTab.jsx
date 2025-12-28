@@ -65,27 +65,28 @@ const EditableCell = ({ value, onSave, type = 'number', className = '' }) => {
     if (e.key === 'Escape') handleCancel();
   };
 
+  // 동일한 크기 유지를 위해 같은 width 사용
+  const boxStyle = "w-16 px-2 py-0.5 text-right font-mono text-xs";
+
   if (isEditing) {
     return (
-      <div className="flex items-center gap-1">
-        <input
-          ref={inputRef}
-          type={type}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={handleSave}
-          className="w-20 bg-zinc-800 border border-violet-500 rounded-lg px-2 py-1 text-right text-white font-mono text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
-          step={type === 'number' ? 'any' : undefined}
-        />
-      </div>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="decimal"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSave}
+        className={`${boxStyle} bg-zinc-800 border border-violet-500/60 rounded text-white focus:outline-none focus:border-violet-400 box-border`}
+      />
     );
   }
 
   return (
     <span
       onClick={() => setIsEditing(true)}
-      className={`cursor-pointer hover:bg-violet-500/20 px-2 py-1 rounded-lg transition-colors ${className}`}
+      className={`${boxStyle} inline-block cursor-pointer hover:bg-violet-500/20 rounded transition-colors box-border ${className}`}
       title="클릭하여 수정"
     >
       {value}
@@ -263,9 +264,9 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-        {/* Left: Visualization */}
-        <div className="md:col-span-4 glass-card flex flex-col animate-enter delay-300 border-violet-500/10">
+      <div className="flex flex-col gap-3">
+        {/* Visualization */}
+        <div className="glass-card flex flex-col animate-enter delay-300 border-violet-500/10">
           <div className="h-10 border-b border-white/[0.06] flex items-center px-4 bg-violet-500/10">
             <h3 className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">Portfolio Allocation</h3>
           </div>
@@ -383,8 +384,8 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           </div>
         </div>
 
-        {/* Right: Account Tables */}
-        <div className="md:col-span-8 glass-card flex flex-col animate-enter delay-400">
+        {/* Account Tables */}
+        <div className="glass-card flex flex-col animate-enter delay-400">
           <div className="h-10 border-b border-violet-500/20 flex items-center px-4 md:px-6 bg-violet-500/10 justify-between">
             <h3 className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">Account Details</h3>
             {data.hasIndividualStocks && (
@@ -473,10 +474,11 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                 <p className="text-2xl font-bold font-mono text-violet-400">{formatKRW(data.investmentTotals?.재호 || 0, true)}</p>
               </div>
               <div className="bento-card border-blue-500/20 bg-blue-500/5">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-2">
                   <h4 className="text-sm font-semibold text-blue-300">향화 해외주식</h4>
                   <span className="text-xs text-violet-400/70">월간 평가액</span>
                 </div>
+                <p className="text-xs text-blue-300/80 mb-2">카카오 + 영웅문</p>
                 <p className="text-2xl font-bold font-mono text-blue-400">{formatKRW(data.investmentTotals?.향화 || 0, true)}</p>
               </div>
               {data.investmentTotals?.배당 > 0 && (

@@ -20,9 +20,9 @@
   --color-surface: #18181B;
   --color-panel: #27272A;
   --color-elevated: #3F3F46;
-  --color-border: rgba(255,255,255,0.08);
+  --color-border: rgba(255,255,255,0.12);
   --color-foreground: #FAFAFA;
-  --color-foreground-muted: #A1A1AA;
+  --color-foreground-muted: #D4D4D8;
 
   /* Glass - Dark */
   --glass-bg: rgba(39,39,42,0.4);

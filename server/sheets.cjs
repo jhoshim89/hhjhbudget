@@ -1,5 +1,17 @@
 const { google } = require('googleapis');
 
+// 시트 이름 상수
+const MAIN_SHEET_NAME = '시트1';
+
+// 레거시 데이터 기준월 (이 월 이전 데이터는 읽기전용)
+const LEGACY_CUTOFF = '2025.09';
+
+// 레거시 월인지 확인
+function isLegacyMonth(monthStr) {
+  if (!monthStr) return false;
+  return monthStr <= LEGACY_CUTOFF;
+}
+
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -107,6 +119,48 @@ async function deleteSheetRow(month, category, name) {
   }
 }
 
+// 메인 시트에서 특정 범위의 행 삭제 (1-indexed)
+async function deleteRowsRange(startRow, endRow, sheetName = MAIN_SHEET_NAME) {
+  try {
+    // 시트 정보 가져오기
+    const sheetInfo = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const targetSheet = sheetInfo.data.sheets.find(
+      s => s.properties.title === sheetName
+    );
+
+    if (!targetSheet) {
+      throw new Error(`Sheet "${sheetName}" not found`);
+    }
+
+    const sheetId = targetSheet.properties.sheetId;
+
+    // 행 삭제 (0-indexed로 변환)
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: startRow - 1, // 1-indexed → 0-indexed
+              endIndex: endRow,         // endIndex는 exclusive
+            },
+          },
+        }],
+      },
+    });
+
+    return { deleted: `rows ${startRow}-${endRow}` };
+  } catch (error) {
+    console.error('Error deleting rows range:', error.message);
+    throw error;
+  }
+}
+
 // 특정 월 데이터 파싱 (시트 구조에 맞게 조정 필요)
 async function getMonthData(year, month) {
   const monthStr = `${year}.${String(month).padStart(2, '0')}`;
@@ -195,11 +249,802 @@ async function updateRowByKey(month, category, name, newValues) {
   }
 }
 
+// ============================================
+// 관심종목 전용 함수 (별도 시트: "관심종목")
+// ============================================
+
+const WATCHLIST_SHEET = '관심종목';
+
+// 관심종목 시트 ID 가져오기 (없으면 생성)
+async function getOrCreateWatchlistSheet() {
+  try {
+    const sheetInfo = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const watchlistSheet = sheetInfo.data.sheets.find(
+      s => s.properties.title === WATCHLIST_SHEET
+    );
+
+    if (watchlistSheet) {
+      return watchlistSheet.properties.sheetId;
+    }
+
+    // 시트가 없으면 생성
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: WATCHLIST_SHEET }
+          }
+        }]
+      }
+    });
+
+    return response.data.replies[0].addSheet.properties.sheetId;
+  } catch (error) {
+    console.error('Error getting/creating watchlist sheet:', error.message);
+    throw error;
+  }
+}
+
+// 관심종목 조회
+async function getWatchlist() {
+  try {
+    await getOrCreateWatchlistSheet(); // 시트 존재 확인
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${WATCHLIST_SHEET}!A:C`,
+    });
+
+    const rows = response.data.values || [];
+    return rows
+      .filter(row => row[0]) // 빈 행 제외
+      .map(([ticker, name, order]) => ({
+        ticker,
+        name: name || ticker,
+        order: parseInt(order) || 999,
+      }))
+      .sort((a, b) => a.order - b.order);
+  } catch (error) {
+    console.error('Error getting watchlist:', error.message);
+    return [];
+  }
+}
+
+// 관심종목 추가
+async function addWatchlistStock(ticker, name) {
+  try {
+    await getOrCreateWatchlistSheet();
+
+    // 현재 종목 수 확인 (순서 번호용)
+    const currentList = await getWatchlist();
+    const newOrder = currentList.length + 1;
+
+    // 중복 체크
+    if (currentList.some(s => s.ticker === ticker)) {
+      throw new Error(`Stock ${ticker} already exists`);
+    }
+
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${WATCHLIST_SHEET}!A:C`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[ticker, name, newOrder]] },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error adding watchlist stock:', error.message);
+    throw error;
+  }
+}
+
+// 관심종목 삭제
+async function removeWatchlistStock(ticker) {
+  try {
+    const sheetId = await getOrCreateWatchlistSheet();
+
+    // 현재 데이터 가져오기
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${WATCHLIST_SHEET}!A:C`,
+    });
+
+    const rows = response.data.values || [];
+    const rowIndex = rows.findIndex(row => row[0] === ticker);
+
+    if (rowIndex === -1) {
+      throw new Error(`Stock ${ticker} not found`);
+    }
+
+    // 행 삭제
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex,
+              endIndex: rowIndex + 1,
+            },
+          },
+        }],
+      },
+    });
+
+    return { deleted: ticker };
+  } catch (error) {
+    console.error('Error removing watchlist stock:', error.message);
+    throw error;
+  }
+}
+
+// 관심종목 순서 저장 (전체 덮어쓰기)
+async function saveWatchlistOrder(stocks) {
+  try {
+    const sheetId = await getOrCreateWatchlistSheet();
+
+    // 기존 데이터 모두 삭제
+    const currentData = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${WATCHLIST_SHEET}!A:C`,
+    });
+
+    const rowCount = currentData.data.values?.length || 0;
+
+    if (rowCount > 0) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: 'ROWS',
+                startIndex: 0,
+                endIndex: rowCount,
+              },
+            },
+          }],
+        },
+      });
+    }
+
+    // 새 데이터 쓰기
+    if (stocks.length > 0) {
+      const values = stocks.map((s, i) => [s.ticker, s.name, i + 1]);
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${WATCHLIST_SHEET}!A1:C${stocks.length}`,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
+    }
+
+    return { saved: stocks.length };
+  } catch (error) {
+    console.error('Error saving watchlist order:', error.message);
+    throw error;
+  }
+}
+
+// ============================================
+// 보유종목 전용 함수 (별도 시트: "보유종목")
+// ============================================
+
+const HOLDINGS_SHEET = '보유종목';
+
+// 보유종목 시트 ID 가져오기 (없으면 생성)
+async function getOrCreateHoldingsSheet() {
+  try {
+    const sheetInfo = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const holdingsSheet = sheetInfo.data.sheets.find(
+      s => s.properties.title === HOLDINGS_SHEET
+    );
+
+    if (holdingsSheet) {
+      return holdingsSheet.properties.sheetId;
+    }
+
+    // 시트가 없으면 생성
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: HOLDINGS_SHEET }
+          }
+        }]
+      }
+    });
+
+    // 헤더 추가
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HOLDINGS_SHEET}!A1:G1`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [['ticker', 'name', 'qty', 'avgPrice', 'account', 'addedDate', 'order']] },
+    });
+
+    return response.data.replies[0].addSheet.properties.sheetId;
+  } catch (error) {
+    console.error('Error getting/creating holdings sheet:', error.message);
+    throw error;
+  }
+}
+
+// 보유종목 조회
+async function getHoldings() {
+  try {
+    await getOrCreateHoldingsSheet();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HOLDINGS_SHEET}!A:G`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return []; // 헤더만 있으면 빈 배열
+
+    // 헤더 제외
+    return rows.slice(1)
+      .filter(row => row[0]) // 빈 행 제외
+      .map(([ticker, name, qty, avgPrice, account, addedDate, order]) => ({
+        ticker,
+        name: name || ticker,
+        qty: parseInt(qty) || 0,
+        avgPrice: parseFloat(avgPrice) || 0,
+        account: account || '',
+        addedDate: addedDate || '',
+        order: parseInt(order) || 999,
+      }))
+      .sort((a, b) => a.order - b.order);
+  } catch (error) {
+    console.error('Error getting holdings:', error.message);
+    return [];
+  }
+}
+
+// 보유종목 추가
+async function addHolding(ticker, name, qty, avgPrice, account) {
+  try {
+    await getOrCreateHoldingsSheet();
+
+    // 현재 종목 수 확인 (순서 번호용)
+    const currentList = await getHoldings();
+    const newOrder = currentList.length + 1;
+
+    // 중복 체크
+    if (currentList.some(s => s.ticker === ticker)) {
+      throw new Error(`Stock ${ticker} already exists`);
+    }
+
+    const addedDate = new Date().toISOString().slice(0, 10);
+
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HOLDINGS_SHEET}!A:G`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[ticker, name, qty, avgPrice, account, addedDate, newOrder]] },
+    });
+
+    return { ticker, name, qty, avgPrice, account, addedDate, order: newOrder };
+  } catch (error) {
+    console.error('Error adding holding:', error.message);
+    throw error;
+  }
+}
+
+// 보유종목 업데이트
+async function updateHolding(ticker, updates) {
+  try {
+    const sheetId = await getOrCreateHoldingsSheet();
+
+    // 현재 데이터 가져오기
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HOLDINGS_SHEET}!A:G`,
+    });
+
+    const rows = response.data.values || [];
+    let rowIndex = -1;
+    let currentData = {};
+
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === ticker) {
+        rowIndex = i + 1; // 1-indexed for Sheets API
+        currentData = {
+          ticker: rows[i][0],
+          name: rows[i][1],
+          qty: parseInt(rows[i][2]) || 0,
+          avgPrice: parseFloat(rows[i][3]) || 0,
+          account: rows[i][4] || '',
+          addedDate: rows[i][5] || '',
+          order: parseInt(rows[i][6]) || 999,
+        };
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      throw new Error(`Holding ${ticker} not found`);
+    }
+
+    // 데이터 병합
+    const newData = { ...currentData, ...updates };
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HOLDINGS_SHEET}!A${rowIndex}:G${rowIndex}`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[newData.ticker, newData.name, newData.qty, newData.avgPrice, newData.account, newData.addedDate, newData.order]] },
+    });
+
+    return newData;
+  } catch (error) {
+    console.error('Error updating holding:', error.message);
+    throw error;
+  }
+}
+
+// 보유종목 삭제
+async function removeHolding(ticker) {
+  try {
+    const sheetId = await getOrCreateHoldingsSheet();
+
+    // 현재 데이터 가져오기
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HOLDINGS_SHEET}!A:G`,
+    });
+
+    const rows = response.data.values || [];
+    const rowIndex = rows.findIndex(row => row[0] === ticker);
+
+    if (rowIndex === -1 || rowIndex === 0) { // 헤더는 삭제하면 안됨
+      throw new Error(`Holding ${ticker} not found`);
+    }
+
+    // 행 삭제
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex,
+              endIndex: rowIndex + 1,
+            },
+          },
+        }],
+      },
+    });
+
+    return { deleted: ticker };
+  } catch (error) {
+    console.error('Error removing holding:', error.message);
+    throw error;
+  }
+}
+
+// 보유종목 순서 저장
+async function saveHoldingsOrder(stocks) {
+  try {
+    const sheetId = await getOrCreateHoldingsSheet();
+
+    // 헤더 유지하고 데이터만 교체
+    const values = stocks.map((s, i) => [
+      s.ticker, s.name, s.qty, s.avgPrice, s.account, s.addedDate, i + 1
+    ]);
+
+    // 기존 데이터 삭제 (헤더 제외)
+    const currentData = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HOLDINGS_SHEET}!A:G`,
+    });
+
+    const rowCount = currentData.data.values?.length || 0;
+
+    if (rowCount > 1) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: 'ROWS',
+                startIndex: 1, // 헤더 제외
+                endIndex: rowCount,
+              },
+            },
+          }],
+        },
+      });
+    }
+
+    // 새 데이터 쓰기
+    if (values.length > 0) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${HOLDINGS_SHEET}!A2:G`,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
+    }
+
+    return { saved: stocks.length };
+  } catch (error) {
+    console.error('Error saving holdings order:', error.message);
+    throw error;
+  }
+}
+
+// ============================================
+// 부동산 전용 함수 (별도 시트: "부동산")
+// ============================================
+
+const REALESTATE_SHEET = '부동산';
+
+// 부동산 시트 ID 가져오기 (없으면 생성)
+async function getOrCreateRealEstateSheet() {
+  try {
+    const sheetInfo = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const realEstateSheet = sheetInfo.data.sheets.find(
+      s => s.properties.title === REALESTATE_SHEET
+    );
+
+    if (realEstateSheet) {
+      return realEstateSheet.properties.sheetId;
+    }
+
+    // 시트가 없으면 생성
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: REALESTATE_SHEET }
+          }
+        }]
+      }
+    });
+
+    // 헤더 추가
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A1:D1`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [['id', 'type', 'propertyId', 'data']] },
+    });
+
+    return response.data.replies[0].addSheet.properties.sheetId;
+  } catch (error) {
+    console.error('Error getting/creating real estate sheet:', error.message);
+    throw error;
+  }
+}
+
+// UUID 생성 함수
+function generateId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// 부동산 데이터 전체 조회
+async function getRealEstateData() {
+  try {
+    await getOrCreateRealEstateSheet();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A:D`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return { watchProperties: [], myProperties: [], loans: [], priceHistory: {} };
+
+    const result = {
+      watchProperties: [],
+      myProperties: [],
+      loans: [],
+      priceHistory: {},
+    };
+
+    // 헤더 제외하고 파싱
+    for (let i = 1; i < rows.length; i++) {
+      const [id, type, propertyId, dataStr] = rows[i];
+      if (!id || !type) continue;
+
+      try {
+        const data = JSON.parse(dataStr || '{}');
+
+        switch (type) {
+          case 'watch':
+            result.watchProperties.push({ id, ...data });
+            break;
+          case 'my':
+            result.myProperties.push({ id, ...data });
+            break;
+          case 'loan':
+            result.loans.push({ id, propertyId, ...data });
+            break;
+          case 'price':
+            if (!result.priceHistory[propertyId]) {
+              result.priceHistory[propertyId] = [];
+            }
+            result.priceHistory[propertyId].push({ id, ...data });
+            break;
+        }
+      } catch (e) {
+        console.error('Error parsing real estate data:', e.message);
+      }
+    }
+
+    // 시세 기록 날짜순 정렬
+    Object.keys(result.priceHistory).forEach(key => {
+      result.priceHistory[key].sort((a, b) => new Date(a.date) - new Date(b.date));
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Error getting real estate data:', error.message);
+    throw error;
+  }
+}
+
+// 관심 부동산 추가
+async function addWatchProperty(name, area, regionCode, address) {
+  try {
+    await getOrCreateRealEstateSheet();
+
+    const id = generateId();
+    const data = JSON.stringify({
+      name,
+      area,
+      regionCode: regionCode || '',
+      address: address || '',
+      addedDate: new Date().toISOString().slice(0, 10),
+    });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A:D`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[id, 'watch', '', data]] },
+    });
+
+    return { id, name, area, regionCode, address };
+  } catch (error) {
+    console.error('Error adding watch property:', error.message);
+    throw error;
+  }
+}
+
+// 내 부동산 추가
+async function addMyProperty(name, area, purchasePrice, purchaseDate, currentValue) {
+  try {
+    await getOrCreateRealEstateSheet();
+
+    const id = generateId();
+    const data = JSON.stringify({
+      name,
+      area,
+      purchasePrice,
+      purchaseDate,
+      currentValue: currentValue || purchasePrice,
+    });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A:D`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[id, 'my', '', data]] },
+    });
+
+    return { id, name, area, purchasePrice, purchaseDate, currentValue };
+  } catch (error) {
+    console.error('Error adding my property:', error.message);
+    throw error;
+  }
+}
+
+// 대출 추가
+async function addLoan(propertyId, amount, rate, startDate, term, loanType) {
+  try {
+    await getOrCreateRealEstateSheet();
+
+    const id = generateId();
+    const data = JSON.stringify({
+      amount,
+      rate,
+      startDate,
+      term: term || 360, // 기본 30년
+      type: loanType || '원리금균등',
+    });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A:D`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[id, 'loan', propertyId, data]] },
+    });
+
+    return { id, propertyId, amount, rate, startDate, term, type: loanType };
+  } catch (error) {
+    console.error('Error adding loan:', error.message);
+    throw error;
+  }
+}
+
+// 시세 기록 추가
+async function addPriceRecord(propertyId, date, salePrice, jeonsePrice, monthlyDeposit, monthlyRent, listingCount) {
+  try {
+    await getOrCreateRealEstateSheet();
+
+    const id = generateId();
+    const data = JSON.stringify({
+      date,
+      salePrice,
+      jeonsePrice,
+      monthlyDeposit,
+      monthlyRent,
+      listingCount,
+    });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A:D`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[id, 'price', propertyId, data]] },
+    });
+
+    return { id, propertyId, date, salePrice, jeonsePrice, monthlyDeposit, monthlyRent, listingCount };
+  } catch (error) {
+    console.error('Error adding price record:', error.message);
+    throw error;
+  }
+}
+
+// 부동산 데이터 업데이트
+async function updateRealEstate(id, updates) {
+  try {
+    const sheetId = await getOrCreateRealEstateSheet();
+
+    // 현재 데이터 가져오기
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A:D`,
+    });
+
+    const rows = response.data.values || [];
+    let rowIndex = -1;
+    let currentData = {};
+
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === id) {
+        rowIndex = i + 1; // 1-indexed for Sheets API
+        try {
+          currentData = JSON.parse(rows[i][3] || '{}');
+        } catch (e) {}
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      throw new Error(`Real estate record not found: ${id}`);
+    }
+
+    // 데이터 병합 및 업데이트
+    const newData = JSON.stringify({ ...currentData, ...updates });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!D${rowIndex}`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[newData]] },
+    });
+
+    return { id, ...currentData, ...updates };
+  } catch (error) {
+    console.error('Error updating real estate:', error.message);
+    throw error;
+  }
+}
+
+// 부동산 데이터 삭제
+async function removeRealEstate(id) {
+  try {
+    const sheetId = await getOrCreateRealEstateSheet();
+
+    // 현재 데이터 가져오기
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${REALESTATE_SHEET}!A:D`,
+    });
+
+    const rows = response.data.values || [];
+    let rowIndex = -1;
+
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === id) {
+        rowIndex = i;
+        break;
+      }
+    }
+
+    if (rowIndex === -1) {
+      throw new Error(`Real estate record not found: ${id}`);
+    }
+
+    // 행 삭제
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex,
+              endIndex: rowIndex + 1,
+            },
+          },
+        }],
+      },
+    });
+
+    return { deleted: id };
+  } catch (error) {
+    console.error('Error removing real estate:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   getSheetData,
   updateSheetData,
   appendSheetData,
   deleteSheetRow,
+  deleteRowsRange,
   updateRowByKey,
   getMonthData,
+  // 레거시 체크
+  isLegacyMonth,
+  LEGACY_CUTOFF,
+  // 관심종목 전용
+  getWatchlist,
+  addWatchlistStock,
+  removeWatchlistStock,
+  saveWatchlistOrder,
+  // 보유종목 전용
+  getHoldings,
+  addHolding,
+  updateHolding,
+  removeHolding,
+  saveHoldingsOrder,
+  // 부동산 전용
+  getRealEstateData,
+  addWatchProperty,
+  addMyProperty,
+  addLoan,
+  addPriceRecord,
+  updateRealEstate,
+  removeRealEstate,
 };

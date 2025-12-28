@@ -1,5 +1,5 @@
-// Vercel 배포 시 상대경로, 로컬 개발 시 localhost
-const API_BASE = import.meta.env.PROD ? '/api' : 'http://localhost:3001/api';
+// Vercel dev & 배포 모두 상대경로 사용
+const API_BASE = '/api';
 
 // 시트 데이터 조회
 export async function fetchSheetData(range = 'A:Z') {
@@ -94,7 +94,12 @@ export function parseSheetToAppData(rows, targetMonth = null) {
     stockAccounts: { 향화카카오: 0, 재호영웅문: 0 },
     // 레거시 투자 데이터 (총 평가액)
     investmentTotals: { 재호해외주식: 0, 향화해외주식: 0, 투자원금: 0, 배당: 0 },
+    // 관심종목 (Yahoo Finance 연동용)
+    watchlist: [],
   };
+
+  // 새 형식 데이터가 있는지 추적 (새 형식 우선)
+  const hasNewFormatIncome = { fixed: new Set(), variable: new Set() };
 
   // 헤더 제외 (첫 행)
   for (let i = 1; i < rows.length; i++) {
@@ -107,11 +112,13 @@ export function parseSheetToAppData(rows, targetMonth = null) {
 
     if (!category || !name) continue;
 
-    // 수입
+    // 수입 (새 형식 - 우선순위 높음)
     if (category === '수입-고정') {
       data.incomes.fixed.push({ name, amount: value });
+      hasNewFormatIncome.fixed.add(name); // 새 형식 데이터 있음 표시
     } else if (category === '수입-변동') {
       data.incomes.variable.push({ name, amount: value, memo: detail || '' });
+      hasNewFormatIncome.variable.add(name);
     }
     // 자산 - 잔고
     else if (category === '자산-잔고') {
@@ -163,13 +170,37 @@ export function parseSheetToAppData(rows, targetMonth = null) {
     else if (category === '지출-변동') {
       data.expenses.variable.push({ name, amount: value });
     }
+    // 관심종목 (티커, 한글명, 추가일자)
+    else if (category === '관심종목') {
+      data.watchlist.push({
+        ticker: name,           // name 필드에 티커 저장 (예: AAPL)
+        name: detail || name,   // detail 필드에 한글명 저장 (예: 애플)
+        addedDate: date,        // 추가 날짜
+      });
+    }
 
     // === 기존 구조 호환 (레거시) ===
-    else if (category.includes('수입')) {
-      if (category.includes('고정')) {
-        data.incomes.fixed.push({ name, amount: value });
+    // 2023년~2025년 9월 데이터: category="수입", name="고정수입"/"변동수입"
+    // 새 형식 데이터가 있으면 레거시는 무시 (새 형식 우선)
+    else if (category === '수입' || category.includes('수입')) {
+      if (name === '고정수입') {
+        // 고정수입 → 학교월급으로 매핑 (새 형식 없을 때만)
+        if (!hasNewFormatIncome.fixed.has('학교월급')) {
+          data.incomes.fixed.push({ name: '학교월급', amount: value });
+        }
+      } else if (name === '변동수입') {
+        // 변동수입 → 추가수입(변동 수입)으로 매핑 (새 형식 없을 때만)
+        if (!hasNewFormatIncome.variable.has('추가수입')) {
+          data.incomes.variable.push({ name: '추가수입', amount: value, memo: detail || '' });
+        }
+      } else if (category.includes('고정')) {
+        if (!hasNewFormatIncome.fixed.has(name)) {
+          data.incomes.fixed.push({ name, amount: value });
+        }
       } else {
-        data.incomes.variable.push({ name, amount: value });
+        if (!hasNewFormatIncome.variable.has(name)) {
+          data.incomes.variable.push({ name, amount: value, memo: detail || '' });
+        }
       }
     } else if (category.includes('지출')) {
       if (category.includes('카드')) {

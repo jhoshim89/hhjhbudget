@@ -14,29 +14,51 @@ const SectionHeader = ({ title, icon: Icon, theme, action }) => (
   </div>
 );
 
-// 계산기 기능이 있는 입력 필드
+// 계산기 기능이 있는 입력 필드 (천원 단위 입력)
 const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", compact = false }) => {
   const [displayValue, setDisplayValue] = useState(value);
   const [isExpression, setIsExpression] = useState(false);
+  const [isDirty, setIsDirty] = useState(false); // 사용자가 값을 변경했는지 추적
 
   // value prop이 변경되면 displayValue 업데이트
   React.useEffect(() => {
     setDisplayValue(value);
+    setIsDirty(false); // 외부 값 변경 시 dirty 리셋
   }, [value]);
 
   const handleChange = (e) => {
     const val = e.target.value;
     setDisplayValue(val);
+    setIsDirty(true); // 사용자가 입력함
     // 수식 포함 여부 확인 (/ 도 더하기로 처리)
     setIsExpression(/[+\-*/]/.test(val.replace(/,/g, '')));
   };
 
   const handleBlur = () => {
-    const result = evaluateExpression(displayValue);
+    // 값이 변경되지 않았으면 변환하지 않음 (기존 값 유지)
+    if (!isDirty) return;
+
+    // 천원 단위 입력: 항상 × 1000 적용
+    const cleaned = String(displayValue).replace(/,/g, '').replace(/\//g, '+').replace(/\s/g, '');
+    let result = null;
+
+    // 수식이면 계산
+    if (/[+\-*]/.test(cleaned)) {
+      try {
+        result = new Function(`return (${cleaned})`)();
+        if (typeof result !== 'number' || !isFinite(result)) result = null;
+      } catch { result = null; }
+    } else {
+      result = parseFloat(cleaned) || null;
+    }
+
     if (result !== null) {
-      const formatted = result.toLocaleString();
+      // 천원 단위: 입력값 × 1000
+      const finalValue = Math.round(result) * 1000;
+      const formatted = finalValue.toLocaleString();
       setDisplayValue(formatted);
       setIsExpression(false);
+      setIsDirty(false);
       onChange({ target: { value: formatted } });
     }
   };
@@ -62,7 +84,7 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
           className={`w-full bg-surface border text-foreground font-semibold pl-7 pr-2 rounded-xl outline-none transition-all font-mono ${
             isExpression ? 'border-amber-500 bg-amber-500/5 ring-2 ring-amber-500/20' : 'border-zinc-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
           } ${compact ? 'py-2.5 text-sm' : 'py-3 text-base'}`}
-          placeholder={placeholder || "0 또는 500+100"}
+          placeholder={placeholder || "천원 단위 (예: 3900=390만)"}
         />
         {isExpression && (
           <span className="absolute right-2 top-2.5 text-amber-400 text-[9px] font-bold bg-amber-500/20 px-1.5 py-0.5 rounded">=계산</span>
@@ -90,7 +112,7 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
   }, [expense.amount]);
 
   const handleSave = () => {
-    const result = evaluateExpression(editValue);
+    const result = evaluateExpression(editValue, { autoConvertUnit: true });
     if (result !== null) {
       onAmountChange(result);
       setEditValue(result.toLocaleString());
@@ -123,8 +145,9 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
+            onFocus={(e) => e.target.select()}
             autoFocus
-            className="w-16 text-[10px] font-bold text-foreground bg-surface border border-blue-500 rounded-lg px-2 py-1 text-right outline-none font-mono"
+            className="w-24 text-xs font-bold text-foreground bg-surface border border-blue-500 rounded-lg px-2 py-1.5 text-right outline-none font-mono"
           />
         ) : (
           <>
@@ -150,8 +173,24 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
 export default function InputTab({ data, handlers, selectedMonth, onMonthChange }) {
   const {
     onManualAccountChange, onAssetChange, onFixedIncomeChange, onCardExpenseChange,
-    onToggleFixedExpense, onAddVariableIncome, onReload
+    onToggleFixedExpense, onAddVariableIncome, onDeleteFixedIncome, onReload
   } = handlers;
+
+  // 기본 4개 항목 (삭제 불가)
+  const DEFAULT_INCOME_NAMES = ['학교월급', '연구비', '월세', '추가수입'];
+
+  // 레거시 항목 이름 (숨김 처리)
+  const LEGACY_INCOME_NAMES = ['고정수입', '변동수입'];
+
+  // 표시할 수입 항목 필터링 (고정수입, 변동수입 이름 제외)
+  const displayedFixedIncomes = data.fixedIncomes.filter(
+    income => !LEGACY_INCOME_NAMES.includes(income.name)
+  );
+
+  // 변동 수입도 레거시 항목 필터링
+  const displayedVariableIncomes = (data.variableIncomes || []).filter(
+    income => !LEGACY_INCOME_NAMES.includes(income.name)
+  );
 
   // 현재 월 체크
   const today = new Date();
@@ -170,7 +209,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   const handleAddIncome = async () => {
     if (!newIncome.name || !newIncome.amount) return;
 
-    const amount = evaluateExpression(newIncome.amount);
+    const amount = evaluateExpression(newIncome.amount, { autoConvertUnit: true });
     if (amount === null || amount <= 0) return;
 
     setIsSaving(true);
@@ -190,7 +229,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   const handleAddExpense = async () => {
     if (!newExpense.name || !newExpense.amount) return;
 
-    const amount = evaluateExpression(newExpense.amount);
+    const amount = evaluateExpression(newExpense.amount, { autoConvertUnit: true });
     if (amount === null || amount <= 0) return;
 
     setIsSavingExpense(true);
@@ -208,9 +247,9 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   };
 
   return (
-    <div className="flex flex-col bg-surface/50">
-      {/* Month Selector */}
-      <div className="p-3 flex justify-center border-b border-white/[0.06]">
+    <div className="flex flex-col bg-surface/50 h-full">
+      {/* Month Selector - Sticky */}
+      <div className="sticky top-0 z-10 p-3 flex justify-center border-b border-white/[0.06] bg-surface/95 backdrop-blur-md">
         <div className="inline-flex items-center bg-panel/50 backdrop-blur-sm rounded-full border border-white/[0.06] p-1">
           <button onClick={() => onMonthChange(-1)} className="p-2 hover:bg-white/[0.05] rounded-full text-foreground-muted transition-colors">
             <ChevronLeft size={18} />
@@ -259,12 +298,12 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           />
 
           <div className="px-2 space-y-4">
-          {/* Total Income Display */}
+          {/* Total Income Display (고정수입/변동수입 이름 항목 제외) */}
           <div className="bento-card-sm border-green-500/20 bg-green-500/5 flex justify-between items-center">
             <span className="text-xs font-semibold text-green-600 dark:text-green-300 uppercase tracking-wide">Total Income</span>
             <span className="text-xl font-bold font-mono text-green-400">
               {formatKRW(
-                (data.fixedIncomes?.reduce((sum, i) => sum + (i.amount || 0), 0) || 0) +
+                (displayedFixedIncomes?.reduce((sum, i) => sum + (i.amount || 0), 0) || 0) +
                 (data.variableIncomes?.reduce((sum, i) => sum + (i.amount || 0), 0) || 0),
                 true
               )}
@@ -318,35 +357,54 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
             </div>
           )}
 
-          {/* 기존 수입 목록 */}
+          {/* 기존 수입 목록 (고정수입, 변동수입 이름 제외) */}
           <div className="grid grid-cols-2 gap-4">
-            {data.fixedIncomes.map((income, index) => (
-              <CalcInputField
-                key={income.name}
-                label={income.name}
-                value={formatKRW(income.amount).replace('원', '')}
-                onChange={(e) => onFixedIncomeChange(index, e.target.value)}
-                compact
-              />
-            ))}
+            {displayedFixedIncomes.map((income) => {
+              // 원본 인덱스 찾기 (삭제/수정용)
+              const originalIndex = data.fixedIncomes.findIndex(i => i.name === income.name);
+              const isDefaultItem = DEFAULT_INCOME_NAMES.includes(income.name);
+              return (
+                <div key={income.name} className="relative group">
+                  <CalcInputField
+                    label={income.name}
+                    value={formatKRW(income.amount).replace('원', '')}
+                    onChange={(e) => onFixedIncomeChange(originalIndex, e.target.value)}
+                    compact
+                  />
+                  {!isDefaultItem && (
+                    <button
+                      onClick={() => onDeleteFixedIncome?.(originalIndex)}
+                      className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 bg-rose-500/80 hover:bg-rose-500 text-white p-1 rounded-full transition-all"
+                      title="삭제"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* 변동 수입 목록 */}
-          {data.variableIncomes?.length > 0 && (
+          {/* 변동 수입 목록 (고정수입/변동수입 이름 제외) */}
+          {displayedVariableIncomes.length > 0 && (
             <div className="space-y-2">
-              {data.variableIncomes.map((income, index) => (
-                <div key={income.name} className="flex items-center gap-3 bg-panel/50 p-3 rounded-xl border border-zinc-700 group">
-                  <span className="text-xs font-semibold text-zinc-300 flex-1">{income.name}</span>
-                  {income.memo && <span className="text-[10px] text-zinc-500">{income.memo}</span>}
-                  <span className="text-xs font-bold text-green-400 font-mono">{formatKRW(income.amount, true)}</span>
-                  <button
-                    onClick={() => handlers.onDeleteVariableIncome?.(index)}
-                    className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-500 transition-all p-1"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
+              {displayedVariableIncomes.map((income) => {
+                // 원본 인덱스 찾기 (삭제용)
+                const originalIndex = data.variableIncomes.findIndex(i => i.name === income.name);
+                return (
+                  <div key={income.name} className="flex items-center gap-3 bg-panel/50 p-3 rounded-xl border border-zinc-700 group">
+                    <span className="text-xs font-semibold text-zinc-300 flex-1">{income.name}</span>
+                    {income.memo && <span className="text-[10px] text-zinc-500">{income.memo}</span>}
+                    <span className="text-xs font-bold text-green-400 font-mono">{formatKRW(income.amount, true)}</span>
+                    <button
+                      onClick={() => handlers.onDeleteVariableIncome?.(originalIndex)}
+                      className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-500 transition-all p-1"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -415,13 +473,16 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
             )}
 
             <div className="grid grid-cols-3 gap-2">
-              {data.fixedExpenses.map((e, index) => (
+              {[...data.fixedExpenses]
+                .map((e, originalIndex) => ({ ...e, originalIndex }))
+                .sort((a, b) => b.amount - a.amount)
+                .map((e) => (
                 <FixedExpenseItem
                   key={e.name}
                   expense={e}
-                  onToggle={() => onToggleFixedExpense(index)}
-                  onAmountChange={(value) => handlers.onFixedExpenseAmountChange(index, value)}
-                  onDelete={() => handlers.onDeleteFixedExpense?.(index)}
+                  onToggle={() => onToggleFixedExpense(e.originalIndex)}
+                  onAmountChange={(value) => handlers.onFixedExpenseAmountChange(e.originalIndex, value)}
+                  onDelete={() => handlers.onDeleteFixedExpense?.(e.originalIndex)}
                 />
               ))}
             </div>

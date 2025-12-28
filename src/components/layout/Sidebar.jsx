@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, ClipboardList, TrendingUp, Calendar, PenTool, Settings } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, TrendingUp, Calendar, PenTool, Eye, Home, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
@@ -14,6 +14,8 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
     { id: 'overview', label: '총괄', icon: LayoutDashboard },
     { id: 'status', label: '현황', icon: ClipboardList },
     { id: 'investment', label: '투자', icon: TrendingUp },
+    { id: 'watchlist', label: '관심', icon: Eye },
+    { id: 'realestate', label: '부동산', icon: Home },
     { id: 'annual', label: '연간', icon: Calendar },
     { id: 'input', label: '입력', icon: PenTool },
   ];

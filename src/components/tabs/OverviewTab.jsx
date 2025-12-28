@@ -62,24 +62,24 @@ const CustomTooltip = ({ active, payload }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-surface/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-4 shadow-2xl min-w-[180px]">
-      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+    <div className="bg-zinc-900 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
+      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/10">
         <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-        <span className="text-foreground font-semibold text-sm">{data.displayMonth}</span>
+        <span className="text-white font-bold text-sm">{data.displayMonth}</span>
       </div>
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-foreground-muted text-xs">수입</span>
-          <span className="text-green-600 dark:text-green-400 font-mono font-semibold text-sm">{formatManWon(income)}</span>
+          <span className="text-zinc-400 text-xs">수입</span>
+          <span className="text-green-400 font-mono font-semibold text-sm">{formatManWon(income)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-foreground-muted text-xs">지출</span>
-          <span className="text-rose-600 dark:text-rose-400 font-mono font-semibold text-sm">{formatManWon(expense)}</span>
+          <span className="text-zinc-400 text-xs">지출</span>
+          <span className="text-rose-400 font-mono font-semibold text-sm">{formatManWon(expense)}</span>
         </div>
-        <div className="flex justify-between items-center pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
-          <span className="text-foreground-muted text-xs">순수익</span>
-          <span className={`font-mono font-bold text-sm ${net >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'}`}>
+        <div className="flex justify-between items-center pt-2 border-t border-white/10">
+          <span className="text-zinc-400 text-xs">순수익</span>
+          <span className={`font-mono font-bold text-sm ${net >= 0 ? 'text-blue-400' : 'text-amber-400'}`}>
             {net >= 0 ? '+' : ''}{formatManWon(net)}
           </span>
         </div>

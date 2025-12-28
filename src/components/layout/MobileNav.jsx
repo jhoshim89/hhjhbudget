@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, ClipboardList, TrendingUp, Calendar, PenTool } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, TrendingUp, Calendar, PenTool, Eye, Home } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function MobileNav({ activeTab, onTabChange }) {
@@ -7,7 +7,8 @@ export default function MobileNav({ activeTab, onTabChange }) {
     { id: 'overview', label: '총괄', icon: LayoutDashboard },
     { id: 'status', label: '현황', icon: ClipboardList },
     { id: 'investment', label: '투자', icon: TrendingUp },
-    { id: 'annual', label: '연간', icon: Calendar },
+    { id: 'watchlist', label: '관심', icon: Eye },
+    { id: 'realestate', label: '부동산', icon: Home },
     { id: 'input', label: '입력', icon: PenTool },
   ];
 
