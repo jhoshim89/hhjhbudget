@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowUpDown, Home, TrendingUp, TrendingDown, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowUpDown, Home, TrendingUp, TrendingDown, RefreshCw, Loader2, X, Plus, ChevronDown } from 'lucide-react';
 import { formatPrice, formatPriceRange } from '../../services/naverRealestateApi';
 
 /**
@@ -8,12 +8,32 @@ import { formatPrice, formatPriceRange } from '../../services/naverRealestateApi
 export default function ComparisonTable({ data, loading, onRefresh, lastUpdated }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
+  const [excludedIds, setExcludedIds] = useState(new Set());
+  const [editMode, setEditMode] = useState(false);
+
+  // 비교에서 제외
+  const handleExclude = (id) => {
+    setExcludedIds(prev => new Set([...prev, id]));
+  };
+
+  // 비교에 추가
+  const handleInclude = (id) => {
+    setExcludedIds(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  // 포함/제외된 데이터 분리
+  const includedData = data.filter(d => !excludedIds.has(d.id));
+  const excludedData = data.filter(d => excludedIds.has(d.id));
 
   // 정렬 처리
   const sortedData = useMemo(() => {
-    if (!sortKey) return data;
+    if (!sortKey) return includedData;
 
-    return [...data].sort((a, b) => {
+    return [...includedData].sort((a, b) => {
       let aVal, bVal;
 
       // 84㎡ 기준 (없으면 80㎡)
@@ -43,7 +63,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
 
       return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
     });
-  }, [data, sortKey, sortOrder]);
+  }, [includedData, sortKey, sortOrder]);
 
   // 정렬 토글
   const toggleSort = (key) => {
@@ -86,14 +106,26 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
             </span>
           )}
         </div>
-        <button
-          onClick={onRefresh}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          새로고침
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              editMode
+                ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
+                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+            }`}
+          >
+            {editMode ? '완료' : '편집'}
+          </button>
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            새로고침
+          </button>
+        </div>
       </div>
 
       {/* 테이블 */}
@@ -101,6 +133,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
         <table className="w-full min-w-[800px]">
           <thead>
             <tr className="text-left text-xs text-zinc-500 uppercase tracking-wider border-b border-zinc-800">
+              {editMode && <th className="pb-3 pr-4 w-8"></th>}
               <th className="pb-3 pr-4">단지명</th>
               <th className="pb-3 pr-4">평형</th>
               <th className="pb-3 pr-4">
@@ -134,20 +167,35 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                       complex.isMine ? 'bg-teal-500/5' : ''
                     }`}
                   >
+                    {/* 제외 버튼 (편집 모드, 첫 행에만) */}
+                    {editMode && isFirst && (
+                      <td className="py-3 pr-2" rowSpan={areas.length}>
+                        <button
+                          onClick={() => handleExclude(complex.id)}
+                          className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          title="비교에서 제외"
+                        >
+                          <X size={14} />
+                        </button>
+                      </td>
+                    )}
+
                     {/* 단지명 (첫 행에만) */}
-                    <td className="py-3 pr-4" rowSpan={isFirst ? areas.length : undefined} style={{ display: isFirst ? undefined : 'none' }}>
-                      <div className="flex items-center gap-2">
-                        {complex.isMine && (
-                          <span className="px-1.5 py-0.5 bg-teal-500/20 text-teal-400 text-[10px] rounded">
-                            내 집
-                          </span>
-                        )}
-                        <div>
-                          <p className="font-medium text-white">{complex.name}</p>
-                          <p className="text-xs text-zinc-500">{complex.region}</p>
+                    {isFirst && (
+                      <td className="py-3 pr-4" rowSpan={areas.length}>
+                        <div className="flex items-center gap-2">
+                          {complex.isMine && (
+                            <span className="px-1.5 py-0.5 bg-teal-500/20 text-teal-400 text-[10px] rounded">
+                              내 집
+                            </span>
+                          )}
+                          <div>
+                            <p className="font-medium text-white">{complex.name}</p>
+                            <p className="text-xs text-zinc-500">{complex.region}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
+                    )}
 
                     {/* 평형 */}
                     <td className="py-3 pr-4">
@@ -212,9 +260,32 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
         </table>
       </div>
 
-      {data.length === 0 && !loading && (
+      {includedData.length === 0 && !loading && (
         <div className="text-center py-8 text-zinc-500">
           데이터가 없습니다. 새로고침을 눌러 조회해주세요.
+        </div>
+      )}
+
+      {/* 제외된 단지 목록 */}
+      {excludedData.length > 0 && (
+        <div className="mt-6 p-4 bg-zinc-800/30 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <ChevronDown size={14} className="text-zinc-500" />
+            <span className="text-sm text-zinc-400">비교에서 제외됨 ({excludedData.length})</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {excludedData.map(complex => (
+              <button
+                key={complex.id}
+                onClick={() => handleInclude(complex.id)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700/50 hover:bg-teal-500/20 text-zinc-400 hover:text-teal-400 rounded-lg text-sm transition-colors"
+              >
+                <Plus size={12} />
+                {complex.name}
+                {complex.isMine && <span className="text-[10px] text-teal-400">(내 집)</span>}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

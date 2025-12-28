@@ -99,9 +99,9 @@ function parseQuoteData(result) {
   const quote = result.indicators?.quote?.[0];
   const timestamps = result.timestamp || [];
 
-  // 현재가 정보
+  // 현재가 정보 (전일 종가 대비)
   const price = meta.regularMarketPrice || 0;
-  const previousClose = meta.chartPreviousClose || meta.previousClose || price;
+  const previousClose = meta.regularMarketPreviousClose || meta.previousClose || price;
   const change = price - previousClose;
   const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
   const currency = meta.currency || 'USD';

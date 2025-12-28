@@ -13,7 +13,6 @@ import MobileNav from './components/layout/MobileNav';
 
 // Tabs
 import OverviewTab from './components/tabs/OverviewTab';
-import StatusTab from './components/tabs/StatusTab';
 import InvestmentTab from './components/tabs/InvestmentTab';
 import AnnualTab from './components/tabs/AnnualTab';
 import InputTab from './components/tabs/InputTab';
@@ -31,6 +30,12 @@ import { useRealEstate } from './hooks/useRealEstate';
 // Holdings Integration
 import { useHoldings } from './hooks/useHoldings';
 
+// Auto Save Investment
+import { useAutoSaveInvestment } from './hooks/useAutoSaveInvestment';
+
+// Toast Component
+import Toast from './components/common/Toast';
+
 // Google Sheets Integration
 import { useSheetData } from './hooks/useSheetData';
 import { appendToSheet, deleteFromSheet, upsertRow } from './services/sheetsApi';
@@ -42,6 +47,7 @@ export default function Dashboard() {
   const [stockPrices, setStockPrices] = useState({});
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [chartRange, setChartRange] = useState('3mo'); // 차트 기간: 7d, 1mo, 3mo, 1y (기본 3개월)
+  const [toast, setToast] = useState(null); // 토스트 알림
 
   // --- Google Sheets 연동 ---
   const {
@@ -207,16 +213,19 @@ export default function Dashboard() {
       setAssets(sheetData.assets);
       setBond(sheetData.bond);
 
-      // 주식계좌 (수동 입력값만 - 보유종목은 별도 시트)
-      setManualAccounts({
-        향화카카오: String(sheetData.stockAccounts?.향화카카오 || 0),
-        재호영웅문: String(sheetData.stockAccounts?.재호영웅문 || 0),
-      });
-
       // 레거시 투자 총액 (개별 종목 데이터가 없는 월용)
       if (sheetData.investmentTotals) {
         setInvestmentTotals(sheetData.investmentTotals);
       }
+
+      // 주식계좌 (수동 입력값만 - 보유종목은 별도 시트)
+      // 레거시 연결: 재호영웅문 = 재호해외주식 (2025.09 이전 데이터)
+      const jaehoYounghwamun = sheetData.stockAccounts?.재호영웅문 || 0;
+      const jaehoLegacy = sheetData.investmentTotals?.재호해외주식 || 0;
+      setManualAccounts({
+        향화카카오: String(sheetData.stockAccounts?.향화카카오 || 0),
+        재호영웅문: String(jaehoYounghwamun || jaehoLegacy), // 현재값 없으면 레거시 사용
+      });
     }
   }, [sheetData, defaultFixedExpensesFromSheet]);
 
@@ -228,12 +237,11 @@ export default function Dashboard() {
 
       const tabMap = {
         '1': 'overview',
-        '2': 'status',
-        '3': 'investment',
-        '4': 'annual',
-        '5': 'input',
-        '6': 'watchlist',
-        '7': 'realestate',
+        '2': 'investment',
+        '3': 'watchlist',
+        '4': 'realestate',
+        '5': 'annual',
+        '6': 'input',
       };
 
       if (tabMap[e.key]) {
@@ -254,6 +262,18 @@ export default function Dashboard() {
     removeStock: removeHolding,
     reorderStocks: reorderHoldings,
   } = useHoldings();
+
+  // --- Auto Save Investment (매월 1일 향화 영웅문 자동 저장) ---
+  useAutoSaveInvestment({
+    rawData,
+    holdings,
+    stockPrices,
+    exchangeRate,
+    holdingsLoading,
+    onSuccess: (msg) => setToast({ type: 'success', message: msg }),
+    onError: (msg) => setToast({ type: 'error', message: msg }),
+    onReload: reloadSheet,
+  });
 
   // --- Calculations ---
   const totalStockUSD = useMemo(() => {
@@ -598,10 +618,25 @@ export default function Dashboard() {
     }
   };
 
-  // 투자 총액 계산: 개별 종목 데이터가 있으면 사용, 없으면 레거시 총액 사용
+  // 투자 총액 계산: 3개 계좌 분리 표시
   const hasIndividualStocks = holdings.length > 0;
-  const legacyStockTotal = investmentTotals.재호해외주식 + investmentTotals.향화해외주식;
-  const effectiveStockTotal = hasIndividualStocks ? totalStockKRW : legacyStockTotal;
+
+  // 재호 영웅문 (신규 값 우선, 레거시 fallback)
+  const jaehoYounghwamun = parseFloat(manualAccounts.재호영웅문) ||
+    investmentTotals.재호해외주식 || 0;
+
+  // 향화 카카오 (단타용)
+  const hyangKakao = parseFloat(manualAccounts.향화카카오) || 0;
+
+  // 향화 영웅문 (장투용 - 보유종목 합계)
+  const hyangYounghwamun = holdings
+    .filter(h => h.account === '향화영웅문')
+    .reduce((sum, h) => sum + h.qty * (stockPrices[h.ticker] || 0) * exchangeRate, 0);
+
+  // 레거시: 향화해외주식 값이 있으면 사용 (9월 이전 데이터)
+  const hyangTotal = investmentTotals.향화해외주식 || (hyangKakao + hyangYounghwamun);
+
+  const effectiveStockTotal = jaehoYounghwamun + hyangTotal;
 
   const investmentData = {
     exchangeRate,
@@ -615,14 +650,18 @@ export default function Dashboard() {
     benchmarks: { spy: stockPrices['SPY'] || 0, qqq: stockPrices['QQQ'] || 0, tqqq: stockPrices['TQQQ'] || 0 },
     history: investmentHistory || [],
     manual: {
-      kakao: parseFloat(manualAccounts.향화카카오),
-      jaeho: parseFloat(manualAccounts.재호영웅문),
-      younghwa: totalStockUSD * exchangeRate  // 향화 영웅문 (실시간 계산)
+      kakao: hyangKakao,
+      jaeho: jaehoYounghwamun,
+      younghwa: hyangYounghwamun
     },
-    // 레거시 데이터 (월별 총액)
+    // 3개 계좌 분리 표시
     investmentTotals: {
-      재호: investmentTotals.재호해외주식,
-      향화: investmentTotals.향화해외주식,
+      재호영웅문: jaehoYounghwamun,
+      향화카카오: hyangKakao,
+      향화영웅문: hyangYounghwamun,
+      // 레거시 호환 (9월 이전 데이터용)
+      재호: investmentTotals.재호해외주식 || jaehoYounghwamun,
+      향화: investmentTotals.향화해외주식 || (hyangKakao + hyangYounghwamun),
       원금: investmentTotals.투자원금,
       배당: investmentTotals.배당,
     },
@@ -709,13 +748,7 @@ export default function Dashboard() {
                   selectedMonth={selectedMonthObj}
                   onMonthChange={handleMonthChange}
                   monthlyHistory={monthlyHistory}
-                />
-              )}
-              {tab === 'status' && (
-                <StatusTab
                   data={statusData}
-                  selectedMonth={selectedMonthObj}
-                  onMonthChange={handleMonthChange}
                 />
               )}
               {tab === 'investment' && (
@@ -796,6 +829,15 @@ export default function Dashboard() {
         onClose={() => setIsAddExpenseModalOpen(false)}
         onAdd={handleAddVariableExpense}
       />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { PenTool, Heart, User, ChevronLeft, ChevronRight, Plus, Check, RefreshCw, Trash2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { PenTool, Heart, User, ChevronLeft, ChevronRight, Plus, Check, RefreshCw, Trash2, Lock } from 'lucide-react';
 import { formatKRW, evaluateExpression } from '../../utils/formatters';
+import { isLegacyMonth, LEGACY_CUTOFF } from '../../services/sheetsApi';
 
 const SectionHeader = ({ title, icon: Icon, theme, action }) => (
   <div className={`flex items-center justify-between py-3 px-4 border-l-2 rounded-r-lg ${theme === 'pink' ? 'border-l-pink-500 bg-pink-500/5' : 'border-l-blue-500 bg-blue-500/5'}`}>
@@ -15,7 +16,7 @@ const SectionHeader = ({ title, icon: Icon, theme, action }) => (
 );
 
 // 계산기 기능이 있는 입력 필드 (천원 단위 입력)
-const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", compact = false }) => {
+const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", compact = false, disabled = false }) => {
   const [displayValue, setDisplayValue] = useState(value);
   const [isExpression, setIsExpression] = useState(false);
   const [isDirty, setIsDirty] = useState(false); // 사용자가 값을 변경했는지 추적
@@ -81,9 +82,10 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
           onChange={handleChange}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
+          disabled={disabled}
           className={`w-full bg-surface border text-foreground font-semibold pl-7 pr-2 rounded-xl outline-none transition-all font-mono ${
             isExpression ? 'border-amber-500 bg-amber-500/5 ring-2 ring-amber-500/20' : 'border-zinc-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
-          } ${compact ? 'py-2.5 text-sm' : 'py-3 text-base'}`}
+          } ${compact ? 'py-2.5 text-sm' : 'py-3 text-base'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           placeholder={placeholder || "천원 단위 (예: 3900=390만)"}
         />
         {isExpression && (
@@ -196,6 +198,13 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   const today = new Date();
   const isCurrentMonth = selectedMonth?.year === today.getFullYear() && selectedMonth?.month === today.getMonth() + 1;
 
+  // 레거시 월 체크 (2025.09 이전은 읽기전용)
+  const currentMonthStr = useMemo(() => {
+    if (!selectedMonth) return '';
+    return `${selectedMonth.year}.${String(selectedMonth.month).padStart(2, '0')}`;
+  }, [selectedMonth]);
+  const isReadOnly = useMemo(() => isLegacyMonth(currentMonthStr), [currentMonthStr]);
+
   // Income 추가 폼 상태
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [newIncome, setNewIncome] = useState({ name: '', amount: '', memo: '' });
@@ -257,6 +266,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           <span className="px-4 text-sm font-semibold text-foreground min-w-[160px] text-center">
             {selectedMonth?.year}년 {selectedMonth?.month}월
             {isCurrentMonth && <span className="ml-2 text-xs text-blue-400">(현재)</span>}
+            {isReadOnly && <span className="ml-2 text-xs text-amber-400">(읽기전용)</span>}
           </span>
           <button
             onClick={() => onMonthChange(1)}
@@ -268,6 +278,16 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
         </div>
       </div>
 
+      {/* 레거시 월 경고 배너 */}
+      {isReadOnly && (
+        <div className="mx-4 mt-3 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3">
+          <Lock size={16} className="text-amber-400 flex-shrink-0" />
+          <p className="text-xs text-amber-300">
+            <strong>{LEGACY_CUTOFF}</strong> 이전 데이터는 읽기전용입니다. 수정이 필요하면 Google 시트에서 직접 편집하세요.
+          </p>
+        </div>
+      )}
+
       <div className="p-4 pb-32 md:pb-4 space-y-4 flex-1">
         {/* 향화 Section */}
         <div className="glass-card p-4 space-y-4 border-pink-500/20 bg-gradient-to-br from-pink-500/5 to-fuchsia-500/5">
@@ -278,12 +298,14 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
               value={formatKRW(data.manualAccounts.향화카카오).replace('원', '')}
               onChange={(e) => onManualAccountChange('향화카카오', e.target.value)}
               compact
+              disabled={isReadOnly}
             />
             <CalcInputField
               label="향화 잔고 (신한)"
               value={formatKRW(data.assets.향화잔고).replace('원', '')}
               onChange={(e) => onAssetChange('향화잔고', e.target.value)}
               compact
+              disabled={isReadOnly}
             />
           </div>
           <p className="text-[10px] text-pink-400/70 px-2">* 향화 영웅문은 주식 탭에서 자동 계산</p>
@@ -312,16 +334,18 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
 
           <div className="flex items-center justify-between">
             <Divider label="Income" />
-            <button
-              onClick={() => setShowIncomeForm(!showIncomeForm)}
-              className="text-blue-400 hover:text-blue-300 transition p-1.5 hover:bg-blue-500/10 rounded-lg"
-            >
-              <Plus size={16} />
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={() => setShowIncomeForm(!showIncomeForm)}
+                className="text-blue-400 hover:text-blue-300 transition p-1.5 hover:bg-blue-500/10 rounded-lg"
+              >
+                <Plus size={16} />
+              </button>
+            )}
           </div>
 
           {/* Income 추가 폼 */}
-          {showIncomeForm && (
+          {showIncomeForm && !isReadOnly && (
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <input
@@ -370,6 +394,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
                     value={formatKRW(income.amount).replace('원', '')}
                     onChange={(e) => onFixedIncomeChange(originalIndex, e.target.value)}
                     compact
+                    disabled={isReadOnly}
                   />
                   {!isDefaultItem && (
                     <button
@@ -427,23 +452,26 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
             value={formatKRW(data.cardExpense).replace('원', '')}
             onChange={(e) => onCardExpenseChange(e.target.value)}
             compact
+            disabled={isReadOnly}
           />
 
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">고정 지출 내역</label>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowExpenseForm(!showExpenseForm)}
-                  className="text-blue-400 hover:text-blue-300 transition p-1.5 hover:bg-blue-500/10 rounded-lg"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowExpenseForm(!showExpenseForm)}
+                    className="text-blue-400 hover:text-blue-300 transition p-1.5 hover:bg-blue-500/10 rounded-lg"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 고정지출 추가 폼 */}
-            {showExpenseForm && (
+            {showExpenseForm && !isReadOnly && (
               <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 mb-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <input
@@ -495,12 +523,14 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
               value={formatKRW(data.assets.재호잔고).replace('원', '')}
               onChange={(e) => onAssetChange('재호잔고', e.target.value)}
               compact
+              disabled={isReadOnly}
             />
             <CalcInputField
               label="재호 영웅문 (원화)"
               value={formatKRW(data.manualAccounts.재호영웅문).replace('원', '')}
               onChange={(e) => onManualAccountChange('재호영웅문', e.target.value)}
               compact
+              disabled={isReadOnly}
             />
           </div>
           </div>

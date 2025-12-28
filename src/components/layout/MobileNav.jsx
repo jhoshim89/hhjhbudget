@@ -4,8 +4,7 @@ import { clsx } from 'clsx';
 
 export default function MobileNav({ activeTab, onTabChange }) {
   const menuItems = [
-    { id: 'overview', label: '총괄', icon: LayoutDashboard },
-    { id: 'status', label: '현황', icon: ClipboardList },
+    { id: 'overview', label: '종합', icon: LayoutDashboard },
     { id: 'investment', label: '투자', icon: TrendingUp },
     { id: 'watchlist', label: '관심', icon: Eye },
     { id: 'realestate', label: '부동산', icon: Home },

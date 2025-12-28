@@ -7,9 +7,14 @@ import { AreaChart, Area, ResponsiveContainer } from 'recharts';
  */
 export default function WatchPropertyCard({ property, priceHistory = [], onRemove, onAddPrice, onClick }) {
   const latestPrice = priceHistory[priceHistory.length - 1];
-  const prevPrice = priceHistory[priceHistory.length - 2];
+  const latestDate = latestPrice?.date ? new Date(latestPrice.date).toDateString() : null;
 
-  // 가격 변동 계산
+  // 전일 대비: 최신 날짜와 다른 날짜 중 가장 최근 데이터 찾기
+  const prevPrice = latestDate
+    ? [...priceHistory].reverse().find(p => new Date(p.date).toDateString() !== latestDate)
+    : null;
+
+  // 가격 변동 계산 (전일 대비)
   const priceChange = latestPrice && prevPrice
     ? latestPrice.salePrice - prevPrice.salePrice
     : 0;

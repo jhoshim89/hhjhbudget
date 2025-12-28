@@ -25,7 +25,7 @@ export default function RealEstateTab({ data, handlers }) {
   const [activeSubTab, setActiveSubTab] = useState('market');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [priceModalProperty, setPriceModalProperty] = useState(null);
-  const [marketViewMode, setMarketViewMode] = useState('card'); // 'card' | 'table'
+  const [marketViewMode, setMarketViewMode] = useState('table'); // 'card' | 'table'
 
   // 네이버 부동산 데이터
   const {
@@ -144,9 +144,9 @@ export default function RealEstateTab({ data, handlers }) {
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
               <TrendingDown size={16} className="text-amber-400" />
             </div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">월 이자</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">월 상환금</span>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-amber-400">{formatPrice(monthlyInterest)}</p>
+          <p className="text-xl md:text-2xl font-bold text-amber-400">{formatPrice(loans.reduce((sum, l) => sum + (l.monthlyPayment || 0), 0))}</p>
           <p className="text-[10px] text-zinc-500">매월 지출</p>
         </div>
       </div>
@@ -292,7 +292,7 @@ export default function RealEstateTab({ data, handlers }) {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {myProperties.map(property => (
                   <MyPropertyCard
                     key={property.id}
@@ -326,7 +326,7 @@ export default function RealEstateTab({ data, handlers }) {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {loans.map(loan => {
                   const linkedProperty = myProperties.find(p => p.id === loan.propertyId);
                   return (

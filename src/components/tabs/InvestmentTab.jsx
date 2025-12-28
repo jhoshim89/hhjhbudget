@@ -121,8 +121,9 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
   const pieData = data.hasIndividualStocks
     ? stocks.list.map(s => ({ name: s.ticker, value: s.qty * (data.stockPrices[s.ticker] || 0) }))
     : [
-        { name: '재호 해외주식', value: data.investmentTotals?.재호 || 0 },
-        { name: '향화 해외주식', value: data.investmentTotals?.향화 || 0 },
+        { name: '재호 영웅문', value: data.investmentTotals?.재호영웅문 || data.investmentTotals?.재호 || 0 },
+        { name: '향화 카카오', value: data.investmentTotals?.향화카카오 || 0 },
+        { name: '향화 영웅문', value: data.investmentTotals?.향화영웅문 || 0 },
       ].filter(item => item.value > 0);
 
   const estimatedAnnualDividend = data.hasIndividualStocks
@@ -466,20 +467,29 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
             </div>
           ) : (
             <div className="flex-1 p-6 space-y-4">
+              {/* 재호 영웅문 */}
               <div className="bento-card border-violet-500/20 bg-violet-500/5">
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-sm font-semibold text-violet-300">재호 해외주식</h4>
+                  <h4 className="text-sm font-semibold text-violet-300">재호 영웅문</h4>
                   <span className="text-xs text-violet-400/70">월간 평가액</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-violet-400">{formatKRW(data.investmentTotals?.재호 || 0, true)}</p>
+                <p className="text-2xl font-bold font-mono text-violet-400">{formatKRW(data.investmentTotals?.재호영웅문 || data.investmentTotals?.재호 || 0, true)}</p>
               </div>
+              {/* 향화 카카오 (단타) */}
+              <div className="bento-card border-amber-500/20 bg-amber-500/5">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-sm font-semibold text-amber-300">향화 카카오</h4>
+                  <span className="text-xs text-amber-400/70">단타</span>
+                </div>
+                <p className="text-2xl font-bold font-mono text-amber-400">{formatKRW(data.investmentTotals?.향화카카오 || 0, true)}</p>
+              </div>
+              {/* 향화 영웅문 (장투) */}
               <div className="bento-card border-blue-500/20 bg-blue-500/5">
                 <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-semibold text-blue-300">향화 해외주식</h4>
-                  <span className="text-xs text-violet-400/70">월간 평가액</span>
+                  <h4 className="text-sm font-semibold text-blue-300">향화 영웅문</h4>
+                  <span className="text-xs text-blue-400/70">장투</span>
                 </div>
-                <p className="text-xs text-blue-300/80 mb-2">카카오 + 영웅문</p>
-                <p className="text-2xl font-bold font-mono text-blue-400">{formatKRW(data.investmentTotals?.향화 || 0, true)}</p>
+                <p className="text-2xl font-bold font-mono text-blue-400">{formatKRW(data.investmentTotals?.향화영웅문 || 0, true)}</p>
               </div>
               {data.investmentTotals?.배당 > 0 && (
                 <div className="bento-card border-green-500/20 bg-green-500/5">

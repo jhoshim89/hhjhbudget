@@ -536,6 +536,9 @@ async function addHolding(ticker, name, qty, avgPrice, account) {
       resource: { values: [[ticker, name, qty, avgPrice, account, addedDate, newOrder]] },
     });
 
+    // 변경이력 저장
+    await addChangeHistory(ticker, '추가', '종목', '', `${name} ${qty}주 @${avgPrice}`);
+
     return { ticker, name, qty, avgPrice, account, addedDate, order: newOrder };
   } catch (error) {
     console.error('Error adding holding:', error.message);
@@ -588,6 +591,13 @@ async function updateHolding(ticker, updates) {
       resource: { values: [[newData.ticker, newData.name, newData.qty, newData.avgPrice, newData.account, newData.addedDate, newData.order]] },
     });
 
+    // 변경이력 저장 (변경된 필드만)
+    for (const [key, value] of Object.entries(updates)) {
+      if (currentData[key] !== value) {
+        await addChangeHistory(ticker, '수정', key, String(currentData[key]), String(value));
+      }
+    }
+
     return newData;
   } catch (error) {
     console.error('Error updating holding:', error.message);
@@ -613,6 +623,10 @@ async function removeHolding(ticker) {
       throw new Error(`Holding ${ticker} not found`);
     }
 
+    // 삭제 전 데이터 저장 (이력용)
+    const deletedRow = rows[rowIndex];
+    const deletedInfo = `${deletedRow[1]} ${deletedRow[2]}주 @${deletedRow[3]}`;
+
     // 행 삭제
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
@@ -629,6 +643,9 @@ async function removeHolding(ticker) {
         }],
       },
     });
+
+    // 변경이력 저장
+    await addChangeHistory(ticker, '삭제', '종목', deletedInfo, '');
 
     return { deleted: ticker };
   } catch (error) {
@@ -687,6 +704,116 @@ async function saveHoldingsOrder(stocks) {
   } catch (error) {
     console.error('Error saving holdings order:', error.message);
     throw error;
+  }
+}
+
+// ============================================
+// 변경이력 전용 함수 (별도 시트: "변경이력")
+// ============================================
+
+const HISTORY_SHEET = '변경이력';
+
+// 변경이력 시트 가져오기 (없으면 생성)
+async function getOrCreateHistorySheet() {
+  try {
+    const sheetInfo = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const historySheet = sheetInfo.data.sheets.find(
+      s => s.properties.title === HISTORY_SHEET
+    );
+
+    if (historySheet) {
+      return historySheet.properties.sheetId;
+    }
+
+    // 시트가 없으면 생성
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: HISTORY_SHEET }
+          }
+        }]
+      }
+    });
+
+    // 헤더 추가
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HISTORY_SHEET}!A1:F1`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [['날짜시간', '종목', '변경유형', '항목', '변경전', '변경후']] },
+    });
+
+    return response.data.replies[0].addSheet.properties.sheetId;
+  } catch (error) {
+    console.error('Error getting/creating history sheet:', error.message);
+    throw error;
+  }
+}
+
+// 변경이력 추가
+async function addChangeHistory(ticker, changeType, field, beforeValue, afterValue) {
+  try {
+    await getOrCreateHistorySheet();
+
+    const timestamp = new Date().toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HISTORY_SHEET}!A:F`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[timestamp, ticker, changeType, field, beforeValue, afterValue]] },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error adding change history:', error.message);
+    // 이력 저장 실패해도 원래 작업은 계속 진행
+    return { success: false, error: error.message };
+  }
+}
+
+// 변경이력 조회
+async function getChangeHistory(limit = 100) {
+  try {
+    await getOrCreateHistorySheet();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HISTORY_SHEET}!A:F`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return []; // 헤더만 있으면 빈 배열
+
+    // 헤더 제외, 최신 순 정렬
+    return rows.slice(1)
+      .filter(row => row[0])
+      .map(([timestamp, ticker, changeType, field, beforeValue, afterValue]) => ({
+        timestamp,
+        ticker,
+        changeType,
+        field,
+        beforeValue: beforeValue || '',
+        afterValue: afterValue || '',
+      }))
+      .reverse()
+      .slice(0, limit);
+  } catch (error) {
+    console.error('Error getting change history:', error.message);
+    return [];
   }
 }
 
@@ -866,7 +993,7 @@ async function addMyProperty(name, area, purchasePrice, purchaseDate, currentVal
 }
 
 // 대출 추가
-async function addLoan(propertyId, amount, rate, startDate, term, loanType) {
+async function addLoan(propertyId, amount, rate, startDate, term, loanType, extra = {}) {
   try {
     await getOrCreateRealEstateSheet();
 
@@ -877,6 +1004,12 @@ async function addLoan(propertyId, amount, rate, startDate, term, loanType) {
       startDate,
       term: term || 360, // 기본 30년
       type: loanType || '원리금균등',
+      bank: extra.bank || '',
+      balance: extra.balance || amount,
+      monthlyPayment: extra.monthlyPayment || 0,
+      lastPaymentDate: extra.lastPaymentDate || '',
+      lastPrincipal: extra.principal || 0,
+      lastInterest: extra.interest || 0,
     });
 
     await sheets.spreadsheets.values.append({
@@ -886,7 +1019,7 @@ async function addLoan(propertyId, amount, rate, startDate, term, loanType) {
       resource: { values: [[id, 'loan', propertyId, data]] },
     });
 
-    return { id, propertyId, amount, rate, startDate, term, type: loanType };
+    return { id, propertyId, ...JSON.parse(data) };
   } catch (error) {
     console.error('Error adding loan:', error.message);
     throw error;
@@ -1039,6 +1172,9 @@ module.exports = {
   updateHolding,
   removeHolding,
   saveHoldingsOrder,
+  // 변경이력 전용
+  addChangeHistory,
+  getChangeHistory,
   // 부동산 전용
   getRealEstateData,
   addWatchProperty,

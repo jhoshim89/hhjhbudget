@@ -1,6 +1,26 @@
 // Vercel dev & 배포 모두 상대경로 사용
 const API_BASE = '/api';
 
+// ============================================
+// 데이터 소스 아키텍처:
+// - 시트1 (메인): 수입, 지출, 자산 (월별 데이터)
+// - 관심종목 시트: 관심 주식 (useWatchlist hook 사용)
+// - 보유종목 시트: 보유 주식 포지션 (useHoldings hook 사용)
+// - 부동산 시트: 부동산 데이터 (useRealEstate hook 사용)
+//
+// 레거시 데이터 (≤2025.09): 읽기전용, 중복 데이터 포함 가능
+// 현재 데이터 (≥2025.10): 웹 UI만 사용, 별도 시트가 정본(source of truth)
+// ============================================
+
+// 레거시 기준월 (프론트엔드용)
+export const LEGACY_CUTOFF = '2025.09';
+
+// 레거시 월인지 확인
+export function isLegacyMonth(monthStr) {
+  if (!monthStr) return false;
+  return monthStr <= LEGACY_CUTOFF;
+}
+
 // 시트 데이터 조회
 export async function fetchSheetData(range = 'A:Z') {
   const res = await fetch(`${API_BASE}/sheet?range=${encodeURIComponent(range)}`);
@@ -139,7 +159,8 @@ export function parseSheetToAppData(rows, targetMonth = null) {
         data.bond.maturityMonths = parseInt(maturityMonths) || 0;
       }
     }
-    // 자산 - 주식 (상세: 수량|평단가|계좌)
+    // 자산 - 주식 - 레거시 데이터만 파싱 (읽기전용)
+    // 신규 데이터는 별도 '보유종목' 시트에서 useHoldings hook으로 관리
     else if (category === '자산-주식') {
       if (detail) {
         const [qty, avgPrice, account] = detail.split('|');
@@ -149,6 +170,7 @@ export function parseSheetToAppData(rows, targetMonth = null) {
           qty: parseInt(qty) || 0,
           avgPrice: avgPrice || '0',
           account: account || '',
+          isLegacy: true, // 레거시 데이터 표시
         });
       }
     }
@@ -170,12 +192,15 @@ export function parseSheetToAppData(rows, targetMonth = null) {
     else if (category === '지출-변동') {
       data.expenses.variable.push({ name, amount: value });
     }
-    // 관심종목 (티커, 한글명, 추가일자)
+    // 관심종목 - 레거시 데이터만 파싱 (읽기전용)
+    // 신규 데이터는 별도 '관심종목' 시트에서 useWatchlist hook으로 관리
     else if (category === '관심종목') {
+      // 레거시 호환용 - 과거 데이터 표시만 가능
       data.watchlist.push({
         ticker: name,           // name 필드에 티커 저장 (예: AAPL)
         name: detail || name,   // detail 필드에 한글명 저장 (예: 애플)
         addedDate: date,        // 추가 날짜
+        isLegacy: true,         // 레거시 데이터 표시
       });
     }
 

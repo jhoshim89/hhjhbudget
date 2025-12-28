@@ -5,6 +5,7 @@ const {
   getSheetData, updateSheetData, appendSheetData, deleteSheetRow, deleteRowsRange, updateRowByKey, getMonthData,
   getWatchlist, addWatchlistStock, removeWatchlistStock, saveWatchlistOrder,
   getHoldings, addHolding, updateHolding, removeHolding, saveHoldingsOrder,
+  addChangeHistory, getChangeHistory,
   getRealEstateData, addWatchProperty, addMyProperty, addLoan, addPriceRecord, updateRealEstate, removeRealEstate,
   isLegacyMonth, LEGACY_CUTOFF
 } = require('./sheets.cjs');
@@ -280,6 +281,21 @@ app.put('/api/holdings/order', async (req, res) => {
 });
 
 // ============================================
+// 변경이력 API (별도 시트)
+// ============================================
+
+// 변경이력 조회
+app.get('/api/history', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const data = await getChangeHistory(limit);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
 // 부동산 API (별도 시트)
 // ============================================
 
@@ -324,11 +340,12 @@ app.post('/api/realestate/my', async (req, res) => {
 // 대출 추가
 app.post('/api/realestate/loan', async (req, res) => {
   try {
-    const { propertyId, amount, rate, startDate, term, type } = req.body;
+    const { propertyId, amount, rate, startDate, term, type, bank, balance, monthlyPayment, lastPaymentDate, principal, interest } = req.body;
     if (!propertyId || !amount || !rate) {
       return res.status(400).json({ success: false, error: 'propertyId, amount, and rate required' });
     }
-    const result = await addLoan(propertyId, amount, rate, startDate, term, type);
+    const extra = { bank, balance, monthlyPayment, lastPaymentDate, principal, interest };
+    const result = await addLoan(propertyId, amount, rate, startDate, term, type, extra);
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
