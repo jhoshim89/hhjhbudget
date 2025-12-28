@@ -95,26 +95,26 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-panel border border-border rounded-xl p-6 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-white">종목 추가</h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-white/[0.05] rounded-lg"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 종목 검색 */}
           <div className="relative">
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+            <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
               종목 검색
             </label>
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -125,21 +125,21 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                 }}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="종목명, 티커, 영문명으로 검색..."
-                className="w-full bg-background border border-border rounded-lg pl-10 pr-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
+                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
               />
             </div>
             {/* 검색 결과 드롭다운 */}
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-panel border border-border rounded-lg shadow-xl max-h-48 overflow-auto">
+              <div className="absolute z-10 w-full mt-2 bg-zinc-900/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl max-h-48 overflow-auto">
                 {suggestions.map((stock) => (
                   <button
                     key={stock.ticker}
                     type="button"
                     onClick={() => handleSelectStock(stock)}
-                    className="w-full px-4 py-3 text-left hover:bg-slate-800 flex items-center justify-between transition-colors"
+                    className="w-full px-4 py-3 text-left hover:bg-white/[0.05] flex items-center justify-between transition-colors first:rounded-t-xl last:rounded-b-xl"
                   >
                     <span className="text-white font-medium">{stock.name}</span>
-                    <span className="text-slate-500 font-mono text-sm">{stock.ticker}</span>
+                    <span className="text-zinc-500 font-mono text-sm">{stock.ticker}</span>
                   </button>
                 ))}
               </div>
@@ -148,15 +148,15 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
 
           {/* 선택된 종목 표시 */}
           {formData.ticker && (
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 flex items-center justify-between">
+            <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 flex items-center justify-between">
               <div>
                 <p className="text-white font-bold">{formData.name}</p>
-                <p className="text-blue-400 font-mono text-sm">{formData.ticker}</p>
+                <p className="text-violet-400 font-mono text-sm">{formData.ticker}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, ticker: '', name: '' }))}
-                className="text-slate-400 hover:text-white"
+                className="text-zinc-400 hover:text-white p-1 hover:bg-white/[0.05] rounded-lg transition-colors"
               >
                 <X size={16} />
               </button>
@@ -165,11 +165,11 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
 
           {/* 직접 입력 옵션 */}
           {!formData.ticker && (
-            <div className="border-t border-border pt-4">
-              <p className="text-xs text-slate-500 mb-3">또는 직접 입력:</p>
+            <div className="border-t border-white/[0.06] pt-4">
+              <p className="text-xs text-zinc-500 mb-3">또는 직접 입력:</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
                     티커
                   </label>
                   <input
@@ -177,11 +177,11 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                     value={formData.ticker}
                     onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
                     placeholder="AAPL"
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2 text-white font-mono text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-2.5 text-white font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+                  <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
                     종목명
                   </label>
                   <input
@@ -189,7 +189,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="애플"
-                    className="w-full bg-background border border-border rounded-lg px-4 py-2 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
+                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
                 </div>
               </div>
@@ -198,7 +198,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+              <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
                 수량
               </label>
               <input
@@ -206,12 +206,12 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                 value={formData.qty}
                 onChange={(e) => setFormData({ ...formData, qty: e.target.value })}
                 placeholder="100"
-                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
+                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white font-mono placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+              <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">
                 평균 매수가 ($)
               </label>
               <input
@@ -220,7 +220,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                 value={formData.avgPrice}
                 onChange={(e) => setFormData({ ...formData, avgPrice: e.target.value })}
                 placeholder="150.00"
-                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-white font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500"
+                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white font-mono placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
               />
             </div>
           </div>
@@ -229,13 +229,13 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-lg border border-border text-slate-400 hover:text-white hover:border-slate-500 transition-colors font-bold"
+              className="flex-1 px-4 py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-white/[0.02] transition-all font-semibold"
             >
               취소
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors"
+              className="flex-1 px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-all"
             >
               추가
             </button>

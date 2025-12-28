@@ -82,3 +82,71 @@ export const numberToHangul = (value) => {
 
   return result + '원';
 };
+
+// === 계산기 유틸 ===
+
+/**
+ * 수식 계산 (500+100 → 600, 1000*2 → 2000)
+ * 지원: +, -, *, 괄호 (/ 는 더하기로 처리)
+ * @param {string} expression
+ * @returns {number|null}
+ */
+export function evaluateExpression(expression) {
+  if (!expression) return null;
+
+  // 콤마 제거 (천 단위 구분자), /를 +로 변환, 공백 제거
+  const cleaned = String(expression).replace(/,/g, '').replace(/\//g, '+').replace(/\s/g, '');
+
+  // 숫자만 있으면 바로 반환
+  if (/^\d+$/.test(cleaned)) {
+    return parseInt(cleaned, 10);
+  }
+
+  // 허용된 문자만 포함하는지 확인 (숫자, +, -, *, /, 괄호, 소수점)
+  if (!/^[\d+\-*/().]+$/.test(cleaned)) {
+    return null;
+  }
+
+  try {
+    // eval 대신 Function 사용 (약간 더 안전)
+    const result = new Function(`return (${cleaned})`)();
+    if (typeof result === 'number' && isFinite(result)) {
+      return Math.round(result); // 정수로 반올림
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// === 월 포맷 변환 유틸 ===
+
+/**
+ * "2025-12" → { year: 2025, month: 12 }
+ */
+export function parseMonthString(monthStr) {
+  if (!monthStr) {
+    const today = new Date();
+    return { year: today.getFullYear(), month: today.getMonth() + 1 };
+  }
+  const [year, month] = monthStr.split('-').map(Number);
+  return { year, month };
+}
+
+/**
+ * { year: 2025, month: 12 } → "2025-12"
+ */
+export function toMonthString(monthObj) {
+  return `${monthObj.year}-${String(monthObj.month).padStart(2, '0')}`;
+}
+
+/**
+ * 월 변경 (delta: +1 또는 -1)
+ */
+export function changeMonthObj(monthObj, delta) {
+  let newMonth = monthObj.month + delta;
+  let newYear = monthObj.year;
+  if (newMonth > 12) { newMonth = 1; newYear++; }
+  else if (newMonth < 1) { newMonth = 12; newYear--; }
+  return { year: newYear, month: newMonth };
+}

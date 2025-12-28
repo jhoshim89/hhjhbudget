@@ -9,7 +9,7 @@ import React from 'react';
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background text-slate-200 font-sans">
+    <div className="h-screen flex flex-col overflow-hidden bg-background text-foreground font-sans">
       {children}
     </div>
   );

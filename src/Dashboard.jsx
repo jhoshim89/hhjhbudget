@@ -5,7 +5,7 @@
  * @dependencies Layout, Sidebar, Header, Dashboard Sub-components, Input Forms.
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
@@ -19,71 +19,108 @@ import AnnualTab from './components/tabs/AnnualTab';
 import InputTab from './components/tabs/InputTab';
 import AddVariableExpenseModal from './components/expense/AddVariableExpenseModal';
 
+// Google Sheets Integration
+import { useSheetData } from './hooks/useSheetData';
+import { appendToSheet, deleteFromSheet, upsertRow } from './services/sheetsApi';
+import { parseMonthString, toMonthString, changeMonthObj } from './utils/formatters';
+
 export default function Dashboard() {
   const [tab, setTab] = useState('overview');
   const [exchangeRate, setExchangeRate] = useState(1380);
   const [stockPrices, setStockPrices] = useState({});
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
-  const [inputMonth, setInputMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // --- Global State ---
-  const [stockList, setStockList] = useState([
-    { ticker: 'NVDA', name: '엔비디아', qty: 140, avgPrice: '110' },
-    { ticker: 'TSLA', name: '테슬라', qty: 50, avgPrice: '260' },
-    { ticker: 'AAPL', name: '애플', qty: 20, avgPrice: '180' },
-    { ticker: 'GOOGL', name: '구글', qty: 10, avgPrice: '150' },
-    { ticker: 'MSFT', name: '마이크로소프트', qty: 5, avgPrice: '400' },
-  ]);
+  // --- Google Sheets 연동 ---
+  const {
+    data: sheetData,
+    loading: sheetLoading,
+    error: sheetError,
+    selectedMonth,
+    setSelectedMonth,
+    availableMonths,
+    investmentHistory,
+    monthlyHistory,
+    reload: reloadSheet,
+  } = useSheetData();
 
-  const [manualAccounts, setManualAccounts] = useState({
-    향화카카오: '5200000', 
-    재호영웅문: '3800000'
-  });
+  // 탭에서 사용할 월 객체 형식 변환
+  const selectedMonthObj = useMemo(() => {
+    return parseMonthString(selectedMonth);
+  }, [selectedMonth]);
 
-  const [assets, setAssets] = useState({
-    재호잔고: 26276263,
-    향화잔고: 12500000,
-    적금: 8020000
-  });
+  // 월 변경 핸들러 (탭에서 호출)
+  const handleMonthChange = useCallback((delta) => {
+    const newMonthObj = changeMonthObj(selectedMonthObj, delta);
+    setSelectedMonth(toMonthString(newMonthObj));
+  }, [selectedMonthObj, setSelectedMonth]);
 
-  // 채권 (단일 채권 정보)
-  const [bond, setBond] = useState({
-    balance: 14744359,
-    purchaseDate: '2024-06-15',
-    yieldRate: 4.2,
-    maturityMonths: 12,
-  });
-
-  // 변동 지출
-  const [variableExpenses, setVariableExpenses] = useState([]);
+  // 변동 지출 모달
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
 
-  const [fixedExpenses, setFixedExpenses] = useState([
-    { name: '대출 상환', amount: 1410000, checked: true },
-    { name: '관리비', amount: 250000, checked: true },
-    { name: '가스비', amount: 100000, checked: true },
-    { name: '인터넷', amount: 17000, checked: true },
-    { name: '구독료', amount: 16000, checked: true },
-    { name: '주유비', amount: 150000, checked: true },
-    { name: '애들 보험/화재보험', amount: 40000, checked: true },
-    { name: '재호 메리츠실비', amount: 12000, checked: true },
-    { name: '향화 삼성실비', amount: 17000, checked: true },
-    { name: '치과보험', amount: 50000, checked: true },
-    { name: '향화 용돈', amount: 100000, checked: true },
-    { name: '향화 운동', amount: 120000, checked: true },
-  ]);
+  // --- 시트 데이터 기반 State (시트 로드 후 초기화) ---
+  const [stockList, setStockList] = useState([]);
+  const [manualAccounts, setManualAccounts] = useState({ 향화카카오: '0', 재호영웅문: '0' });
+  const [assets, setAssets] = useState({ 재호잔고: 0, 향화잔고: 0, 적금: 0 });
+  const [bond, setBond] = useState({ balance: 0, purchaseDate: '', yieldRate: 0, maturityMonths: 0 });
+  const [fixedExpenses, setFixedExpenses] = useState([]);
+  const [variableExpenses, setVariableExpenses] = useState([]);
+  const [fixedIncomes, setFixedIncomes] = useState([]);
+  const [variableIncomes, setVariableIncomes] = useState([]);
+  const [cardExpense, setCardExpense] = useState('0');
+  const [investmentTotals, setInvestmentTotals] = useState({ 재호해외주식: 0, 향화해외주식: 0, 투자원금: 0, 배당: 0 });
 
-  const [fixedIncomes, setFixedIncomes] = useState([
-    { name: '학교월급', amount: 5618990 },
-    { name: '연구비', amount: 0 },
-    { name: '월세', amount: 0 }
-  ]);
-  
-  const [variableIncomes, setVariableIncomes] = useState([
-    { name: '강의비', amount: 200000, memo: '특강' }
-  ]);
-  
-  const [cardExpense, setCardExpense] = useState('850000');
+  // 시트 데이터 로드 시 로컬 상태 동기화
+  useEffect(() => {
+    if (sheetData) {
+      // 수입
+      setFixedIncomes(sheetData.incomes.fixed);
+      setVariableIncomes(sheetData.incomes.variable);
+
+      // 지출
+      setFixedExpenses(sheetData.expenses.fixed);
+      setVariableExpenses(sheetData.expenses.variable);
+      setCardExpense(String(sheetData.expenses.card || 0));
+
+      // 자산
+      setAssets(sheetData.assets);
+      setBond(sheetData.bond);
+
+      // 주식
+      setStockList(sheetData.stocks);
+      setManualAccounts({
+        향화카카오: String(sheetData.stockAccounts?.향화카카오 || 0),
+        재호영웅문: String(sheetData.stockAccounts?.재호영웅문 || 0),
+      });
+
+      // 레거시 투자 총액 (개별 종목 데이터가 없는 월용)
+      if (sheetData.investmentTotals) {
+        setInvestmentTotals(sheetData.investmentTotals);
+      }
+    }
+  }, [sheetData]);
+
+  // 키보드 단축키: 1-5로 탭 전환
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // input, textarea에서는 무시
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const tabMap = {
+        '1': 'overview',
+        '2': 'status',
+        '3': 'investment',
+        '4': 'annual',
+        '5': 'input',
+      };
+
+      if (tabMap[e.key]) {
+        setTab(tabMap[e.key]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // --- Calculations ---
   const totalStockUSD = useMemo(() => {
@@ -119,28 +156,124 @@ export default function Dashboard() {
     variableExpenses.reduce((s, e) => s + e.amount, 0);
 
   // --- Handlers ---
-  const handleManualAccountChange = (key, value) => {
-    setManualAccounts(prev => ({ ...prev, [key]: value.replace(/,/g, '') }));
+  const handleManualAccountChange = async (key, value) => {
+    const newValue = value.replace(/,/g, '');
+    setManualAccounts(prev => ({ ...prev, [key]: newValue }));
+
+    try {
+      // 자산-주식계좌 카테고리로 저장 (없으면 새로 생성)
+      await upsertRow(selectedMonth, '자산-주식계좌', key, [
+        selectedMonth, '자산-주식계좌', key, parseInt(newValue) || 0, ''
+      ]);
+    } catch (error) {
+      console.error('Failed to update manual account:', error);
+    }
   };
 
-  const handleAssetChange = (key, value) => {
-    setAssets(prev => ({ ...prev, [key]: parseInt(value.replace(/,/g, '')) || 0 }));
+  const handleAssetChange = async (key, value) => {
+    const newValue = parseInt(value.replace(/,/g, '')) || 0;
+    setAssets(prev => ({ ...prev, [key]: newValue }));
+
+    // 카테고리 매핑
+    const categoryMap = {
+      '재호잔고': ['자산-잔고', '재호잔고'],
+      '향화잔고': ['자산-잔고', '향화잔고'],
+      '적금': ['자산-저축', '적금'],
+    };
+    const [category, name] = categoryMap[key] || ['자산-잔고', key];
+
+    try {
+      await upsertRow(selectedMonth, category, name, [selectedMonth, category, name, newValue, '']);
+    } catch (error) {
+      console.error('Failed to update asset:', error);
+    }
   };
 
-  const handleFixedIncomeChange = (index, value) => {
-    const newIncomes = [...fixedIncomes];
-    newIncomes[index].amount = parseInt(value.replace(/,/g, '')) || 0;
+  const handleFixedIncomeChange = async (index, value) => {
+    const income = fixedIncomes[index];
+    const newAmount = parseInt(value.replace(/,/g, '')) || 0;
+
+    // 새 객체로 교체 (불변성 유지)
+    const newIncomes = fixedIncomes.map((item, i) =>
+      i === index ? { ...item, amount: newAmount } : item
+    );
     setFixedIncomes(newIncomes);
+
+    try {
+      await upsertRow(selectedMonth, '수입-고정', income.name, [selectedMonth, '수입-고정', income.name, newAmount, '']);
+    } catch (error) {
+      console.error('Failed to update income:', error);
+    }
   };
 
-  const handleCardExpenseChange = (value) => {
-    setCardExpense(value.replace(/,/g, ''));
+  const handleCardExpenseChange = async (value) => {
+    const newValue = value.replace(/,/g, '');
+    setCardExpense(newValue);
+
+    try {
+      await upsertRow(selectedMonth, '지출-카드', '카드값', [selectedMonth, '지출-카드', '카드값', newValue, '']);
+    } catch (error) {
+      console.error('Failed to update card expense:', error);
+    }
   };
 
-  const handleToggleFixedExpense = (index) => {
-    const newExpenses = [...fixedExpenses];
-    newExpenses[index].checked = !newExpenses[index].checked;
+  const handleToggleFixedExpense = async (index) => {
+    const expense = fixedExpenses[index];
+    const newChecked = !expense.checked;
+
+    // 새 객체로 교체 (불변성 유지)
+    const newExpenses = fixedExpenses.map((item, i) =>
+      i === index ? { ...item, checked: newChecked } : item
+    );
     setFixedExpenses(newExpenses);
+
+    try {
+      // detail 필드에 체크 상태 저장 (checked/unchecked)
+      await upsertRow(selectedMonth, '지출-고정', expense.name, [
+        selectedMonth, '지출-고정', expense.name, expense.amount, newChecked ? 'checked' : 'unchecked'
+      ]);
+    } catch (error) {
+      console.error('Failed to update fixed expense check:', error);
+    }
+  };
+
+  const handleFixedExpenseAmountChange = async (index, value) => {
+    const expense = fixedExpenses[index];
+    const newAmount = parseInt(String(value).replace(/,/g, ''), 10) || 0;
+
+    const newExpenses = fixedExpenses.map((item, i) =>
+      i === index ? { ...item, amount: newAmount } : item
+    );
+    setFixedExpenses(newExpenses);
+
+    try {
+      await upsertRow(selectedMonth, '지출-고정', expense.name, [
+        selectedMonth, '지출-고정', expense.name, newAmount, expense.checked ? 'checked' : 'unchecked'
+      ]);
+    } catch (error) {
+      console.error('Failed to update fixed expense amount:', error);
+    }
+  };
+
+  const handleAddFixedExpense = async (expense) => {
+    try {
+      await appendToSheet('A:E', [[selectedMonth, '지출-고정', expense.name, expense.amount, 'checked']]);
+      setFixedExpenses(prev => [...prev, { ...expense, checked: true }]);
+    } catch (error) {
+      console.error('Failed to add fixed expense:', error);
+      alert('고정지출 추가 실패: ' + error.message);
+    }
+  };
+
+  const handleDeleteFixedExpense = async (index) => {
+    const expense = fixedExpenses[index];
+    try {
+      await deleteFromSheet(selectedMonth, '지출-고정', expense.name);
+      setFixedExpenses(prev => prev.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Failed to delete fixed expense:', error);
+      alert('고정지출 삭제 실패: ' + error.message);
+    }
   };
 
   const handleExchangeRateChange = (value) => {
@@ -160,28 +293,105 @@ export default function Dashboard() {
     setFixedExpenses(newOrder);
   };
 
-  // --- Variable Expense Handlers ---
-  const handleAddVariableExpense = (expense) => {
-    setVariableExpenses(prev => [...prev, expense]);
+  // --- Variable Income Handlers ---
+  const handleAddVariableIncome = async (income) => {
+    try {
+      // 시트에 저장: [날짜, 카테고리, 이름, 금액, 메모]
+      await appendToSheet('A:E', [[selectedMonth, '수입-변동', income.name, income.amount, income.memo || '']]);
+      setVariableIncomes(prev => [...prev, income]);
+      reloadSheet();
+    } catch (error) {
+      console.error('Failed to add income:', error);
+      alert('수입 추가 실패: ' + error.message);
+    }
   };
 
-  const handleDeleteVariableExpense = (index) => {
-    setVariableExpenses(prev => prev.filter((_, i) => i !== index));
+  // --- Variable Expense Handlers ---
+  const handleAddVariableExpense = async (expense) => {
+    try {
+      // 시트에 저장: [날짜, 카테고리, 이름, 금액, 상세]
+      await appendToSheet('A:E', [[selectedMonth, '지출-변동', expense.name, expense.amount, '']]);
+      setVariableExpenses(prev => [...prev, expense]);
+      reloadSheet();
+    } catch (error) {
+      console.error('Failed to add expense:', error);
+      alert('지출 추가 실패: ' + error.message);
+    }
+  };
+
+  const handleDeleteVariableExpense = async (index) => {
+    try {
+      const expense = variableExpenses[index];
+      await deleteFromSheet(selectedMonth, '지출-변동', expense.name);
+      setVariableExpenses(prev => prev.filter((_, i) => i !== index));
+      reloadSheet();
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
+      alert('지출 삭제 실패: ' + error.message);
+    }
+  };
+
+  const handleDeleteVariableIncome = async (index) => {
+    try {
+      const income = variableIncomes[index];
+      await deleteFromSheet(selectedMonth, '수입-변동', income.name);
+      setVariableIncomes(prev => prev.filter((_, i) => i !== index));
+      reloadSheet();
+    } catch (error) {
+      console.error('Failed to delete income:', error);
+      alert('수입 삭제 실패: ' + error.message);
+    }
   };
 
   // --- Stock Management Handlers ---
-  const handleAddStock = (newStock) => {
-    setStockList(prev => [...prev, newStock]);
+  const handleAddStock = async (newStock) => {
+    try {
+      // 시트에 저장: [날짜, 카테고리, 종목명, 금액, 상세(수량|평단가|계좌)]
+      const detail = `${newStock.qty}|${newStock.avgPrice}|${newStock.account || ''}`;
+      await appendToSheet('A:E', [[selectedMonth, '자산-주식', newStock.ticker, '0', detail]]);
+
+      // 로컬 상태 업데이트 & 시트 리로드
+      setStockList(prev => [...prev, newStock]);
+      reloadSheet();
+    } catch (error) {
+      console.error('Failed to add stock:', error);
+      alert('종목 추가 실패: ' + error.message);
+    }
   };
 
-  const handleDeleteStock = (ticker) => {
-    setStockList(prev => prev.filter(s => s.ticker !== ticker));
+  const handleDeleteStock = async (ticker) => {
+    try {
+      // 시트에서 삭제
+      await deleteFromSheet(selectedMonth, '자산-주식', ticker);
+
+      // 로컬 상태 업데이트 & 시트 리로드
+      setStockList(prev => prev.filter(s => s.ticker !== ticker));
+      reloadSheet();
+    } catch (error) {
+      console.error('Failed to delete stock:', error);
+      alert('종목 삭제 실패: ' + error.message);
+    }
   };
 
-  const handleUpdateStock = (ticker, updates) => {
+  const handleUpdateStock = async (ticker, updates) => {
+    // 로컬 상태 업데이트
+    const updatedStock = stockList.find(s => s.ticker === ticker);
+    if (!updatedStock) return;
+
+    const newStock = { ...updatedStock, ...updates };
     setStockList(prev => prev.map(s =>
-      s.ticker === ticker ? { ...s, ...updates } : s
+      s.ticker === ticker ? newStock : s
     ));
+
+    try {
+      // 시트에 저장: detail = 수량|평단가|계좌
+      const detail = `${newStock.qty}|${newStock.avgPrice}|${newStock.account || ''}`;
+      await upsertRow(selectedMonth, '자산-주식', ticker, [
+        selectedMonth, '자산-주식', ticker, '0', detail
+      ]);
+    } catch (error) {
+      console.error('Failed to update stock:', error);
+    }
   };
 
   // --- Effects ---
@@ -215,38 +425,50 @@ export default function Dashboard() {
     }
   };
 
+  // 투자 총액 계산: 개별 종목 데이터가 있으면 사용, 없으면 레거시 총액 사용
+  const hasIndividualStocks = stockList.length > 0;
+  const legacyStockTotal = investmentTotals.재호해외주식 + investmentTotals.향화해외주식;
+  const effectiveStockTotal = hasIndividualStocks ? totalStockKRW : legacyStockTotal;
+
   const investmentData = {
     exchangeRate,
     stockPrices,
     totalStockUSD,
-    totalStockKRW,
-    totalInvestmentKRW: totalStockKRW + bond.balance,
-    investedPrincipal: totalStockKRW * 0.8, // Mock
+    totalStockKRW: effectiveStockTotal,
+    totalInvestmentKRW: effectiveStockTotal + bond.balance,
+    investedPrincipal: investmentTotals.투자원금 || effectiveStockTotal * 0.8,
     stocks: { list: stockList },
     bonds: { ...bond, ...getBondMaturity() },
     benchmarks: { spy: stockPrices['SPY'] || 0, qqq: stockPrices['QQQ'] || 0, tqqq: stockPrices['TQQQ'] || 0 },
-    history: [
-      { date: '2023-06', value: 42000, principal: 40000 },
-      { date: '2023-07', value: 45000, principal: 41000 },
-      { date: '2023-08', value: 43000, principal: 42000 },
-      { date: '2023-09', value: 48000, principal: 42000 },
-      { date: '2023-10', value: 51000, principal: 43000 },
-      { date: '2023-11', value: 52300, principal: 43000 },
-    ],
+    history: investmentHistory || [],
     manual: {
       kakao: parseFloat(manualAccounts.향화카카오),
       jaeho: parseFloat(manualAccounts.재호영웅문),
       younghwa: totalStockUSD * exchangeRate  // 향화 영웅문 (실시간 계산)
-    }
+    },
+    // 레거시 데이터 (월별 총액)
+    investmentTotals: {
+      재호: investmentTotals.재호해외주식,
+      향화: investmentTotals.향화해외주식,
+      원금: investmentTotals.투자원금,
+      배당: investmentTotals.배당,
+    },
+    hasIndividualStocks,
   };
 
-  const inputData = { manualAccounts, assets, fixedIncomes, fixedExpenses, cardExpense };
+  const inputData = { manualAccounts, assets, fixedIncomes, variableIncomes, fixedExpenses, cardExpense };
   const inputHandlers = {
     onManualAccountChange: handleManualAccountChange,
     onAssetChange: handleAssetChange,
     onFixedIncomeChange: handleFixedIncomeChange,
     onCardExpenseChange: handleCardExpenseChange,
-    onToggleFixedExpense: handleToggleFixedExpense
+    onToggleFixedExpense: handleToggleFixedExpense,
+    onFixedExpenseAmountChange: handleFixedExpenseAmountChange,
+    onAddFixedExpense: handleAddFixedExpense,
+    onDeleteFixedExpense: handleDeleteFixedExpense,
+    onAddVariableIncome: handleAddVariableIncome,
+    onDeleteVariableIncome: handleDeleteVariableIncome,
+    onReload: reloadSheet
   };
 
   const investmentHandlers = {
@@ -266,7 +488,7 @@ export default function Dashboard() {
           { name: 'TQQQ', value: stockPrices['TQQQ'] || 0, change: 'up' }
         ]}
       />
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex relative overflow-hidden">
         {/* Desktop Sidebar */}
         <div className="hidden md:block">
           <Sidebar
@@ -277,12 +499,80 @@ export default function Dashboard() {
           />
         </div>
 
-        <main className="flex-1 flex flex-col overflow-auto bg-background pb-16 md:pb-0">
-          {tab === 'overview' && <OverviewTab stats={overviewStats} />}
-          {tab === 'status' && <StatusTab data={statusData} />}
-          {tab === 'investment' && <InvestmentTab data={investmentData} handlers={investmentHandlers} />}
-          {tab === 'annual' && <AnnualTab currentData={{ income: thisMonthIncome, expense: thisMonthExpense }} />}
-          {tab === 'input' && <InputTab data={inputData} handlers={inputHandlers} />}
+        <main className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto bg-background pb-32 md:pb-0">
+          {/* 로딩 상태 */}
+          {sheetLoading && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-slate-400 text-sm">데이터 로딩 중...</p>
+              </div>
+            </div>
+          )}
+
+          {/* 에러 상태 */}
+          {sheetError && !sheetLoading && (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 max-w-md text-center">
+                <p className="text-red-400 mb-2">데이터 로드 실패</p>
+                <p className="text-slate-400 text-sm mb-3">{sheetError}</p>
+                <button
+                  onClick={reloadSheet}
+                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm"
+                >
+                  다시 시도
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 정상 상태 */}
+          {!sheetLoading && !sheetError && (
+            <>
+              {tab === 'overview' && (
+                <OverviewTab
+                  stats={overviewStats}
+                  selectedMonth={selectedMonthObj}
+                  onMonthChange={handleMonthChange}
+                  monthlyHistory={monthlyHistory}
+                />
+              )}
+              {tab === 'status' && (
+                <StatusTab
+                  data={statusData}
+                  selectedMonth={selectedMonthObj}
+                  onMonthChange={handleMonthChange}
+                />
+              )}
+              {tab === 'investment' && (
+                <InvestmentTab
+                  data={investmentData}
+                  handlers={investmentHandlers}
+                  selectedMonth={selectedMonthObj}
+                  onMonthChange={handleMonthChange}
+                />
+              )}
+              {tab === 'annual' && (
+                <AnnualTab
+                  currentData={{ income: thisMonthIncome, expense: thisMonthExpense }}
+                  investmentData={{
+                    totalValue: investmentData.totalStockKRW,
+                    principal: investmentData.investedPrincipal,
+                    profit: investmentData.totalStockKRW - investmentData.investedPrincipal,
+                    profitPercent: ((investmentData.totalStockKRW / investmentData.investedPrincipal - 1) * 100).toFixed(1),
+                  }}
+                />
+              )}
+              {tab === 'input' && (
+                <InputTab
+                  data={inputData}
+                  handlers={inputHandlers}
+                  selectedMonth={selectedMonthObj}
+                  onMonthChange={handleMonthChange}
+                />
+              )}
+            </>
+          )}
         </main>
       </div>
 

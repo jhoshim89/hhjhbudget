@@ -12,7 +12,7 @@ export default function IncomeForm({
   fixedIncomes, setFixedIncomes,
   variableIncomes, setVariableIncomes
 }) {
-  const [newVarIncome, setNewVarIncome] = useState({ name: '강의비', amount: '', memo: '' });
+  const [newVarIncome, setNewVarIncome] = useState({ name: '', amount: '', memo: '' });
 
   return (
     <div className="space-y-6 overflow-y-auto max-h-[500px] pr-2">
@@ -72,15 +72,13 @@ export default function IncomeForm({
         {/* Add New */}
         <div className="bg-panel border border-border p-3 rounded">
           <div className="grid grid-cols-2 gap-2 mb-2">
-            <select 
+            <input
+              type="text"
               value={newVarIncome.name}
               onChange={e => setNewVarIncome({...newVarIncome, name: e.target.value})}
               className="bg-background border border-border text-white text-xs p-2 rounded outline-none"
-            >
-              <option>강의비</option>
-              <option>배당</option>
-              <option>기타</option>
-            </select>
+              placeholder="수입명 (예: 강의비)"
+            />
             <input 
               type="text" 
               value={newVarIncome.amount}
