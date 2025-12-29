@@ -41,6 +41,9 @@ import FloatingAIChatButton from './components/common/FloatingAIChatButton';
 import AIChatModal from './components/common/AIChatModal';
 import DesktopAIChatPanel from './components/common/DesktopAIChatPanel';
 
+// PWA
+import ReloadPrompt from './components/common/ReloadPrompt';
+
 // Google Sheets Integration
 import { useSheetData } from './hooks/useSheetData';
 import { appendToSheet, deleteFromSheet, upsertRow } from './services/sheetsApi';
@@ -1102,6 +1105,9 @@ export default function Dashboard() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* PWA Reload Prompt */}
+      <ReloadPrompt />
     </DashboardLayout>
   );
 }
