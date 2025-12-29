@@ -98,15 +98,9 @@ function parseQuoteData(result) {
   const meta = result.meta;
   const quote = result.indicators?.quote?.[0];
   const timestamps = result.timestamp || [];
-
-  // 현재가 정보 (전일 종가 대비)
-  const price = meta.regularMarketPrice || 0;
-  const previousClose = meta.regularMarketPreviousClose || meta.previousClose || price;
-  const change = price - previousClose;
-  const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
   const currency = meta.currency || 'USD';
 
-  // 히스토리 데이터 (OHLC 캔들스틱용)
+  // 1. 먼저 히스토리 데이터 파싱 (OHLC 캔들스틱용)
   const history = [];
   if (timestamps.length && quote?.close) {
     for (let i = 0; i < timestamps.length; i++) {
@@ -127,6 +121,25 @@ function parseQuoteData(result) {
         });
       }
     }
+  }
+
+  // 2. 히스토리에서 마지막 두 거래일 종가로 변동률 계산
+  // 주말/공휴일에도 실제 거래일 기준으로 정확한 변동률 표시
+  let price, previousClose, change, changePercent;
+
+  if (history.length >= 2) {
+    const lastClose = history[history.length - 1].close;
+    const prevClose = history[history.length - 2].close;
+    price = lastClose;
+    previousClose = prevClose;
+    change = lastClose - prevClose;
+    changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
+  } else {
+    // 히스토리가 부족하면 API meta 데이터 사용 (폴백)
+    price = meta.regularMarketPrice || 0;
+    previousClose = meta.regularMarketPreviousClose || meta.previousClose || price;
+    change = price - previousClose;
+    changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
   }
 
   return {

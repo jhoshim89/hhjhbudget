@@ -1,44 +1,53 @@
 import React, { useState, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { formatKRW } from '../../utils/formatters';
-import { ChevronLeft, ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet, PieChart, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet, Trash2 } from 'lucide-react';
 import DraggableList from '../common/DraggableList';
 
 const colorMap = {
   income: 'border-green-500/30 bg-green-500/5',
   expense: 'border-rose-500/30 bg-rose-500/5',
-  assets: 'border-blue-500/30 bg-blue-500/5',
-  stocks: 'border-violet-500/30 bg-violet-500/5',
+  net: 'border-blue-500/30 bg-blue-500/5',
+  netNegative: 'border-amber-500/30 bg-amber-500/5',
+  assets: 'border-violet-500/30 bg-violet-500/5',
 };
 
 const iconMap = {
   income: TrendingUp,
   expense: TrendingDown,
+  net: TrendingUp,
+  netNegative: TrendingDown,
   assets: Wallet,
-  stocks: PieChart,
 };
 
-const SummaryCard = ({ title, value, type, delay = 0 }) => {
+const SummaryCard = ({ title, value, type, delay = 0, subInfo }) => {
   const Icon = iconMap[type];
   const colorClass = colorMap[type];
   const textColorMap = {
     income: 'text-green-400',
     expense: 'text-rose-400',
-    assets: 'text-blue-400',
-    stocks: 'text-violet-400',
+    net: 'text-blue-400',
+    netNegative: 'text-amber-400',
+    assets: 'text-violet-400',
   };
 
   return (
-    <div className={`bento-card ${colorClass} border animate-enter delay-${delay} flex flex-col justify-between min-h-[120px]`}>
-      <div className="flex items-center justify-between mb-3">
+    <div className={`bento-card ${colorClass} border animate-enter delay-${delay} flex flex-col min-h-[120px] relative`}>
+      <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">{title}</p>
-        <div className={`p-2 rounded-lg ${colorClass}`}>
-          <Icon size={16} className={textColorMap[type]} />
+        <div className={`p-1.5 rounded-lg ${colorClass}`}>
+          <Icon size={14} className={textColorMap[type]} />
         </div>
       </div>
       <p className={`text-2xl md:text-3xl font-bold font-mono ${textColorMap[type]} tracking-tight`}>
         {value}
       </p>
+      {/* 카드 내 서브 정보 */}
+      {subInfo && (
+        <div className="mt-auto pt-2 border-t border-white/[0.06] text-[10px] text-zinc-500">
+          {subInfo}
+        </div>
+      )}
     </div>
   );
 };
@@ -131,7 +140,7 @@ const DataItem = ({ name, amount, subtext, colorClass = "text-white", highlight 
   </div>
 );
 
-export default function OverviewTab({ stats, selectedMonth, onMonthChange, monthlyHistory = [], data }) {
+export default function OverviewTab({ stats, selectedMonth, onMonthChange, monthlyHistory = [], cardHistory = [], data }) {
   const [isFixedExpenseOpen, setIsFixedExpenseOpen] = useState(false);
   const today = new Date();
   const isCurrentMonth = selectedMonth?.year === today.getFullYear() && selectedMonth?.month === today.getMonth() + 1;
@@ -144,12 +153,42 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
     <DataItem name={item.name} amount={item.amount} colorClass="text-rose-400" delay={0} indent />
   );
 
+  // Card expense chart data
+  const cardChartData = useMemo(() => {
+    if (!cardHistory || cardHistory.length === 0) return [];
+
+    const avg = cardHistory.reduce((sum, d) => sum + d.amount, 0) / cardHistory.length;
+
+    let prevYear = null;
+    return cardHistory.map(item => {
+      const separator = item.month.includes('.') ? '.' : '-';
+      const [year, month] = item.month.split(separator);
+      const shortYear = year.slice(2);
+      const isYearStart = prevYear !== null && prevYear !== year;
+      prevYear = year;
+
+      return {
+        name: isYearStart ? `'${shortYear}` : `${parseInt(month)}`,
+        displayMonth: `${year}.${month}`,
+        amount: item.amount,
+        avg,
+        isOver: item.amount > avg,
+        isYearStart,
+      };
+    });
+  }, [cardHistory]);
+
+  const cardAvg = useMemo(() => {
+    if (cardChartData.length === 0) return 0;
+    return cardChartData[0]?.avg || 0;
+  }, [cardChartData]);
+
   // Chart data transformation
   const chartData = useMemo(() => {
     if (!monthlyHistory || monthlyHistory.length === 0) {
       return [{
         name: `${selectedMonth?.month || 12}월`,
-        fullMonth: `${selectedMonth?.year}-${String(selectedMonth?.month).padStart(2, '0')}`,
+        fullMonth: `${selectedMonth?.year}.${String(selectedMonth?.month).padStart(2, '0')}`,
         displayMonth: `${selectedMonth?.year}.${String(selectedMonth?.month).padStart(2, '0')}`,
         income: stats.income || 0,
         expense: stats.expense || 0,
@@ -159,7 +198,9 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
 
     let prevYear = null;
     return monthlyHistory.map((item, idx) => {
-      const [year, month] = item.month.split('-');
+      // 점(.) 또는 하이픈(-) 구분자 모두 지원
+      const separator = item.month.includes('.') ? '.' : '-';
+      const [year, month] = item.month.split(separator);
       const monthNum = parseInt(month);
       const shortYear = year.slice(2);
       const isYearStart = prevYear !== null && prevYear !== year;
@@ -213,9 +254,52 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
       {/* Summary Cards - Bento Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard title="총 수입" value={formatKRW(stats.income, true)} type="income" delay={0} />
-        <SummaryCard title="총 지출" value={formatKRW(stats.expense, true)} type="expense" delay={100} />
-        <SummaryCard title="순자산" value={formatKRW(stats.totalAssets, true)} type="assets" delay={200} />
-        <SummaryCard title="주식 자산" value={formatKRW(stats.stockAssets, true)} type="stocks" delay={300} />
+        <SummaryCard
+          title="총 지출"
+          value={formatKRW(stats.expense, true)}
+          type="expense"
+          delay={100}
+          subInfo={stats.expenseCalc && stats.expenseCalc.hasPrevData && (
+            <div className="flex justify-between">
+              <span>전달+수입-현재</span>
+              <span className="font-mono">
+                {formatKRW(stats.expenseCalc.prevMonthBalance, true)}+{formatKRW(stats.expenseCalc.thisMonthIncome, true)}-{formatKRW(stats.expenseCalc.currentBalance, true)}
+              </span>
+            </div>
+          )}
+        />
+        <SummaryCard
+          title="순수익"
+          value={formatKRW(stats.netProfit, true)}
+          type={stats.netProfit >= 0 ? 'net' : 'netNegative'}
+          delay={200}
+          subInfo={(
+            <div className="flex justify-between">
+              <span>수입 - 지출</span>
+              <span className="font-mono">
+                {formatKRW(stats.income, true)} - {formatKRW(stats.expense, true)}
+              </span>
+            </div>
+          )}
+        />
+        <SummaryCard
+          title="순자산"
+          value={formatKRW(stats.totalAssets, true)}
+          type="assets"
+          delay={300}
+          subInfo={(
+            <div className="flex justify-between gap-2">
+              {stats.assetsChange && stats.assetsChange.hasPrevData ? (
+                <span className={stats.assetsChange.changePercent >= 0 ? 'text-green-400' : 'text-rose-400'}>
+                  전월 대비 {stats.assetsChange.changePercent >= 0 ? '+' : ''}{stats.assetsChange.changePercent}%
+                </span>
+              ) : (
+                <span className="text-violet-400">주식 {formatKRW(stats.assetBreakdown?.stocks, true)}</span>
+              )}
+              <span className="text-blue-400">현금 {formatKRW(stats.assetBreakdown?.cash, true)}</span>
+            </div>
+          )}
+        />
       </div>
 
       {/* Main Chart */}
@@ -277,7 +361,7 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
               <XAxis
                 dataKey="name"
                 stroke="transparent"
-                fontSize={10}
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 interval={chartData.length > 18 ? 2 : chartData.length > 12 ? 1 : 0}
@@ -285,7 +369,7 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
                   const item = chartData[index];
                   if (!item || item.isYearStart) return null;
                   return (
-                    <text x={x} y={y + 10} textAnchor="middle" fill="#52525B" fontSize={9}>
+                    <text x={x} y={y + 10} textAnchor="middle" fill="#a1a1aa" fontSize={11}>
                       {payload.value}월
                     </text>
                   );
@@ -294,12 +378,12 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
 
               <YAxis
                 stroke="transparent"
-                fontSize={9}
+                fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v) => `${Math.round(v/10000)}만`}
-                width={40}
-                tick={{ fill: '#52525B' }}
+                width={45}
+                tick={{ fill: '#a1a1aa' }}
               />
 
               <Tooltip
@@ -355,6 +439,104 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
         </div>
       </div>
 
+      {/* Card Expense Chart */}
+      {cardChartData.length > 0 && (
+        <div className="glass-card p-4 md:p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                카드값 추이
+              </h3>
+              {cardChartData.length > 0 && (
+                <span className="text-xs text-zinc-500 font-mono">
+                  {cardChartData[0]?.displayMonth} — {cardChartData[cardChartData.length - 1]?.displayMonth}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-zinc-500">평균</span>
+              <span className="text-rose-400 font-mono font-semibold">{formatKRW(cardAvg, true)}</span>
+            </div>
+          </div>
+
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={cardChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="cardGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F43F5E" stopOpacity={0.8}/>
+                    <stop offset="100%" stopColor="#F43F5E" stopOpacity={0.3}/>
+                  </linearGradient>
+                  <linearGradient id="cardOverGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#EF4444" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#EF4444" stopOpacity={0.5}/>
+                  </linearGradient>
+                </defs>
+
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+
+                <XAxis
+                  dataKey="name"
+                  stroke="transparent"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#a1a1aa' }}
+                />
+
+                <YAxis
+                  stroke="transparent"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => `${Math.round(v/10000)}만`}
+                  width={45}
+                  tick={{ fill: '#a1a1aa' }}
+                />
+
+                <ReferenceLine
+                  y={cardAvg}
+                  stroke="#F43F5E"
+                  strokeDasharray="5 5"
+                  strokeOpacity={0.5}
+                />
+
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || !payload[0]) return null;
+                    const data = payload[0].payload;
+                    const diff = data.amount - data.avg;
+                    return (
+                      <div className="bg-zinc-900 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl">
+                        <div className="text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
+                        <div className="flex justify-between items-center gap-4">
+                          <span className="text-zinc-400 text-xs">카드값</span>
+                          <span className="text-rose-400 font-mono font-semibold text-sm">{formatKRW(data.amount, true)}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-4 mt-1 pt-1 border-t border-white/[0.06]">
+                          <span className="text-zinc-500 text-[10px]">평균 대비</span>
+                          <span className={`font-mono font-semibold text-xs ${diff >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                            {diff >= 0 ? '+' : ''}{formatKRW(diff, true)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+
+                <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                  {cardChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.isOver ? 'url(#cardOverGradient)' : 'url(#cardGradient)'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       {/* 3 Columns - Status Section */}
       {data && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -386,13 +568,13 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
               {/* Fixed Expenses - Accordion */}
               <button
                 onClick={() => setIsFixedExpenseOpen(!isFixedExpenseOpen)}
-                className="w-full bg-panel/20 px-4 py-2 flex justify-between items-center border-b border-white/[0.04] hover:bg-panel/30 transition-colors"
+                className="w-full bg-panel/20 px-4 py-3 flex justify-between items-center border-b border-white/[0.04] hover:bg-panel/30 transition-colors"
               >
-                <span className="text-[10px] font-semibold text-zinc-500 uppercase">Fixed</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-rose-400 font-mono">{formatKRW(fixedTotal, true)}</span>
-                  <ChevronDown size={12} className={`text-zinc-500 transition-transform ${isFixedExpenseOpen ? 'rotate-180' : ''}`} />
+                <div className="flex items-center gap-1.5">
+                  <ChevronDown size={14} className={`text-zinc-500 transition-transform ${isFixedExpenseOpen ? 'rotate-180' : ''}`} />
+                  <span className="text-xs font-semibold text-zinc-400 uppercase">Fixed</span>
                 </div>
+                <span className="text-sm font-semibold text-rose-400 font-mono">{formatKRW(fixedTotal, true)}</span>
               </button>
               {isFixedExpenseOpen && (
                 handlers?.onReorderFixedExpenses ? (
@@ -407,7 +589,7 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
                 )
               )}
               {/* Variable Expenses */}
-              <div className="bg-panel/20 px-4 py-2 text-[10px] font-semibold text-zinc-500 uppercase border-b border-white/[0.04] mt-1">
+              <div className="bg-panel/20 px-4 py-3 text-xs font-semibold text-zinc-400 uppercase border-b border-white/[0.04] mt-1">
                 Variable
               </div>
               <DataItem name="카드값" amount={expenses?.card || 0} colorClass="text-rose-400" delay={0} indent />
@@ -435,11 +617,11 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
           <div className="glass-card flex flex-col animate-enter delay-500">
             <ColumnHeader title="자산" total={assets?.total || 0} colorClass="text-blue-400" />
             <div className="flex-1">
-              <div className="bg-panel/20 px-4 py-2 text-[10px] font-semibold text-zinc-500 uppercase border-b border-white/[0.04]">Cash / Savings</div>
+              <div className="bg-panel/20 px-4 py-3 text-xs font-semibold text-zinc-400 uppercase border-b border-white/[0.04]">Cash / Savings</div>
               {Object.entries(assets?.cash || {}).map(([name, val], idx) => <DataItem key={name} name={name} amount={val} colorClass="text-blue-400" delay={idx * 50} indent />)}
-              <div className="bg-panel/20 px-4 py-2 text-[10px] font-semibold text-zinc-500 uppercase border-b border-white/[0.04] mt-1">Stocks</div>
+              <div className="bg-panel/20 px-4 py-3 text-xs font-semibold text-zinc-400 uppercase border-b border-white/[0.04] mt-1">Stocks</div>
               {Object.entries(assets?.stocks || {}).map(([name, val], idx) => <DataItem key={name} name={name} amount={val} colorClass="text-violet-400" delay={idx * 50} indent />)}
-              <div className="bg-panel/20 px-4 py-2 text-[10px] font-semibold text-zinc-500 uppercase border-b border-white/[0.04] mt-1">Bonds</div>
+              <div className="bg-panel/20 px-4 py-3 text-xs font-semibold text-zinc-400 uppercase border-b border-white/[0.04] mt-1">Bonds</div>
               <DataItem name="채권 잔액" amount={assets?.bonds || 0} colorClass="text-amber-400" delay={0} indent />
             </div>
           </div>

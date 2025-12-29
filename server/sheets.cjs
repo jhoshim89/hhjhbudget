@@ -74,17 +74,27 @@ async function appendSheetData(range, values) {
   }
 }
 
+// 월 형식 정규화 (2025-12 또는 2025.12 → 2025.12)
+function normalizeMonth(monthStr) {
+  if (!monthStr) return '';
+  return monthStr.replace('-', '.');
+}
+
 // 행 삭제 (조건에 맞는 행 찾아서 삭제)
 async function deleteSheetRow(month, category, name) {
   try {
     // 먼저 모든 데이터 가져오기
     const allData = await getSheetData('A:E');
 
+    // 월 형식 정규화
+    const normalizedMonth = normalizeMonth(month);
+
     // 삭제할 행 찾기 (0-indexed, 헤더 제외하므로 +1)
     let rowIndex = -1;
     for (let i = 1; i < allData.length; i++) {
       const row = allData[i];
-      if (row[0] === month && row[1] === category && row[2] === name) {
+      // 월 형식을 정규화해서 비교
+      if (normalizeMonth(row[0]) === normalizedMonth && row[1] === category && row[2] === name) {
         rowIndex = i;
         break;
       }
@@ -224,11 +234,15 @@ async function updateRowByKey(month, category, name, newValues) {
     // 먼저 모든 데이터 가져오기
     const allData = await getSheetData('A:E');
 
+    // 월 형식 정규화
+    const normalizedMonth = normalizeMonth(month);
+
     // 업데이트할 행 찾기
     let rowIndex = -1;
     for (let i = 1; i < allData.length; i++) {
       const row = allData[i];
-      if (row[0] === month && row[1] === category && row[2] === name) {
+      // 월 형식을 정규화해서 비교
+      if (normalizeMonth(row[0]) === normalizedMonth && row[1] === category && row[2] === name) {
         rowIndex = i + 1; // 1-indexed for Sheets API
         break;
       }
@@ -803,22 +817,80 @@ async function getChangeHistory(limit = 100) {
     const rows = response.data.values || [];
     if (rows.length <= 1) return []; // 헤더만 있으면 빈 배열
 
-    // 헤더 제외, 최신 순 정렬
+    // 헤더 제외, 최신 순 정렬 (원래 행 번호도 함께 반환)
     return rows.slice(1)
-      .filter(row => row[0])
-      .map(([timestamp, ticker, changeType, field, beforeValue, afterValue]) => ({
+      .map((row, idx) => ({ row, rowIndex: idx + 2 })) // 2번 행부터 시작 (헤더가 1)
+      .filter(item => item.row[0])
+      .map(({ row: [timestamp, ticker, changeType, field, beforeValue, afterValue], rowIndex }) => ({
         timestamp,
         ticker,
         changeType,
         field,
         beforeValue: beforeValue || '',
         afterValue: afterValue || '',
+        rowIndex, // 삭제용 행 번호
       }))
       .reverse()
       .slice(0, limit);
   } catch (error) {
     console.error('Error getting change history:', error.message);
     return [];
+  }
+}
+
+// 변경이력 초기화 (전체 삭제)
+async function clearChangeHistory() {
+  try {
+    const sheetId = await getOrCreateHistorySheet();
+
+    // 데이터 행만 삭제 (헤더 유지)
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HISTORY_SHEET}!A:F`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return { success: true, deleted: 0 };
+
+    // 2번 행부터 끝까지 삭제
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${HISTORY_SHEET}!A2:F`,
+    });
+
+    return { success: true, deleted: rows.length - 1 };
+  } catch (error) {
+    console.error('Error clearing change history:', error.message);
+    throw error;
+  }
+}
+
+// 변경이력 개별 삭제
+async function deleteHistoryItem(rowIndex) {
+  try {
+    const sheetId = await getOrCreateHistorySheet();
+
+    // 해당 행 삭제
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex - 1, // 0-based index
+              endIndex: rowIndex,
+            }
+          }
+        }]
+      }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting history item:', error.message);
+    throw error;
   }
 }
 
@@ -1180,6 +1252,8 @@ module.exports = {
   // 변경이력 전용
   addChangeHistory,
   getChangeHistory,
+  clearChangeHistory,
+  deleteHistoryItem,
   // 부동산 전용
   getRealEstateData,
   addWatchProperty,

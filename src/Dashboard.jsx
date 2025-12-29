@@ -39,6 +39,7 @@ import Toast from './components/common/Toast';
 // AI Chat Components
 import FloatingAIChatButton from './components/common/FloatingAIChatButton';
 import AIChatModal from './components/common/AIChatModal';
+import DesktopAIChatPanel from './components/common/DesktopAIChatPanel';
 
 // Google Sheets Integration
 import { useSheetData } from './hooks/useSheetData';
@@ -65,6 +66,9 @@ export default function Dashboard() {
     availableMonths,
     investmentHistory,
     monthlyHistory,
+    cardHistory,
+    balanceHistory,
+    assetsHistory,
     expenseByCategory,
     reload: reloadSheet,
   } = useSheetData();
@@ -275,7 +279,16 @@ export default function Dashboard() {
     updateStock: updateHolding,
     removeStock: removeHolding,
     reorderStocks: reorderHoldings,
+    history: changeHistory,
+    fetchHistory,
+    clearHistory,
+    deleteHistoryItem,
   } = useHoldings();
+
+  // 변경이력 초기 로드
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   // --- Auto Save Investment (매월 1일 향화 영웅문 자동 저장) ---
   useAutoSaveInvestment({
@@ -304,8 +317,12 @@ export default function Dashboard() {
     return younghwaKRW + kakao + jaeho;
   }, [totalStockUSD, exchangeRate, manualAccounts]);
 
+  // 순자산 계산용 (적금 포함)
   const cashTotal = Object.values(assets).reduce((a, b) => a + b, 0);
   const totalAssetsValue = totalStockKRW + bond.balance + cashTotal;
+
+  // 잔고통합 (지출 계산용): 재호잔고 + 향화잔고 (적금, 채권 제외!)
+  const balanceTotal = (assets.재호잔고 || 0) + (assets.향화잔고 || 0);
 
   // 채권 만기 계산
   const getBondMaturity = () => {
@@ -318,9 +335,37 @@ export default function Dashboard() {
   };
 
   const thisMonthIncome = fixedIncomes.reduce((s, i) => s + i.amount, 0) + variableIncomes.reduce((s, i) => s + i.amount, 0);
-  const thisMonthExpense = (parseInt(cardExpense.replace(/,/g,'')) || 0) +
-    fixedExpenses.filter(e => e.checked).reduce((s, e) => s + e.amount, 0) +
-    variableExpenses.reduce((s, e) => s + e.amount, 0);
+
+  // 전달 월 계산
+  const getPrevMonth = (monthStr) => {
+    if (!monthStr) return null;
+    const [year, month] = monthStr.split('.').map(Number);
+    if (month === 1) {
+      return `${year - 1}.12`;
+    }
+    return `${year}.${String(month - 1).padStart(2, '0')}`;
+  };
+
+  const prevMonth = getPrevMonth(selectedMonth);
+  // 전달 잔고통합: 재호잔고 + 향화잔고 (적금, 채권 제외!)
+  const prevMonthBalance = useMemo(() => {
+    if (!prevMonth || !balanceHistory[prevMonth]) return null;
+    const prev = balanceHistory[prevMonth];
+    return (prev.재호잔고 || 0) + (prev.향화잔고 || 0);
+  }, [prevMonth, balanceHistory]);
+
+  // 총지출 계산: 총수입 - 잔고증감 (구글 시트 행 30 계산식)
+  // 잔고증감 = 현재 잔고통합 - 전달 잔고통합
+  // 전달 잔고가 없으면 기존 방식 사용
+  const balanceChange = prevMonthBalance !== null ? balanceTotal - prevMonthBalance : null;
+  const thisMonthExpense = balanceChange !== null
+    ? thisMonthIncome - balanceChange
+    : (parseInt(cardExpense.replace(/,/g,'')) || 0) +
+      fixedExpenses.filter(e => e.checked).reduce((s, e) => s + e.amount, 0) +
+      variableExpenses.reduce((s, e) => s + e.amount, 0);
+
+  // 순수익 계산
+  const netProfit = thisMonthIncome - thisMonthExpense;
 
   // AI 챗봇 컨텍스트 (전체 재무 데이터)
   const aiContext = useMemo(() => ({
@@ -684,15 +729,18 @@ export default function Dashboard() {
     reorderStocks: reorderWatchlist,
   } = useWatchlist();
 
-  // Yahoo Finance 연동 (관심종목 티커 기반)
-  const watchlistTickers = useMemo(() => {
-    return watchlist?.map(s => s.ticker) || [];
-  }, [watchlist]);
+  // Yahoo Finance 연동 (보유종목 + 관심종목 + 기본 티커)
+  const allTickers = useMemo(() => {
+    const holdingTickers = holdings?.map(h => h.ticker) || [];
+    const watchTickers = watchlist?.map(s => s.ticker) || [];
+    const baseTickers = ['KRW=X', 'SPY', 'QQQ', 'TQQQ', 'BTC-KRW', 'ETH-KRW'];
+    return [...new Set([...holdingTickers, ...watchTickers, ...baseTickers])];
+  }, [holdings, watchlist]);
 
   const {
     data: yahooData,
     loading: yahooLoading,
-  } = useYahooFinance(watchlistTickers, { range: '5y' }); // 항상 5년치 로딩, chartRange는 visible range만 조절
+  } = useYahooFinance(allTickers, { range: '5y' }); // 항상 5년치 로딩, chartRange는 visible range만 조절
 
   // --- Effects ---
   // Yahoo Finance에서 환율 가져오기
@@ -702,21 +750,88 @@ export default function Dashboard() {
     }
   }, [yahooData]);
 
+  // Yahoo Finance 데이터를 stockPrices에 반영
   useEffect(() => {
-    const demoPrices = {
-      'NVDA': 140.50, 'TSLA': 250.00, 'AAPL': 195.00,
-      'GOOGL': 175.00, 'MSFT': 430.00, 'SPY': 595.20, 'QQQ': 480.11, 'TQQQ': 72.45
-    };
-    setStockPrices(demoPrices);
-  }, []);
+    if (yahooData && Object.keys(yahooData).length > 0) {
+      const prices = {};
+      Object.entries(yahooData).forEach(([ticker, data]) => {
+        if (data?.price) prices[ticker] = data.price;
+      });
+      setStockPrices(prices);
+    }
+  }, [yahooData]);
+
+  // 전달 순자산 계산 (증감률용) - 주식 데이터가 있는 이전 월 찾기
+  const prevMonthAssetsData = useMemo(() => {
+    if (!selectedMonth || !assetsHistory) return { assets: null, month: null };
+
+    // 현재 월의 주식 데이터 확인
+    const current = assetsHistory[selectedMonth];
+    const currentHasStocks = current?.stocks > 0;
+
+    // 이전 월들을 최근순으로 정렬
+    const sortedMonths = Object.keys(assetsHistory)
+      .filter(m => m < selectedMonth)
+      .sort((a, b) => b.localeCompare(a));
+
+    // 주식 데이터가 있는 이전 월 찾기
+    for (const month of sortedMonths) {
+      const prev = assetsHistory[month];
+      if (currentHasStocks && prev.stocks > 0) {
+        // 현재/이전 둘 다 주식 데이터가 있으면 전체 비교
+        return {
+          assets: (prev.cash || 0) + (prev.savings || 0) + (prev.bonds || 0) + (prev.stocks || 0),
+          month
+        };
+      } else if (!currentHasStocks && prev.stocks === 0) {
+        // 둘 다 주식 데이터가 없으면 주식 제외 비교
+        return {
+          assets: (prev.cash || 0) + (prev.savings || 0) + (prev.bonds || 0),
+          month
+        };
+      }
+    }
+
+    return { assets: null, month: null };
+  }, [selectedMonth, assetsHistory]);
+
+  const prevMonthAssets = prevMonthAssetsData.assets;
+
+  // 순자산 증감률
+  const assetsChangePercent = prevMonthAssets && prevMonthAssets > 0
+    ? ((totalAssetsValue - prevMonthAssets) / prevMonthAssets * 100).toFixed(1)
+    : null;
 
   // --- Tab Data Mapping ---
   const overviewStats = {
     income: thisMonthIncome,
     expense: thisMonthExpense,
+    netProfit: netProfit,
     totalAssets: totalAssetsValue,
     stockAssets: totalStockKRW,
-    savingsRate: (((thisMonthIncome - thisMonthExpense) / thisMonthIncome) * 100).toFixed(1)
+    savingsRate: thisMonthIncome > 0 ? (((thisMonthIncome - thisMonthExpense) / thisMonthIncome) * 100).toFixed(1) : '0.0',
+    // 순자산 구성 상세
+    assetBreakdown: {
+      stocks: totalStockKRW,
+      bonds: bond.balance,
+      cash: cashTotal,
+      cashDetail: assets, // { 재호잔고, 향화잔고, 적금 }
+    },
+    // 지출 계산 상세 (툴팁용) - 총지출 = 총수입 - 잔고증감
+    expenseCalc: {
+      prevMonthBalance: prevMonthBalance,
+      currentBalance: balanceTotal,
+      balanceChange: balanceChange,
+      thisMonthIncome: thisMonthIncome,
+      hasPrevData: prevMonthBalance !== null,
+    },
+    // 순자산 증감
+    assetsChange: {
+      prevMonthAssets: prevMonthAssets,
+      changeAmount: prevMonthAssets ? totalAssetsValue - prevMonthAssets : null,
+      changePercent: assetsChangePercent,
+      hasPrevData: prevMonthAssets !== null,
+    }
   };
 
   const statusData = {
@@ -762,6 +877,11 @@ export default function Dashboard() {
     stocks: { list: holdings },
     bonds: { ...bond, ...getBondMaturity() },
     benchmarks: { spy: stockPrices['SPY'] || 0, qqq: stockPrices['QQQ'] || 0, tqqq: stockPrices['TQQQ'] || 0 },
+    benchmarkHistory: {
+      SPY: yahooData?.['SPY']?.history || [],
+      QQQ: yahooData?.['QQQ']?.history || [],
+      TQQQ: yahooData?.['TQQQ']?.history || [],
+    },
     history: investmentHistory || [],
     manual: {
       kakao: hyangKakao,
@@ -809,11 +929,8 @@ export default function Dashboard() {
     <DashboardLayout>
       <Header
         exchangeRate={exchangeRate}
-        indices={[
-          { name: 'SPY', value: stockPrices['SPY'] || 0, change: 'up' },
-          { name: 'QQQ', value: stockPrices['QQQ'] || 0, change: 'up' },
-          { name: 'TQQQ', value: stockPrices['TQQQ'] || 0, change: 'up' }
-        ]}
+        watchlist={watchlist}
+        yahooData={yahooData}
       />
       <div className="flex-1 flex relative overflow-hidden">
         {/* Desktop Sidebar */}
@@ -823,6 +940,7 @@ export default function Dashboard() {
               onTabChange={setTab}
               isOpen={true}
               onClose={() => {}}
+              onAIChatOpen={() => setIsAIChatOpen(true)}
           />
         </div>
 
@@ -862,6 +980,7 @@ export default function Dashboard() {
                   selectedMonth={selectedMonthObj}
                   onMonthChange={handleMonthChange}
                   monthlyHistory={monthlyHistory}
+                  cardHistory={cardHistory}
                   data={statusData}
                 />
               )}
@@ -871,6 +990,10 @@ export default function Dashboard() {
                   handlers={investmentHandlers}
                   selectedMonth={selectedMonthObj}
                   onMonthChange={handleMonthChange}
+                  changeHistory={changeHistory}
+                  onClearHistory={clearHistory}
+                  onDeleteHistoryItem={deleteHistoryItem}
+                  onRefreshHistory={fetchHistory}
                 />
               )}
               {tab === 'annual' && (
@@ -883,6 +1006,7 @@ export default function Dashboard() {
                     profitPercent: ((investmentData.totalStockKRW / investmentData.investedPrincipal - 1) * 100).toFixed(1),
                   }}
                   monthlyHistory={monthlyHistory}
+                  cardHistory={cardHistory}
                   expenseTop5={expenseByCategory}
                 />
               )}
@@ -934,20 +1058,31 @@ export default function Dashboard() {
             </>
           )}
         </main>
+
+        {/* Desktop AI Chat Panel (inside flex container) */}
+        <DesktopAIChatPanel
+          isOpen={isAIChatOpen}
+          onClose={() => setIsAIChatOpen(false)}
+          context={aiContext}
+          actionHandlers={aiActionHandlers}
+        />
       </div>
 
       {/* Mobile Bottom Navigation */}
       <MobileNav activeTab={tab} onTabChange={setTab} />
 
-      {/* AI Chat Floating Button */}
-      <FloatingAIChatButton onClick={() => setIsAIChatOpen(true)} />
+      {/* AI Chat Floating Button (Mobile Only) */}
+      <div className="md:hidden">
+        <FloatingAIChatButton onClick={() => setIsAIChatOpen(true)} />
+      </div>
 
-      {/* AI Chat Modal */}
+      {/* AI Chat Modal (Mobile Only) */}
       <AIChatModal
         isOpen={isAIChatOpen}
         onClose={() => setIsAIChatOpen(false)}
         context={aiContext}
         actionHandlers={aiActionHandlers}
+        mobileOnly={true}
       />
 
       {/* Variable Expense Modal */}

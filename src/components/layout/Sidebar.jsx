@@ -6,17 +6,17 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, ClipboardList, TrendingUp, Calendar, PenTool, Eye, Home, Settings } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, TrendingUp, Calendar, PenTool, Eye, Home, Settings, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 
-export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
+export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, onAIChatOpen }) {
   const menuItems = [
-    { id: 'overview', label: '종합', icon: LayoutDashboard },
-    { id: 'investment', label: '투자', icon: TrendingUp },
-    { id: 'watchlist', label: '관심', icon: Eye },
-    { id: 'realestate', label: '부동산', icon: Home },
-    { id: 'annual', label: '연간', icon: Calendar },
-    { id: 'input', label: '입력', icon: PenTool },
+    { id: 'overview', label: '종합', icon: LayoutDashboard, shortcut: '1' },
+    { id: 'investment', label: '투자', icon: TrendingUp, shortcut: '2' },
+    { id: 'watchlist', label: '관심', icon: Eye, shortcut: '3' },
+    { id: 'realestate', label: '부동산', icon: Home, shortcut: '4' },
+    { id: 'annual', label: '연간', icon: Calendar, shortcut: '5' },
+    { id: 'input', label: '입력', icon: PenTool, shortcut: '6' },
   ];
 
   const NavItem = ({ item }) => {
@@ -36,7 +36,12 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
         )}
       >
         <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-        <span className="text-sm tracking-tight">{item.label}</span>
+        <span className="text-sm tracking-tight flex-1">{item.label}</span>
+        {item.shortcut && (
+          <span className="text-[10px] text-zinc-600 font-mono px-1.5 py-0.5 rounded bg-zinc-800/50">
+            {item.shortcut}
+          </span>
+        )}
       </button>
     );
   };
@@ -61,6 +66,22 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose }) {
         <div className="flex flex-col gap-1 shrink-0">
           {menuItems.map(item => <NavItem key={item.id} item={item} />)}
         </div>
+
+        {/* AI 재무상담 버튼 */}
+        {onAIChatOpen && (
+          <div className="mt-4 pt-4 border-t border-white/[0.06]">
+            <button
+              onClick={onAIChatOpen}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold
+                         bg-gradient-to-r from-violet-600/20 to-purple-600/20
+                         text-violet-400 hover:from-violet-600/30 hover:to-purple-600/30
+                         border border-violet-500/20 transition-all text-sm"
+            >
+              <MessageSquare size={18} />
+              <span>AI 재무상담</span>
+            </button>
+          </div>
+        )}
 
         <div className="mt-auto shrink-0 pt-4 border-t border-white/[0.06]">
           <button className="flex items-center gap-3 px-4 py-3 rounded-xl w-full font-semibold text-foreground-muted hover:bg-white/[0.03] hover:text-foreground transition-all text-sm">

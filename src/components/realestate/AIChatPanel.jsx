@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Trash2, Loader2 } from 'lucide-react';
 import { useSolarChat } from '../../hooks/useSolarChat';
+import Markdown from 'react-markdown';
 
 /**
  * AI 재무 상담 패널
+ * @param {boolean} isDesktopPanel - 데스크톱 고정 패널 모드 여부
  */
-export default function AIChatPanel({ context, actionHandlers = {} }) {
+export default function AIChatPanel({ context, actionHandlers = {}, isDesktopPanel = false }) {
   const { messages, loading, sendMessage, clearMessages, quickQuestions } = useSolarChat(context, actionHandlers);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
@@ -30,8 +32,13 @@ export default function AIChatPanel({ context, actionHandlers = {} }) {
     await sendMessage(question);
   };
 
+  // 데스크톱 패널: 높이 full, 배경/테두리 제거
+  const containerClass = isDesktopPanel
+    ? "flex flex-col h-full bg-transparent overflow-hidden"
+    : "flex flex-col h-[600px] bg-zinc-900/50 rounded-2xl border border-white/[0.08] overflow-hidden";
+
   return (
-    <div className="flex flex-col h-[600px] bg-zinc-900/50 rounded-2xl border border-white/[0.08] overflow-hidden">
+    <div className={containerClass}>
       {/* 헤더 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
@@ -105,7 +112,54 @@ export default function AIChatPanel({ context, actionHandlers = {} }) {
                         ? 'bg-rose-500/10 text-rose-400 rounded-tl-md'
                         : 'bg-zinc-800/80 text-zinc-200 rounded-tl-md'
                   }`}>
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    {msg.role === 'user' ? (
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    ) : (
+                      <div className="markdown-content">
+                        <Markdown
+                          components={{
+                            h1: ({children}) => <h1 className="text-lg font-bold text-white mt-3 mb-2 first:mt-0">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-base font-bold text-white mt-3 mb-2 first:mt-0">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-sm font-semibold text-zinc-100 mt-2 mb-1 first:mt-0">{children}</h3>,
+                            p: ({children}) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                            strong: ({children}) => <strong className="font-semibold text-white">{children}</strong>,
+                            em: ({children}) => <em className="italic text-zinc-300">{children}</em>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1 ml-1">{children}</ul>,
+                            ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1 ml-1">{children}</ol>,
+                            li: ({children}) => <li className="text-zinc-300">{children}</li>,
+                            blockquote: ({children}) => (
+                              <blockquote className="border-l-2 border-violet-500/50 pl-3 my-2 text-zinc-400 italic">
+                                {children}
+                              </blockquote>
+                            ),
+                            code: ({node, children, ...props}) => {
+                              // react-markdown v9+: inline 여부는 부모가 pre인지 확인
+                              const isInline = !props.className;
+                              return isInline ? (
+                                <code className="px-1.5 py-0.5 bg-zinc-700/50 rounded text-violet-300 text-xs font-mono">
+                                  {children}
+                                </code>
+                              ) : (
+                                <code className="text-xs font-mono text-zinc-300" {...props}>{children}</code>
+                              );
+                            },
+                            pre: ({children}) => (
+                              <pre className="bg-zinc-800/80 rounded-lg p-3 my-2 overflow-x-auto">
+                                {children}
+                              </pre>
+                            ),
+                            a: ({href, children}) => (
+                              <a href={href} className="text-violet-400 hover:text-violet-300 underline" target="_blank" rel="noopener noreferrer">
+                                {children}
+                              </a>
+                            ),
+                            hr: () => <hr className="border-zinc-700 my-3" />,
+                          }}
+                        >
+                          {msg.content}
+                        </Markdown>
+                      </div>
+                    )}
                   </div>
                   <p className="text-[10px] text-zinc-600 mt-1 px-1">
                     {new Date(msg.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}

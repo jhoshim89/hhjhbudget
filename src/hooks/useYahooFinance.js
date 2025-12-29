@@ -8,8 +8,8 @@ const DEMO_PRICES = {
   // 환율
   'KRW=X': { price: 1450.0, change: 5.2, changePercent: 0.36, currency: 'KRW' },
   // 크립토
-  'BTC-USD': { price: 95000.0, change: 1250.0, changePercent: 1.33, currency: 'USD' },
-  'ETH-USD': { price: 3350.0, change: 45.0, changePercent: 1.36, currency: 'USD' },
+  'BTC-KRW': { price: 138000000, change: 1800000, changePercent: 1.32, currency: 'KRW' },
+  'ETH-KRW': { price: 4850000, change: 65000, changePercent: 1.36, currency: 'KRW' },
   // 빅테크
   AAPL: { price: 195.0, change: 2.5, changePercent: 1.3, currency: 'USD' },
   NVDA: { price: 140.5, change: -3.2, changePercent: -2.2, currency: 'USD' },
@@ -41,6 +41,10 @@ const DEMO_PRICES = {
   ACHR: { price: 9.5, change: 0.7, changePercent: 7.95, currency: 'USD' },
   MSTR: { price: 380.0, change: 15.0, changePercent: 4.11, currency: 'USD' },
   COIN: { price: 265.0, change: 8.5, changePercent: 3.31, currency: 'USD' },
+  // 리츠/배당주
+  O: { price: 57.0, change: -0.3, changePercent: -0.52, currency: 'USD' },
+  // 해외 이커머스
+  CPNG: { price: 24.5, change: 0.5, changePercent: 2.08, currency: 'USD' },
 };
 
 // 데모 히스토리 생성

@@ -5,7 +5,7 @@ const {
   getSheetData, updateSheetData, appendSheetData, deleteSheetRow, deleteRowsRange, updateRowByKey, getMonthData,
   getWatchlist, addWatchlistStock, removeWatchlistStock, saveWatchlistOrder,
   getHoldings, addHolding, updateHolding, removeHolding, saveHoldingsOrder,
-  addChangeHistory, getChangeHistory,
+  addChangeHistory, getChangeHistory, clearChangeHistory, deleteHistoryItem,
   getRealEstateData, addWatchProperty, addMyProperty, addLoan, addPriceRecord, updateRealEstate, removeRealEstate,
   isLegacyMonth, LEGACY_CUTOFF
 } = require('./sheets.cjs');
@@ -290,6 +290,30 @@ app.get('/api/history', async (req, res) => {
     const limit = parseInt(req.query.limit) || 100;
     const data = await getChangeHistory(limit);
     res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 변경이력 전체 초기화
+app.delete('/api/history', async (req, res) => {
+  try {
+    const result = await clearChangeHistory();
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 변경이력 개별 삭제
+app.delete('/api/history/:rowIndex', async (req, res) => {
+  try {
+    const rowIndex = parseInt(req.params.rowIndex, 10);
+    if (!rowIndex || rowIndex < 2) {
+      return res.status(400).json({ success: false, error: 'Invalid row index' });
+    }
+    const result = await deleteHistoryItem(rowIndex);
+    res.json({ success: true, ...result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

@@ -5,9 +5,10 @@ import AIChatPanel from '../realestate/AIChatPanel';
 /**
  * AI 재무 상담 모달
  * - 모바일: 전체 화면
- * - 데스크톱: 우측 사이드 패널
+ * - 데스크톱: 우측 사이드 패널 (mobileOnly=false 시)
+ * @param {boolean} mobileOnly - true면 모바일에서만 렌더링
  */
-export default function AIChatModal({ isOpen, onClose, context, actionHandlers = {} }) {
+export default function AIChatModal({ isOpen, onClose, context, actionHandlers = {}, mobileOnly = false }) {
   // ESC 키로 닫기
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -33,8 +34,13 @@ export default function AIChatModal({ isOpen, onClose, context, actionHandlers =
 
   if (!isOpen) return null;
 
+  // mobileOnly가 true면 모바일에서만 렌더링
+  const containerClass = mobileOnly
+    ? "fixed inset-0 z-50 flex items-end md:hidden"
+    : "fixed inset-0 z-50 flex items-end md:items-center md:justify-end";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-end">
+    <div className={containerClass}>
       {/* 백드롭 */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"

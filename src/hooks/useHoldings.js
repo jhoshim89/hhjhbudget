@@ -13,8 +13,13 @@ export function useHoldings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 변경이력 상태
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   // 중복 요청 방지
   const fetchingRef = useRef(false);
+  const historyFetchingRef = useRef(false);
 
   // 보유종목 조회
   const fetchHoldings = useCallback(async () => {
@@ -149,6 +154,75 @@ export function useHoldings() {
     fetchHoldings();
   }, [fetchHoldings]);
 
+  // 변경이력 조회
+  const fetchHistory = useCallback(async (limit = 100) => {
+    if (historyFetchingRef.current) return;
+    historyFetchingRef.current = true;
+
+    setHistoryLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/history?limit=${limit}`);
+      const json = await response.json();
+
+      if (json.success) {
+        setHistory(json.data || []);
+      } else {
+        console.error('History fetch failed:', json.error);
+      }
+    } catch (err) {
+      console.error('History fetch error:', err);
+    } finally {
+      setHistoryLoading(false);
+      historyFetchingRef.current = false;
+    }
+  }, []);
+
+  // 변경이력 새로고침
+  const refetchHistory = useCallback(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  // 변경이력 전체 초기화
+  const clearHistory = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/history`, {
+        method: 'DELETE',
+      });
+      const json = await response.json();
+
+      if (json.success) {
+        setHistory([]);
+        return { success: true, deleted: json.deleted };
+      } else {
+        throw new Error(json.error || 'Failed to clear history');
+      }
+    } catch (err) {
+      console.error('Clear history error:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  // 변경이력 개별 삭제
+  const deleteHistoryItem = useCallback(async (rowIndex) => {
+    try {
+      const response = await fetch(`${API_BASE}/history/${rowIndex}`, {
+        method: 'DELETE',
+      });
+      const json = await response.json();
+
+      if (json.success) {
+        // 로컬 상태에서도 제거
+        setHistory(prev => prev.filter(item => item.rowIndex !== rowIndex));
+        return { success: true };
+      } else {
+        throw new Error(json.error || 'Failed to delete history item');
+      }
+    } catch (err) {
+      console.error('Delete history item error:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
   return {
     stocks,
     loading,
@@ -158,6 +232,13 @@ export function useHoldings() {
     removeStock,
     reorderStocks,
     refetch,
+    // 변경이력
+    history,
+    historyLoading,
+    fetchHistory,
+    refetchHistory,
+    clearHistory,
+    deleteHistoryItem,
   };
 }
 

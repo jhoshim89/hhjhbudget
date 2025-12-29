@@ -18,10 +18,10 @@ export const formatKRW = (value, compact = false) => {
     if (absValue >= 10000) {
       return `${isNegative ? '-' : ''}${Math.round(absValue / 10000).toLocaleString()}만`;
     }
-    return `${isNegative ? '-' : ''}${absValue.toLocaleString()}원`;
+    return `${isNegative ? '-' : ''}${Math.round(absValue).toLocaleString()}원`;
   }
   
-  return `${isNegative ? '-' : ''}${absValue.toLocaleString()}원`;
+  return `${isNegative ? '-' : ''}${Math.round(absValue).toLocaleString()}원`;
 };
 
 /**
@@ -135,22 +135,24 @@ export function evaluateExpression(expression, options = {}) {
 // === 월 포맷 변환 유틸 ===
 
 /**
- * "2025-12" → { year: 2025, month: 12 }
+ * "2025.12" 또는 "2025-12" → { year: 2025, month: 12 }
  */
 export function parseMonthString(monthStr) {
   if (!monthStr) {
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() + 1 };
   }
-  const [year, month] = monthStr.split('-').map(Number);
+  // 점(.) 또는 하이픈(-) 구분자 모두 지원
+  const separator = monthStr.includes('.') ? '.' : '-';
+  const [year, month] = monthStr.split(separator).map(Number);
   return { year, month };
 }
 
 /**
- * { year: 2025, month: 12 } → "2025-12"
+ * { year: 2025, month: 12 } → "2025.12" (시트 형식)
  */
 export function toMonthString(monthObj) {
-  return `${monthObj.year}-${String(monthObj.month).padStart(2, '0')}`;
+  return `${monthObj.year}.${String(monthObj.month).padStart(2, '0')}`;
 }
 
 /**

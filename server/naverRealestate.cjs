@@ -134,62 +134,61 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3) {
 }
 
 /**
- * fin.land.naver.com Front API로 매물 목록 조회
- * Rate limit이 엄격하므로 캐시 우선, 실패시 fallback
+ * m.land.naver.com Mobile API로 매물 목록 조회
+ * complexNo(hscpNo)를 사용하여 정확한 단지 매물 조회
  */
-async function fetchArticlesByFrontApi(complex, tradeType = 'A1') {
-  const cacheKey = `front_${complex.complexNo}_${tradeType}`;
+async function fetchArticlesByMobileApi(complex, tradeType = 'A1') {
+  const cacheKey = `mobile_${complex.complexNo}_${tradeType}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log(`[Naver] Cache hit (front): ${complex.name} (${tradeType})`);
+    console.log(`[Naver] Cache hit (mobile): ${complex.name} (${tradeType})`);
     return { ...cached.data, fromCache: true };
   }
 
   try {
-    const areaFrom = complex.areas?.[0] || 84;
-    const areaTo = complex.areas?.[complex.areas.length - 1] || 84;
-
-    const url = `https://fin.land.naver.com/front-api/v1/complex/article/list`;
+    const url = `https://m.land.naver.com/complex/getComplexArticleList`;
     const params = {
-      complexNumber: complex.complexNo,
-      tradeType: tradeType,
-      areaFrom: areaFrom,
-      areaTo: areaTo,
+      hscpNo: complex.complexNo,
+      tradTpCd: tradeType,
+      order: 'prc',
+      showR0: 'N',
       page: 1,
-      size: 20,
     };
 
-    console.log(`[Naver] Fetching (front): ${complex.name} (${tradeType})`);
+    console.log(`[Naver] Fetching (mobile): ${complex.name} (${tradeType})`);
 
     const response = await fetchWithRetry(url, {
       params,
       headers: {
         ...getHeaders(),
-        'Referer': `https://fin.land.naver.com/complexes/${complex.complexNo}`,
+        'Referer': `https://m.land.naver.com/complex/${complex.complexNo}`,
       },
     });
 
     const articles = response.data?.result?.list || [];
+    const totalCount = response.data?.result?.totAtclCnt || 0;
 
     const normalized = articles.map(article => ({
-      articleNo: article.articleNumber,
-      articleName: complex.name,
-      tradeTypeName: tradeType === 'A1' ? '매매' : tradeType === 'B1' ? '전세' : '월세',
-      dealOrWarrantPrc: article.dealPrice || article.warrantPrice,
-      rentPrc: article.rentPrice || 0,
-      area1: article.supplyArea,
-      area2: article.exclusiveArea,
-      floorInfo: article.floor,
+      articleNo: article.atclNo,
+      articleName: article.atclNm || complex.name,
+      tradeTypeName: article.tradTpNm || (tradeType === 'A1' ? '매매' : tradeType === 'B1' ? '전세' : '월세'),
+      dealOrWarrantPrc: article.prcInfo,  // "8억 5,000" 형태
+      rentPrc: article.rentPrc || 0,
+      area1: article.spc1,  // 공급면적
+      area2: article.spc2,  // 전용면적
+      floorInfo: article.flrInfo,
       direction: article.direction,
-      articleConfirmYmd: article.articleConfirmDate,
-      realtorName: article.realtorName,
-      tags: article.tags || [],
+      articleConfirmYmd: article.cfmYmd,
+      realtorName: article.rltrNm,
+      tags: article.tagList || [],
+      bildNm: article.bildNm,
     }));
 
-    const prices = normalized.map(a => a.dealOrWarrantPrc).filter(p => p > 0);
+    // 가격 파싱
+    const prices = normalized.map(a => parsePrice(a.dealOrWarrantPrc)).filter(p => p > 0);
 
     const result = {
-      count: normalized.length,
+      count: totalCount,
       minPrice: prices.length > 0 ? Math.min(...prices) : 0,
       maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
       avgPrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
@@ -199,7 +198,7 @@ async function fetchArticlesByFrontApi(complex, tradeType = 'A1') {
     cache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
   } catch (error) {
-    console.error(`[Naver] Front API error for ${complex.name}:`, error.message);
+    console.error(`[Naver] Mobile API error for ${complex.name}:`, error.message);
 
     // Fallback: 캐시된 데이터가 있으면 반환
     const staleCache = cache.get(cacheKey);
@@ -207,7 +206,6 @@ async function fetchArticlesByFrontApi(complex, tradeType = 'A1') {
       return { ...staleCache.data, fromCache: true, isStale: true };
     }
 
-    // Cluster API로 fallback
     return null;
   }
 }
@@ -339,13 +337,13 @@ function parsePrice(priceStr) {
 }
 
 /**
- * 매물 조회 (Front API 우선, Cluster API fallback)
+ * 매물 조회 (Mobile API 우선, Cluster API fallback)
  */
 async function fetchArticles(complex, tradeType) {
-  // 1. Front API 먼저 시도 (complexNo 기반으로 정확한 데이터)
-  const frontResult = await fetchArticlesByFrontApi(complex, tradeType);
-  if (frontResult && frontResult.count > 0) {
-    return frontResult;
+  // 1. Mobile API 먼저 시도 (hscpNo/complexNo 기반으로 정확한 데이터)
+  const mobileResult = await fetchArticlesByMobileApi(complex, tradeType);
+  if (mobileResult) {
+    return mobileResult;
   }
 
   // 2. Cluster API fallback (좌표 기반)
@@ -630,7 +628,7 @@ async function naverRealestateHandler(req, res) {
 
 module.exports = {
   fetchArticles,
-  fetchArticlesByFrontApi,
+  fetchArticlesByMobileApi,
   fetchArticlesByCluster,
   fetchComplexSummary,
   fetchAllComplexes,

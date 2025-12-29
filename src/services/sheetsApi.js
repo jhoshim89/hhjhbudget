@@ -108,6 +108,12 @@ export function filterByMonth(rows, yearMonth) {
   return rows.filter(row => row[0] === yearMonth);
 }
 
+// 월 형식 정규화 (2025-12 또는 2025.12 → 2025.12)
+function normalizeMonth(monthStr) {
+  if (!monthStr) return '';
+  return monthStr.replace('-', '.');
+}
+
 // 시트 데이터를 앱 데이터 구조로 변환 (새 구조 지원)
 export function parseSheetToAppData(rows, targetMonth = null) {
   const data = {
@@ -126,12 +132,15 @@ export function parseSheetToAppData(rows, targetMonth = null) {
   // 새 형식 데이터가 있는지 추적 (새 형식 우선)
   const hasNewFormatIncome = { fixed: new Set(), variable: new Set() };
 
+  // 월 형식 정규화
+  const normalizedTarget = normalizeMonth(targetMonth);
+
   // 헤더 제외 (첫 행)
   for (let i = 1; i < rows.length; i++) {
     const [date, category, name, amount, detail] = rows[i];
 
-    // 특정 월 필터링
-    if (targetMonth && date !== targetMonth) continue;
+    // 특정 월 필터링 (형식 정규화하여 비교)
+    if (normalizedTarget && normalizeMonth(date) !== normalizedTarget) continue;
 
     const value = parseInt(String(amount)?.replace(/,/g, '')) || 0;
 
@@ -235,7 +244,8 @@ export function parseSheetToAppData(rows, targetMonth = null) {
     } else if (category.includes('지출')) {
       if (category.includes('카드')) {
         data.expenses.card = value;
-      } else if (category.includes('고정') || category.includes('월납')) {
+      } else if (category.includes('고정') || category.includes('월납') || category.includes('연납')) {
+        // 레거시: 지출-고정월납, 지출-연납 모두 고정지출로 분류
         const isChecked = detail !== 'unchecked';
         data.expenses.fixed.push({ name, amount: value, checked: isChecked });
       } else {

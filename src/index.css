@@ -38,6 +38,22 @@
   :root {
     --radius: 1rem;
   }
+
+  html {
+    font-size: 16px;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 17px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 18px;
+    }
+  }
 }
 
 @layer base {
@@ -194,6 +210,22 @@
     }
   }
 
+  /* Desktop AI Chat Panel slide-in from right */
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
   /* Glow effects on focus */
   .focus-glow:focus {
     @apply outline-none ring-2 ring-blue-500/30 border-blue-500;
@@ -216,4 +248,42 @@
   .text-foreground { color: var(--color-foreground); }
   .text-foreground-muted { color: var(--color-foreground-muted); }
   .border-theme { border-color: var(--color-border); }
+
+  /* Stock Ticker Marquee Animation */
+  .animate-ticker {
+    display: flex;
+    width: fit-content;
+    animation: ticker-scroll linear infinite;
+  }
+
+  .animate-ticker:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes ticker-scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Fade mask for ticker edges */
+  .mask-fade {
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 5%,
+      black 95%,
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 5%,
+      black 95%,
+      transparent 100%
+    );
+  }
 }

@@ -9,7 +9,9 @@
       "WebFetch(domain:github.com)",
       "Bash(git config:*)",
       "Bash(mkdir:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: AI 채팅 기능 강화 및 스킬 시스템 추가\n\n- 플로팅 AI 채팅 버튼 및 모달 컴포넌트 추가\n- Solar API 스트리밍 응답 지원 및 채팅 기능 개선\n- 네이버 부동산 API 대폭 개선 \\(매물 목록, 시세 정보\\)\n- Claude 스킬 시스템 추가 \\(plan 작성, 실행, 스킬 생성\\)\n- 연간 탭 차트/테이블 개선\n- CI/CD 파이프라인 계획 문서 추가\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)"
     ]
   }
 }

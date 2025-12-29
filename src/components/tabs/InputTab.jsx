@@ -532,6 +532,28 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
               compact
               disabled={isReadOnly}
             />
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <CalcInputField
+                  label="적금 (주택청약+저금)"
+                  value={formatKRW(data.assets.적금).replace('원', '')}
+                  onChange={(e) => onAssetChange('적금', e.target.value)}
+                  compact
+                  disabled={isReadOnly}
+                />
+              </div>
+              {!isReadOnly && (
+                <button
+                  onClick={() => {
+                    const newAmount = (data.assets.적금 || 0) + 120000;
+                    onAssetChange('적금', newAmount.toLocaleString());
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap"
+                >
+                  +12만
+                </button>
+              )}
+            </div>
           </div>
           </div>
         </div>
