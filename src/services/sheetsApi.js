@@ -1,5 +1,7 @@
-// Vercel dev & 배포 모두 상대경로 사용
-const API_BASE = '/api';
+// Production: 환경변수 사용, Development: 상대경로 (vite proxy)
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api';
 
 // ============================================
 // 데이터 소스 아키텍처:

@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, ClipboardList, TrendingUp, Calendar, PenTool, Eye, Home, Settings, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Calendar, PenTool, Eye, Home, Settings, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 
 export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, onAIChatOpen }) {
