@@ -3,21 +3,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { formatKRW } from '../../utils/formatters';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-// 기본 데이터 (만 원 단위)
-const baseData = [
-  { name: '1월', income: 720, expense: 310, net: 410 },
-  { name: '2월', income: 810, expense: 290, net: 520 },
-  { name: '3월', income: 750, expense: 450, net: 300 },
-  { name: '4월', income: 920, expense: 330, net: 590 },
-  { name: '5월', income: 840, expense: 310, net: 530 },
-  { name: '6월', income: 880, expense: 350, net: 530 },
-  { name: '7월', income: 850, expense: 320, net: 530 },
-  { name: '8월', income: 880, expense: 410, net: 470 },
-  { name: '9월', income: 910, expense: 350, net: 560 },
-  { name: '10월', income: 890, expense: 380, net: 510 },
-  { name: '11월', income: 950, expense: 310, net: 640 },
-  { name: '12월', income: 910, expense: 310, net: 600 },
-];
+// 월 이름 상수
+const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
 const AnalysisPanel = ({ title, children }) => (
   <div className="glass-card flex flex-col">
@@ -30,23 +17,26 @@ const AnalysisPanel = ({ title, children }) => (
   </div>
 );
 
-export default function AnnualTab({ currentData, investmentData }) {
-  const currentMonth = new Date().getMonth(); // 0-11
+export default function AnnualTab({ currentData, investmentData, monthlyHistory = [], expenseTop5 = [] }) {
   const currentYear = new Date().getFullYear();
 
-  // 현재 월의 실제 데이터로 대체
+  // monthlyHistory에서 차트 데이터 생성
   const chartData = useMemo(() => {
-    return baseData.map((d, i) => {
-      if (i === currentMonth && currentData) {
-        return {
-          ...d,
-          income: Math.round(currentData.income / 10000),
-          expense: Math.round(currentData.expense / 10000),
+    const data = MONTHS.map(name => ({ name, income: 0, expense: 0, net: 0 }));
+
+    monthlyHistory.forEach(({ month, income, expense }) => {
+      const m = parseInt(month.split('.')[1]) - 1; // '2025.12' → 11
+      if (m >= 0 && m < 12) {
+        data[m] = {
+          name: MONTHS[m],
+          income: Math.round(income / 10000),
+          expense: Math.round(expense / 10000),
+          net: Math.round((income - expense) / 10000)
         };
       }
-      return d;
     });
-  }, [currentData, currentMonth]);
+    return data;
+  }, [monthlyHistory]);
 
   // 연간 합계 계산
   const annualStats = useMemo(() => {
@@ -224,13 +214,9 @@ export default function AnnualTab({ currentData, investmentData }) {
 
           <AnalysisPanel title="지출 TOP 5">
             <div className="space-y-3">
-              {[
-                { n: '대출 상환', v: 1692, p: 40 },
-                { n: '식비', v: 850, p: 20 },
-                { n: '교육비', v: 620, p: 15 },
-                { n: '관리비/가스', v: 420, p: 10 },
-                { n: '주유/교통', v: 310, p: 7 },
-              ].map((i, idx) => (
+              {(expenseTop5.length ? expenseTop5 : [
+                { n: '데이터 없음', v: 0, p: 0 }
+              ]).map((i, idx) => (
                 <div key={i.n} className="animate-enter" style={{ animationDelay: `${(idx + 1) * 100}ms` }}>
                   <div className="flex justify-between text-[10px] font-semibold mb-1">
                     <span className="text-zinc-700 dark:text-zinc-300">{i.n}</span>

@@ -36,6 +36,10 @@ import { useAutoSaveInvestment } from './hooks/useAutoSaveInvestment';
 // Toast Component
 import Toast from './components/common/Toast';
 
+// AI Chat Components
+import FloatingAIChatButton from './components/common/FloatingAIChatButton';
+import AIChatModal from './components/common/AIChatModal';
+
 // Google Sheets Integration
 import { useSheetData } from './hooks/useSheetData';
 import { appendToSheet, deleteFromSheet, upsertRow } from './services/sheetsApi';
@@ -48,6 +52,7 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [chartRange, setChartRange] = useState('3mo'); // 차트 기간: 7d, 1mo, 3mo, 1y (기본 3개월)
   const [toast, setToast] = useState(null); // 토스트 알림
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false); // AI 챗봇 모달
 
   // --- Google Sheets 연동 ---
   const {
@@ -60,8 +65,12 @@ export default function Dashboard() {
     availableMonths,
     investmentHistory,
     monthlyHistory,
+    expenseByCategory,
     reload: reloadSheet,
   } = useSheetData();
+
+  // --- Real Estate (별도 시트) ---
+  const realEstateData = useRealEstate();
 
   // 탭에서 사용할 월 객체 형식 변환
   const selectedMonthObj = useMemo(() => {
@@ -175,17 +184,22 @@ export default function Dashboard() {
         }
       });
 
-      // 변동 수입(수입-변동)의 합계를 "추가수입"에 연동 (레거시 항목 제외)
+      // 변동 수입(수입-변동) 처리 (레거시 항목 제외)
       const validVariableIncomes = sheetData.incomes.variable.filter(i => !legacyNames.includes(i.name));
       const variableTotal = validVariableIncomes.reduce((sum, i) => sum + (i.amount || 0), 0);
 
-      // 추가수입 = 변동 수입 합계
+      // 추가수입: 수입-고정에 저장된 값 우선 사용, 없으면 변동 수입 합계
       const extraIncomeIdx = mergedIncomes.findIndex(i => i.name === '추가수입');
       if (extraIncomeIdx >= 0) {
-        mergedIncomes[extraIncomeIdx] = {
-          ...mergedIncomes[extraIncomeIdx],
-          amount: variableTotal
-        };
+        // 수입-고정에서 이미 병합된 추가수입 값이 있으면 유지
+        const savedExtraIncome = mergedIncomes[extraIncomeIdx].amount;
+        // 저장된 값이 없고 변동 수입이 있을 때만 합계로 대체
+        if (!savedExtraIncome && variableTotal > 0) {
+          mergedIncomes[extraIncomeIdx] = {
+            ...mergedIncomes[extraIncomeIdx],
+            amount: variableTotal
+          };
+        }
       }
 
       setFixedIncomes(mergedIncomes);
@@ -307,6 +321,102 @@ export default function Dashboard() {
   const thisMonthExpense = (parseInt(cardExpense.replace(/,/g,'')) || 0) +
     fixedExpenses.filter(e => e.checked).reduce((s, e) => s + e.amount, 0) +
     variableExpenses.reduce((s, e) => s + e.amount, 0);
+
+  // AI 챗봇 컨텍스트 (전체 재무 데이터)
+  const aiContext = useMemo(() => ({
+    incomes: { fixed: fixedIncomes, variable: variableIncomes },
+    expenses: { fixed: fixedExpenses, variable: variableExpenses, card: cardExpense },
+    assets,
+    bond,
+    holdings,
+    stockPrices,
+    exchangeRate,
+    manualAccounts,
+    realEstate: {
+      myProperties: realEstateData.myProperties,
+      loans: realEstateData.loans,
+      netWorth: realEstateData.netWorth,
+    },
+    summary: {
+      selectedMonth,
+      totalIncome: thisMonthIncome,
+      totalExpense: thisMonthExpense,
+      totalAssets: totalAssetsValue,
+    },
+  }), [
+    fixedIncomes, variableIncomes, fixedExpenses, variableExpenses, cardExpense,
+    assets, bond, holdings, stockPrices, exchangeRate, manualAccounts,
+    realEstateData, selectedMonth, thisMonthIncome, thisMonthExpense, totalAssetsValue
+  ]);
+
+  // AI 챗봇 액션 핸들러 (이름으로 항목 찾아서 수정)
+  const aiActionHandlers = useMemo(() => ({
+    updateCardExpense: async ({ amount }) => {
+      setCardExpense(String(amount));
+      await upsertRow(selectedMonth, '지출-카드', '카드값', [selectedMonth, '지출-카드', '카드값', amount, '']);
+      reloadSheet();
+    },
+    updateFixedIncome: async ({ name, amount }) => {
+      const index = fixedIncomes.findIndex(i => i.name === name);
+      if (index === -1) throw new Error(`수입 항목 "${name}"을(를) 찾을 수 없습니다.`);
+      const newIncomes = fixedIncomes.map((item, i) =>
+        i === index ? { ...item, amount } : item
+      );
+      setFixedIncomes(newIncomes);
+      await upsertRow(selectedMonth, '수입-고정', name, [selectedMonth, '수입-고정', name, amount, '']);
+      reloadSheet();
+    },
+    addVariableExpense: async ({ name, amount }) => {
+      const newExpense = { name, amount };
+      setVariableExpenses(prev => [...prev, newExpense]);
+      await appendToSheet('시트1', [[selectedMonth, '지출-변동', name, amount, '']]);
+      reloadSheet();
+    },
+    updateAsset: async ({ name, amount }) => {
+      const categoryMap = {
+        '재호잔고': ['자산-잔고', '재호잔고'],
+        '향화잔고': ['자산-잔고', '향화잔고'],
+        '적금': ['자산-저축', '적금'],
+      };
+      const [category, assetName] = categoryMap[name] || ['자산-잔고', name];
+      setAssets(prev => ({ ...prev, [name]: amount }));
+      await upsertRow(selectedMonth, category, assetName, [selectedMonth, category, assetName, amount, '']);
+      reloadSheet();
+    },
+    updateFixedExpense: async ({ name, amount }) => {
+      const index = fixedExpenses.findIndex(e => e.name === name);
+      if (index === -1) throw new Error(`지출 항목 "${name}"을(를) 찾을 수 없습니다.`);
+      const expense = fixedExpenses[index];
+      const newExpenses = fixedExpenses.map((item, i) =>
+        i === index ? { ...item, amount } : item
+      );
+      setFixedExpenses(newExpenses);
+      await upsertRow(selectedMonth, '지출-고정', name, [
+        selectedMonth, '지출-고정', name, amount, expense.checked ? 'checked' : 'unchecked'
+      ]);
+      reloadSheet();
+    },
+    toggleFixedExpense: async ({ name, checked }) => {
+      const index = fixedExpenses.findIndex(e => e.name === name);
+      if (index === -1) throw new Error(`지출 항목 "${name}"을(를) 찾을 수 없습니다.`);
+      const expense = fixedExpenses[index];
+      const newExpenses = fixedExpenses.map((item, i) =>
+        i === index ? { ...item, checked } : item
+      );
+      setFixedExpenses(newExpenses);
+      await upsertRow(selectedMonth, '지출-고정', name, [
+        selectedMonth, '지출-고정', name, expense.amount, checked ? 'checked' : 'unchecked'
+      ]);
+      reloadSheet();
+    },
+    updateManualAccount: async ({ name, amount }) => {
+      setManualAccounts(prev => ({ ...prev, [name]: String(amount) }));
+      await upsertRow(selectedMonth, '자산-주식계좌', name, [
+        selectedMonth, '자산-주식계좌', name, amount, ''
+      ]);
+      reloadSheet();
+    },
+  }), [selectedMonth, fixedIncomes, fixedExpenses, reloadSheet]);
 
   // --- Handlers ---
   const handleManualAccountChange = async (key, value) => {
@@ -574,9 +684,6 @@ export default function Dashboard() {
     reorderStocks: reorderWatchlist,
   } = useWatchlist();
 
-  // --- Real Estate (별도 시트) ---
-  const realEstate = useRealEstate();
-
   // Yahoo Finance 연동 (관심종목 티커 기반)
   const watchlistTickers = useMemo(() => {
     return watchlist?.map(s => s.ticker) || [];
@@ -588,6 +695,13 @@ export default function Dashboard() {
   } = useYahooFinance(watchlistTickers, { range: '5y' }); // 항상 5년치 로딩, chartRange는 visible range만 조절
 
   // --- Effects ---
+  // Yahoo Finance에서 환율 가져오기
+  useEffect(() => {
+    if (yahooData?.['KRW=X']?.price) {
+      setExchangeRate(yahooData['KRW=X'].price);
+    }
+  }, [yahooData]);
+
   useEffect(() => {
     const demoPrices = {
       'NVDA': 140.50, 'TSLA': 250.00, 'AAPL': 195.00,
@@ -768,6 +882,8 @@ export default function Dashboard() {
                     profit: investmentData.totalStockKRW - investmentData.investedPrincipal,
                     profitPercent: ((investmentData.totalStockKRW / investmentData.investedPrincipal - 1) * 100).toFixed(1),
                   }}
+                  monthlyHistory={monthlyHistory}
+                  expenseTop5={expenseByCategory}
                 />
               )}
               {tab === 'input' && (
@@ -793,25 +909,25 @@ export default function Dashboard() {
               {tab === 'realestate' && (
                 <RealEstateTab
                   data={{
-                    watchProperties: realEstate.watchProperties,
-                    myProperties: realEstate.myProperties,
-                    loans: realEstate.loans,
-                    priceHistory: realEstate.priceHistory,
-                    totalAssets: realEstate.totalAssets,
-                    totalDebt: realEstate.totalDebt,
-                    netWorth: realEstate.netWorth,
-                    monthlyInterest: realEstate.monthlyInterest,
+                    watchProperties: realEstateData.watchProperties,
+                    myProperties: realEstateData.myProperties,
+                    loans: realEstateData.loans,
+                    priceHistory: realEstateData.priceHistory,
+                    totalAssets: realEstateData.totalAssets,
+                    totalDebt: realEstateData.totalDebt,
+                    netWorth: realEstateData.netWorth,
+                    monthlyInterest: realEstateData.monthlyInterest,
                   }}
                   handlers={{
-                    addWatch: realEstate.addWatch,
-                    removeWatch: realEstate.removeWatch,
-                    addProperty: realEstate.addProperty,
-                    updateProperty: realEstate.updateProperty,
-                    removeProperty: realEstate.removeProperty,
-                    addLoan: realEstate.addLoan,
-                    updateLoan: realEstate.updateLoan,
-                    removeLoan: realEstate.removeLoan,
-                    addPrice: realEstate.addPrice,
+                    addWatch: realEstateData.addWatch,
+                    removeWatch: realEstateData.removeWatch,
+                    addProperty: realEstateData.addProperty,
+                    updateProperty: realEstateData.updateProperty,
+                    removeProperty: realEstateData.removeProperty,
+                    addLoan: realEstateData.addLoan,
+                    updateLoan: realEstateData.updateLoan,
+                    removeLoan: realEstateData.removeLoan,
+                    addPrice: realEstateData.addPrice,
                   }}
                 />
               )}
@@ -822,6 +938,17 @@ export default function Dashboard() {
 
       {/* Mobile Bottom Navigation */}
       <MobileNav activeTab={tab} onTabChange={setTab} />
+
+      {/* AI Chat Floating Button */}
+      <FloatingAIChatButton onClick={() => setIsAIChatOpen(true)} />
+
+      {/* AI Chat Modal */}
+      <AIChatModal
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
+        context={aiContext}
+        actionHandlers={aiActionHandlers}
+      />
 
       {/* Variable Expense Modal */}
       <AddVariableExpenseModal

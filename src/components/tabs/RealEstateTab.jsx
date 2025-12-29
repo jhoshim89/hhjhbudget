@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Home, Building2, Landmark, MessageSquare, Plus,
-  TrendingUp, TrendingDown, Wallet, CreditCard,
+  Home, Building2, Landmark, Plus,
+  TrendingDown, Wallet, CreditCard,
   LayoutGrid, Table2, Eye
 } from 'lucide-react';
 
@@ -11,7 +11,6 @@ import MyPropertyCard from '../realestate/MyPropertyCard';
 import LoanCard from '../realestate/LoanCard';
 import AddPropertyModal from '../realestate/AddPropertyModal';
 import PriceInputModal from '../realestate/PriceInputModal';
-import AIChatPanel from '../realestate/AIChatPanel';
 import ComparisonTable from '../realestate/ComparisonTable';
 import PropertySummaryCard from '../realestate/PropertySummaryCard';
 
@@ -64,7 +63,6 @@ export default function RealEstateTab({ data, handlers }) {
     { id: 'watch', label: '관심', icon: Home, count: watchProperties.length },
     { id: 'my', label: '내 부동산', icon: Building2, count: myProperties.length },
     { id: 'loan', label: '대출', icon: Landmark, count: loans.length },
-    { id: 'ai', label: 'AI 상담', icon: MessageSquare },
   ];
 
   // 금액 포맷
@@ -79,14 +77,6 @@ export default function RealEstateTab({ data, handlers }) {
     }
     return amount.toLocaleString();
   };
-
-  // AI 상담 컨텍스트
-  const aiContext = useMemo(() => ({
-    myProperties,
-    loans,
-    watchProperties,
-    priceHistory,
-  }), [myProperties, loans, watchProperties, priceHistory]);
 
   // 부동산별 대출 매핑
   const loansByProperty = useMemo(() => {
@@ -202,7 +192,7 @@ export default function RealEstateTab({ data, handlers }) {
           </div>
         )}
 
-        {activeSubTab !== 'ai' && activeSubTab !== 'market' && (
+        {activeSubTab !== 'market' && (
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-medium transition-colors"
@@ -344,10 +334,6 @@ export default function RealEstateTab({ data, handlers }) {
           </div>
         )}
 
-        {/* AI 상담 */}
-        {activeSubTab === 'ai' && (
-          <AIChatPanel context={aiContext} />
-        )}
       </div>
 
       {/* 모달 */}

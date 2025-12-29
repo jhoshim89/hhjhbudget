@@ -119,6 +119,39 @@ export function useSheetData(initialMonth = null) {
       .sort((a, b) => a.month.localeCompare(b.month));
   }, [rawData]);
 
+  // 연간 지출 카테고리별 합계 (TOP 5용)
+  const expenseByCategory = useMemo(() => {
+    if (!rawData.length) return [];
+
+    const categoryTotals = {};
+
+    for (let i = 1; i < rawData.length; i++) {
+      const [date, category, name, amount, detail] = rawData[i];
+      if (!category?.startsWith('지출')) continue;
+
+      // 고정지출 중 unchecked인 항목 제외
+      if ((category === '지출-고정' || category === '지출-고정월납') && detail === 'unchecked') {
+        continue;
+      }
+
+      const value = parseInt(String(amount)?.replace(/,/g, '')) || 0;
+      const key = name || category;
+      categoryTotals[key] = (categoryTotals[key] || 0) + value;
+    }
+
+    const sorted = Object.entries(categoryTotals)
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount);
+
+    const total = sorted.reduce((sum, i) => sum + i.amount, 0);
+
+    return sorted.slice(0, 5).map(i => ({
+      n: i.name,
+      v: Math.round(i.amount / 10000),
+      p: total ? Math.round(i.amount / total * 100) : 0
+    }));
+  }, [rawData]);
+
   // 데이터 업데이트
   const update = useCallback(async (range, values) => {
     try {
@@ -160,6 +193,7 @@ export function useSheetData(initialMonth = null) {
     availableMonths,
     investmentHistory,
     monthlyHistory,
+    expenseByCategory,
     reload: loadData,
     update,
     append,

@@ -76,10 +76,41 @@ export async function searchComplexNo(name) {
 
 /**
  * 모든 대상 단지 데이터 조회
+ * @param {boolean} forceRefresh - 캐시 무시하고 새로 조회
+ * @returns {Object} { data, isStale, cachedAt, fromCache, error? }
  */
-export async function fetchAllComplexes() {
+export async function fetchAllComplexes(forceRefresh = false) {
   const params = new URLSearchParams({
     type: 'all',
+  });
+
+  if (forceRefresh) {
+    params.append('forceRefresh', 'true');
+  }
+
+  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
+  const json = await res.json();
+
+  if (!json.success && !json.data) {
+    throw new Error(json.error || 'Failed to fetch data');
+  }
+
+  // 새 응답 구조 반환 (data, isStale, cachedAt, fromCache 포함)
+  return {
+    data: json.data,
+    isStale: json.isStale || false,
+    cachedAt: json.cachedAt || null,
+    fromCache: json.fromCache || false,
+    error: json.error || null,
+  };
+}
+
+/**
+ * 캐시 상태 조회
+ */
+export async function fetchCacheStatus() {
+  const params = new URLSearchParams({
+    type: 'cache-status',
   });
 
   const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
@@ -119,6 +150,7 @@ export default {
   fetchComplexInfo,
   searchComplexNo,
   fetchAllComplexes,
+  fetchCacheStatus,
   formatPrice,
   formatPriceRange,
 };

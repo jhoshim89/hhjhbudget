@@ -6,10 +6,15 @@ const MAIN_SHEET_NAME = '시트1';
 // 레거시 데이터 기준월 (이 월 이전 데이터는 읽기전용)
 const LEGACY_CUTOFF = '2025.09';
 
-// 레거시 월인지 확인
+// 레거시 월인지 확인 (숫자 비교로 수정)
 function isLegacyMonth(monthStr) {
   if (!monthStr) return false;
-  return monthStr <= LEGACY_CUTOFF;
+  // '2025.09' -> [2025, 9] 형식으로 파싱하여 숫자 비교
+  const [year, month] = monthStr.split('.').map(Number);
+  const [cutoffYear, cutoffMonth] = LEGACY_CUTOFF.split('.').map(Number);
+  if (year < cutoffYear) return true;
+  if (year > cutoffYear) return false;
+  return month <= cutoffMonth;
 }
 
 const auth = new google.auth.GoogleAuth({

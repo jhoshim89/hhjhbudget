@@ -3,10 +3,10 @@ import { Send, Bot, User, Sparkles, Trash2, Loader2 } from 'lucide-react';
 import { useSolarChat } from '../../hooks/useSolarChat';
 
 /**
- * AI 상담 패널
+ * AI 재무 상담 패널
  */
-export default function AIChatPanel({ context }) {
-  const { messages, loading, sendMessage, clearMessages, quickQuestions } = useSolarChat(context);
+export default function AIChatPanel({ context, actionHandlers = {} }) {
+  const { messages, loading, sendMessage, clearMessages, quickQuestions } = useSolarChat(context, actionHandlers);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -39,8 +39,8 @@ export default function AIChatPanel({ context }) {
             <Sparkles size={16} className="text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">AI 부동산 상담</h3>
-            <p className="text-[10px] text-zinc-500">Solar Pro · 내 데이터 기반 분석</p>
+            <h3 className="text-sm font-semibold text-white">AI 재무 상담</h3>
+            <p className="text-[10px] text-zinc-500">Solar Pro · 내 재무 데이터 기반</p>
           </div>
         </div>
         {messages.length > 0 && (
@@ -63,7 +63,7 @@ export default function AIChatPanel({ context }) {
             </div>
             <h4 className="text-lg font-semibold text-white mb-2">무엇이든 물어보세요</h4>
             <p className="text-sm text-zinc-500 mb-6 max-w-xs">
-              부동산 시세, 대출 상환 계획, 투자 전략 등 AI가 분석해드립니다.
+              수입/지출 분석, 투자 조언, 저축 계획 등 AI가 분석해드립니다.
             </p>
 
             {/* 빠른 질문 */}
