@@ -1008,6 +1008,8 @@ export default function Dashboard() {
                   monthlyHistory={monthlyHistory}
                   cardHistory={cardHistory}
                   expenseTop5={expenseByCategory}
+                  changeHistory={changeHistory}
+                  exchangeRate={exchangeRate}
                 />
               )}
               {tab === 'input' && (

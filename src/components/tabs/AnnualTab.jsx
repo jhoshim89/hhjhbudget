@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { formatKRW } from '../../utils/formatters';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
+import { aggregateByMonth } from '../../utils/investmentCalculator';
 
 // 월 이름 상수
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -17,7 +18,7 @@ const AnalysisPanel = ({ title, children }) => (
   </div>
 );
 
-export default function AnnualTab({ currentData, investmentData, monthlyHistory = [], cardHistory = [], expenseTop5 = [] }) {
+export default function AnnualTab({ currentData, investmentData, monthlyHistory = [], cardHistory = [], expenseTop5 = [], changeHistory = [], exchangeRate = 1380 }) {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
@@ -95,6 +96,30 @@ export default function AnnualTab({ currentData, investmentData, monthlyHistory 
     const investmentRate = totalIncome > 0 ? ((totalSaving + totalInvestment) / totalIncome * 100).toFixed(1) : '0.0';
     return { totalIncome, totalExpense, totalSaving, totalInvestment, netIncome, avgIncome, avgExpense, savingsRate, investmentRate };
   }, [chartData]);
+
+  // 월별 투자(매수) 현황 데이터 (선택된 연도만)
+  const investmentPurchaseData = useMemo(() => {
+    if (!changeHistory || changeHistory.length === 0) return [];
+
+    const allMonthlyData = aggregateByMonth(changeHistory, exchangeRate);
+
+    // 선택된 연도만 필터링
+    return allMonthlyData
+      .filter(item => item.month.startsWith(`${selectedYear}.`))
+      .map(item => {
+        const [, month] = item.month.split('.');
+        return {
+          name: `${parseInt(month)}월`,
+          displayMonth: item.month,
+          invested: item.invested,
+        };
+      });
+  }, [changeHistory, exchangeRate, selectedYear]);
+
+  // 선택된 연도의 총 투자액
+  const yearlyInvestmentTotal = useMemo(() => {
+    return investmentPurchaseData.reduce((sum, d) => sum + d.invested, 0);
+  }, [investmentPurchaseData]);
 
   return (
     <div className="flex flex-col gap-3 p-3 md:p-4">
@@ -386,6 +411,77 @@ export default function AnnualTab({ currentData, investmentData, monthlyHistory 
                     <Cell key={`cell-${index}`} fill={entry.isOver ? 'url(#cardOverGradientAnnual)' : 'url(#cardGradientAnnual)'} />
                   ))}
                 </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Investment Purchase Chart */}
+      {investmentPurchaseData.length > 0 && (
+        <div className="glass-card p-4 md:p-6 flex flex-col animate-enter delay-500">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <TrendingUp size={14} className="text-cyan-400" />
+                {selectedYear}년 월별 매수 현황
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-zinc-500">연간 총 매수</span>
+              <span className="text-cyan-400 font-mono font-semibold">{formatKRW(yearlyInvestmentTotal, true)}</span>
+            </div>
+          </div>
+
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={investmentPurchaseData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="investGradientAnnual" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.8}/>
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0.3}/>
+                  </linearGradient>
+                </defs>
+
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+
+                <XAxis
+                  dataKey="name"
+                  stroke="transparent"
+                  fontSize={9}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#52525B' }}
+                />
+
+                <YAxis
+                  stroke="transparent"
+                  fontSize={9}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => `${Math.round(v/10000)}만`}
+                  width={35}
+                  tick={{ fill: '#52525B' }}
+                />
+
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || !payload[0]) return null;
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-zinc-900 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl">
+                        <div className="text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
+                        <div className="flex justify-between items-center gap-4">
+                          <span className="text-zinc-400 text-xs">매수액</span>
+                          <span className="text-cyan-400 font-mono font-semibold text-sm">{formatKRW(data.invested, true)}</span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+
+                <Bar dataKey="invested" fill="url(#investGradientAnnual)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
