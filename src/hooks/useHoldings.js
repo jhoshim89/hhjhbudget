@@ -6,7 +6,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const API_BASE = '/api';
+// Production: 환경변수 사용, Development: 상대경로 (vite proxy)
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api';
 
 export function useHoldings() {
   const [stocks, setStocks] = useState([]);

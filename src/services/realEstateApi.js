@@ -1,5 +1,8 @@
 // 부동산 API 클라이언트
-const API_BASE = '/api';
+// Production: 환경변수 사용, Development: 상대경로 (vite proxy)
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api';
 
 /**
  * 부동산 데이터 전체 조회
