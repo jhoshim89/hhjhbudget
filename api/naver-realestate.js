@@ -58,7 +58,7 @@ const TARGET_COMPLEXES = [
  * Railway API로 프록시
  */
 async function proxyToRailway(path) {
-  const url = `${RAILWAY_API_URL}/api/realestate${path}`;
+  const url = `${RAILWAY_API_URL}/api/naver-realestate${path}`;
   console.log(`[Proxy] Forwarding to: ${url}`);
 
   const controller = new AbortController();
