@@ -1,9 +1,9 @@
 /**
- * 네이버 부동산 API (Browserless.io + Playwright)
- * Best Practice: 네트워크 인터셉트 방식
+ * 네이버 부동산 크롤러 (Browserless.io + Playwright)
+ * SSR 페이지 DOM 스크래핑 방식
  *
  * @description
- * - 페이지 로드 시 발생하는 API 호출을 인터셉트
+ * - 모바일 페이지에서 직접 DOM 데이터 추출
  * - Vercel Edge Cache + stale-while-revalidate 패턴
  * - 재시도 로직과 에러 핸들링
  */
@@ -16,7 +16,7 @@ import { chromium } from 'playwright-core';
 const CONFIG = {
   CACHE_TTL: 6 * 60 * 60,         // 6시간 (초)
   STALE_TTL: 24 * 60 * 60,        // 24시간 (stale-while-revalidate)
-  PAGE_TIMEOUT: 25000,            // 페이지 로드 타임아웃
+  PAGE_TIMEOUT: 20000,            // 페이지 로드 타임아웃
   RETRY_COUNT: 2,
   RETRY_DELAY: 1000,
 };
@@ -85,6 +85,30 @@ async function withRetry(fn, retries = CONFIG.RETRY_COUNT) {
   throw lastError;
 }
 
+/**
+ * 가격 문자열 파싱 ("12억 5,000" → 1250000000)
+ */
+function parsePrice(priceStr) {
+  if (!priceStr) return 0;
+  const str = String(priceStr).replace(/,/g, '').trim();
+
+  // "12억 5000" 형태
+  const match = str.match(/(\d+)억\s*(\d*)/);
+  if (match) {
+    const eok = parseInt(match[1]) || 0;
+    const man = parseInt(match[2]) || 0;
+    return (eok * 100000000) + (man * 10000);
+  }
+
+  // 숫자만 있는 경우 (만원 단위)
+  const numOnly = parseInt(str);
+  if (!isNaN(numOnly)) {
+    return numOnly * 10000;
+  }
+
+  return 0;
+}
+
 function formatPrice(amount) {
   if (!amount) return '-';
   if (amount >= 100000000) {
@@ -128,13 +152,13 @@ async function createPage(browser) {
 }
 
 // ============================================
-// 네이버 부동산 데이터 수집
+// DOM 스크래핑
 // ============================================
 
 /**
- * 페이지에서 API 응답을 인터셉트하여 데이터 수집
+ * 페이지에서 매물 데이터 추출
  */
-async function fetchComplexDataWithIntercept(page, complexNo, tradeType) {
+async function extractArticlesFromPage(page, complexNo, tradeType) {
   const tradeTpCdMap = {
     'sale': 'A1',
     'jeonse': 'B1',
@@ -142,147 +166,161 @@ async function fetchComplexDataWithIntercept(page, complexNo, tradeType) {
   };
   const tradeTpCd = tradeTpCdMap[tradeType] || 'A1';
 
-  let interceptedData = null;
+  // 페이지 로드
+  const pageUrl = `https://m.land.naver.com/complex/info/${complexNo}?tradTpCd=${tradeTpCd}&ptpNo=1`;
+  console.log(`[Scrape] Loading: ${pageUrl}`);
 
-  // Response 인터셉트 설정
-  const responseHandler = async (response) => {
-    const url = response.url();
+  await page.goto(pageUrl, {
+    waitUntil: 'domcontentloaded',
+    timeout: CONFIG.PAGE_TIMEOUT,
+  });
 
-    // 매물 목록 API 응답 캡처
-    if (url.includes('/cluster/ajax/articleList') || url.includes('/api/articles')) {
-      try {
-        const data = await response.json();
-        console.log(`[Intercept] Captured API response for ${tradeType}`);
-        interceptedData = data;
-      } catch (e) {
-        console.warn(`[Intercept] Failed to parse: ${e.message}`);
-      }
-    }
-  };
+  // 컨텐츠 로드 대기
+  await sleep(1500);
 
-  page.on('response', responseHandler);
+  // 스크롤하여 lazy load 트리거
+  await page.evaluate(() => window.scrollTo(0, 500));
+  await sleep(500);
 
-  try {
-    // 페이지 로드 (API 호출 트리거)
-    const pageUrl = `https://m.land.naver.com/complex/info/${complexNo}?tradTpCd=${tradeTpCd}&ptpNo=1`;
-    console.log(`[Fetch] Loading: ${pageUrl}`);
-
-    await page.goto(pageUrl, {
-      waitUntil: 'networkidle',
-      timeout: CONFIG.PAGE_TIMEOUT,
-    });
-
-    // 추가 대기 (API 응답 수신 보장)
-    await sleep(2000);
-
-    // 매물 목록 버튼 클릭 시도 (더 많은 API 호출 유도)
-    try {
-      const articleBtn = await page.$('a[href*="article"], .complex_item a');
-      if (articleBtn) {
-        await articleBtn.click();
-        await sleep(1500);
-      }
-    } catch (e) {
-      // 무시
-    }
-
-  } finally {
-    page.off('response', responseHandler);
-  }
-
-  return interceptedData;
-}
-
-/**
- * DOM에서 직접 데이터 추출 (폴백)
- */
-async function extractDataFromDOM(page, tradeType) {
-  return await page.evaluate((tradeType) => {
+  // DOM에서 데이터 추출
+  const data = await page.evaluate((tradeType) => {
     const result = {
       count: 0,
+      totalCount: 0,
       articles: [],
-      priceRange: null,
+      priceRange: '',
+      debug: {},
     };
 
-    // 매물 수 추출
-    const countEl = document.querySelector('.item_num, .complex_summary .count, [class*="count"]');
-    if (countEl) {
-      const match = countEl.textContent.match(/(\d+)/);
-      if (match) result.count = parseInt(match[1]);
+    // 매물 수 추출 - 여러 셀렉터 시도
+    const countSelectors = [
+      '.complex_price .total em',
+      '.article_count em',
+      '.complex_summary em',
+      '[class*="count"] em',
+      '.tab_area .on em',
+    ];
+
+    for (const selector of countSelectors) {
+      const el = document.querySelector(selector);
+      if (el) {
+        const match = el.textContent.match(/(\d+)/);
+        if (match) {
+          result.totalCount = parseInt(match[1]);
+          result.debug.countSelector = selector;
+          break;
+        }
+      }
     }
 
     // 가격 범위 추출
-    const priceEl = document.querySelector('.complex_price .price, .price_area, [class*="price"]');
-    if (priceEl) {
-      result.priceRange = priceEl.textContent.trim();
+    const priceSelectors = [
+      '.complex_price .price',
+      '.price_info .price',
+      '.article_price',
+    ];
+
+    for (const selector of priceSelectors) {
+      const el = document.querySelector(selector);
+      if (el) {
+        result.priceRange = el.textContent.trim();
+        result.debug.priceSelector = selector;
+        break;
+      }
     }
 
     // 매물 목록 추출
-    const items = document.querySelectorAll('.article_box, .item_inner, [class*="article"]');
-    items.forEach((item, index) => {
-      if (index >= 20) return;
+    const articleSelectors = [
+      '.article_lst li',
+      '.complex_lst li',
+      '.item_list li',
+      '[class*="article"] li',
+    ];
 
-      const priceText = item.querySelector('.price, [class*="price"]')?.textContent?.trim() || '';
-      const areaText = item.querySelector('.info, .area, [class*="area"]')?.textContent?.trim() || '';
-      const floorText = item.querySelector('.floor, [class*="floor"]')?.textContent?.trim() || '';
+    for (const selector of articleSelectors) {
+      const items = document.querySelectorAll(selector);
+      if (items.length > 0) {
+        result.debug.articleSelector = selector;
+        items.forEach((item, index) => {
+          if (index >= 20) return;
 
-      if (priceText) {
-        result.articles.push({
-          priceText,
-          areaText,
-          floorText,
+          // 가격 추출
+          const priceEl = item.querySelector('.price, .item_price, [class*="price"]');
+          const priceText = priceEl?.textContent?.trim() || '';
+
+          // 면적 추출
+          const areaEl = item.querySelector('.area, .item_area, [class*="area"]');
+          const areaText = areaEl?.textContent?.trim() || '';
+
+          // 층/방향 추출
+          const infoEl = item.querySelector('.info, .item_info, [class*="info"]');
+          const infoText = infoEl?.textContent?.trim() || '';
+
+          // 설명 추출
+          const descEl = item.querySelector('.desc, .item_desc, [class*="desc"]');
+          const descText = descEl?.textContent?.trim() || '';
+
+          if (priceText) {
+            result.articles.push({
+              priceText,
+              areaText,
+              infoText,
+              descText,
+            });
+          }
         });
+        break;
       }
-    });
+    }
+
+    result.count = result.articles.length;
+
+    // 페이지 전체 HTML 일부 (디버깅용)
+    result.debug.bodyLength = document.body?.innerHTML?.length || 0;
+    result.debug.title = document.title;
 
     return result;
   }, tradeType);
+
+  return data;
 }
 
 /**
  * 매물 데이터 정규화
  */
-function normalizeArticles(data, tradeType) {
-  if (!data) {
+function normalizeExtractedData(data, tradeType) {
+  if (!data || !data.articles) {
     return {
       count: 0,
+      totalCount: 0,
       minPrice: 0,
       maxPrice: 0,
       avgPrice: 0,
-      totalCount: 0,
       articles: [],
     };
   }
 
-  // API 응답 구조
-  const articles = data?.result?.list || data?.articleList || data?.articles || [];
-  const totalCount = data?.result?.totAtclCnt || data?.totalCount || articles.length;
+  const normalized = data.articles.map(article => {
+    const price = parsePrice(article.priceText);
 
-  const normalized = articles.slice(0, 20).map(article => {
-    let price = 0;
+    // 월세 파싱 (보증금/월세)
     let deposit = 0;
     let monthlyRent = 0;
 
-    if (tradeType === 'monthly') {
-      deposit = parseInt(article.warrantPrc || article.prc || 0) * 10000;
-      monthlyRent = parseInt(article.rentPrc || 0) * 10000;
-      price = deposit;
-    } else {
-      price = parseInt(article.prc || article.dealOrWarrantPrc || 0) * 10000;
+    if (tradeType === 'monthly' && article.priceText.includes('/')) {
+      const parts = article.priceText.split('/');
+      deposit = parsePrice(parts[0]);
+      monthlyRent = parsePrice(parts[1]);
     }
 
     return {
-      articleNo: article.atclNo || '',
-      price,
+      price: tradeType === 'monthly' ? deposit : price,
       deposit,
       monthlyRent,
-      priceText: article.hanPrc || formatPrice(price),
-      area: parseFloat(article.spc2 || article.excluUseAr || 0),
-      areaText: article.spc2 ? `${article.spc2}㎡` : '',
-      floor: article.flrInfo || '',
-      direction: article.direction || '',
-      description: article.atclFetrDesc || '',
-      confirmDate: article.atclCfmYmd || '',
+      priceText: article.priceText,
+      areaText: article.areaText,
+      floor: article.infoText,
+      description: article.descText,
     };
   });
 
@@ -290,13 +328,19 @@ function normalizeArticles(data, tradeType) {
 
   return {
     count: normalized.length,
-    totalCount,
+    totalCount: data.totalCount || normalized.length,
     minPrice: prices.length > 0 ? Math.min(...prices) : 0,
     maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
     avgPrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
+    priceRange: data.priceRange,
     articles: normalized,
+    debug: data.debug,
   };
 }
+
+// ============================================
+// 단지별 데이터 조회
+// ============================================
 
 /**
  * 단일 단지 전체 데이터 조회
@@ -320,45 +364,20 @@ async function fetchComplexData(page, complex, area = 84) {
 
   try {
     // 매매 데이터
-    const saleData = await fetchComplexDataWithIntercept(page, complex.complexNo, 'sale');
-    result.sale = normalizeArticles(saleData, 'sale');
+    const saleData = await extractArticlesFromPage(page, complex.complexNo, 'sale');
+    result.sale = normalizeExtractedData(saleData, 'sale');
 
-    // DOM에서 추가 데이터 추출 (폴백)
-    if (result.sale.count === 0) {
-      const domData = await extractDataFromDOM(page, 'sale');
-      if (domData.count > 0) {
-        result.sale.count = domData.count;
-        result.sale.totalCount = domData.count;
-      }
-    }
-
-    await sleep(500 + Math.random() * 300);
+    await sleep(400 + Math.random() * 300);
 
     // 전세 데이터
-    const jeonseData = await fetchComplexDataWithIntercept(page, complex.complexNo, 'jeonse');
-    result.jeonse = normalizeArticles(jeonseData, 'jeonse');
+    const jeonseData = await extractArticlesFromPage(page, complex.complexNo, 'jeonse');
+    result.jeonse = normalizeExtractedData(jeonseData, 'jeonse');
 
-    if (result.jeonse.count === 0) {
-      const domData = await extractDataFromDOM(page, 'jeonse');
-      if (domData.count > 0) {
-        result.jeonse.count = domData.count;
-        result.jeonse.totalCount = domData.count;
-      }
-    }
-
-    await sleep(500 + Math.random() * 300);
+    await sleep(400 + Math.random() * 300);
 
     // 월세 데이터
-    const monthlyData = await fetchComplexDataWithIntercept(page, complex.complexNo, 'monthly');
-    result.monthly = normalizeArticles(monthlyData, 'monthly');
-
-    if (result.monthly.count === 0) {
-      const domData = await extractDataFromDOM(page, 'monthly');
-      if (domData.count > 0) {
-        result.monthly.count = domData.count;
-        result.monthly.totalCount = domData.count;
-      }
-    }
+    const monthlyData = await extractArticlesFromPage(page, complex.complexNo, 'monthly');
+    result.monthly = normalizeExtractedData(monthlyData, 'monthly');
 
   } catch (error) {
     console.error(`[Fetch] Error for ${complex.name}:`, error.message);
@@ -412,7 +431,7 @@ async function fetchAllComplexes() {
           });
         }
 
-        await sleep(800 + Math.random() * 500);
+        await sleep(600 + Math.random() * 400);
       }
     }
 
