@@ -32,7 +32,7 @@ const SummaryCard = ({ title, value, type, delay = 0, subInfo }) => {
   };
 
   return (
-    <div className={`bento-card ${colorClass} border animate-enter delay-${delay} flex flex-col min-h-[120px] relative`}>
+    <div className={`bento-card ${colorClass} border animate-enter delay-${delay} flex flex-col min-h-[120px] relative overflow-hidden`}>
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted whitespace-nowrap">{title}</p>
         <div className={`p-1.5 rounded-lg ${colorClass}`}>
@@ -44,7 +44,7 @@ const SummaryCard = ({ title, value, type, delay = 0, subInfo }) => {
       </p>
       {/* 카드 내 서브 정보 */}
       {subInfo && (
-        <div className="mt-auto pt-2 border-t border-white/[0.06] text-[10px] text-zinc-500">
+        <div className="mt-auto pt-2 border-t border-white/[0.06] text-[10px] text-zinc-600 dark:text-zinc-500 overflow-hidden">
           {subInfo}
         </div>
       )}
@@ -260,11 +260,11 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
           type="expense"
           delay={100}
           subInfo={stats.expenseCalc && stats.expenseCalc.hasPrevData && (
-            <div className="flex justify-between text-[10px] gap-1">
-              <span className="whitespace-nowrap">전달+수입-현재</span>
-              <span className="font-mono whitespace-nowrap text-right">
+            <div className="text-[10px] overflow-hidden">
+              <span className="text-zinc-400 dark:text-zinc-500">전달+수입-현재</span>
+              <div className="font-mono truncate">
                 {formatKRW(stats.expenseCalc.prevMonthBalance, true)}+{formatKRW(stats.expenseCalc.thisMonthIncome, true)}-{formatKRW(stats.expenseCalc.currentBalance, true)}
-              </span>
+              </div>
             </div>
           )}
         />
@@ -288,15 +288,15 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
           type="assets"
           delay={300}
           subInfo={(
-            <div className="flex justify-between gap-2">
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 overflow-hidden">
               {stats.assetsChange && stats.assetsChange.hasPrevData ? (
-                <span className={`whitespace-nowrap ${stats.assetsChange.changePercent >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
+                <span className={`${stats.assetsChange.changePercent >= 0 ? 'text-green-500 dark:text-green-400' : 'text-rose-500 dark:text-rose-400'}`}>
                   전월 대비 {stats.assetsChange.changePercent >= 0 ? '+' : ''}{stats.assetsChange.changePercent}%
                 </span>
               ) : (
-                <span className="text-violet-400 whitespace-nowrap">주식 {formatKRW(stats.assetBreakdown?.stocks, true)}</span>
+                <span className="text-violet-500 dark:text-violet-400">주식 {formatKRW(stats.assetBreakdown?.stocks, true)}</span>
               )}
-              <span className="text-blue-400 whitespace-nowrap">현금 {formatKRW(stats.assetBreakdown?.cash, true)}</span>
+              <span className="text-blue-500 dark:text-blue-400">현금 {formatKRW(stats.assetBreakdown?.cash, true)}</span>
             </div>
           )}
         />

@@ -8,6 +8,7 @@ export default function MobileNav({ activeTab, onTabChange }) {
     { id: 'investment', label: '투자', icon: TrendingUp },
     { id: 'watchlist', label: '관심', icon: Eye },
     { id: 'realestate', label: '부동산', icon: Home },
+    { id: 'annual', label: '연간', icon: Calendar },
     { id: 'input', label: '입력', icon: PenTool },
   ];
 

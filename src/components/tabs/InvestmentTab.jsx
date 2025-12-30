@@ -683,34 +683,34 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
               {/* 재호 영웅문 */}
               <div className="bento-card border-violet-500/20 bg-violet-500/5">
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-sm font-semibold text-violet-300">재호 영웅문</h4>
-                  <span className="text-xs text-violet-400/70">월간 평가액</span>
+                  <h4 className="text-sm font-semibold text-violet-600 dark:text-violet-300">재호 영웅문</h4>
+                  <span className="text-xs text-violet-500 dark:text-violet-400/70">월간 평가액</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-violet-400">{formatKRW(data.investmentTotals?.재호영웅문 || data.investmentTotals?.재호 || 0, true)}</p>
+                <p className="text-2xl font-bold font-mono text-violet-600 dark:text-violet-400">{formatKRW(data.investmentTotals?.재호영웅문 || data.investmentTotals?.재호 || 0, true)}</p>
               </div>
               {/* 향화 카카오 (단타) */}
               <div className="bento-card border-amber-500/20 bg-amber-500/5">
                 <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-semibold text-amber-300">향화 카카오</h4>
-                  <span className="text-xs text-amber-400/70">단타</span>
+                  <h4 className="text-sm font-semibold text-amber-600 dark:text-amber-300">향화 카카오</h4>
+                  <span className="text-xs text-amber-500 dark:text-amber-400/70">단타</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-amber-400">{formatKRW(data.investmentTotals?.향화카카오 || 0, true)}</p>
+                <p className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">{formatKRW(data.investmentTotals?.향화카카오 || 0, true)}</p>
               </div>
               {/* 향화 영웅문 (장투) */}
               <div className="bento-card border-blue-500/20 bg-blue-500/5">
                 <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-semibold text-blue-300">향화 영웅문</h4>
-                  <span className="text-xs text-blue-400/70">장투</span>
+                  <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-300">향화 영웅문</h4>
+                  <span className="text-xs text-blue-500 dark:text-blue-400/70">장투</span>
                 </div>
-                <p className="text-2xl font-bold font-mono text-blue-400">{formatKRW(data.investmentTotals?.향화영웅문 || 0, true)}</p>
+                <p className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400">{formatKRW(data.investmentTotals?.향화영웅문 || 0, true)}</p>
               </div>
               {data.investmentTotals?.배당 > 0 && (
                 <div className="bento-card border-green-500/20 bg-green-500/5">
                   <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-sm font-semibold text-green-300">배당금</h4>
-                    <span className="text-xs text-green-400/70">이번 달</span>
+                    <h4 className="text-sm font-semibold text-green-600 dark:text-green-300">배당금</h4>
+                    <span className="text-xs text-green-500 dark:text-green-400/70">이번 달</span>
                   </div>
-                  <p className="text-2xl font-bold font-mono text-green-400">{formatKRW(data.investmentTotals?.배당 || 0, true)}</p>
+                  <p className="text-2xl font-bold font-mono text-green-600 dark:text-green-400">{formatKRW(data.investmentTotals?.배당 || 0, true)}</p>
                 </div>
               )}
             </div>
@@ -720,27 +720,27 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
             {data.hasIndividualStocks ? (
               <div className="flex gap-4 md:gap-6 flex-wrap">
                 <div className="flex flex-col">
-                  <span className="text-xs text-violet-400/70 uppercase font-semibold">향화 영웅문</span>
-                  <span className="text-base text-white font-semibold font-mono">{formatKRW(data.manual.younghwa, true)}</span>
+                  <span className="text-xs text-violet-500 dark:text-violet-400/70 uppercase font-semibold">향화 영웅문</span>
+                  <span className="text-base text-zinc-800 dark:text-white font-semibold font-mono">{formatKRW(data.manual.younghwa, true)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-violet-400/70 uppercase font-semibold">향화 카카오</span>
-                  <span className="text-base text-white font-semibold font-mono">{formatKRW(data.manual.kakao, true)}</span>
+                  <span className="text-xs text-violet-500 dark:text-violet-400/70 uppercase font-semibold">향화 카카오</span>
+                  <span className="text-base text-zinc-800 dark:text-white font-semibold font-mono">{formatKRW(data.manual.kakao, true)}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-violet-400/70 uppercase font-semibold">재호 영웅문</span>
-                  <span className="text-base text-white font-semibold font-mono">{formatKRW(data.manual.jaeho, true)}</span>
+                  <span className="text-xs text-violet-500 dark:text-violet-400/70 uppercase font-semibold">재호 영웅문</span>
+                  <span className="text-base text-zinc-800 dark:text-white font-semibold font-mono">{formatKRW(data.manual.jaeho, true)}</span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col">
-                <span className="text-xs text-violet-400/70 uppercase font-semibold">투자 원금</span>
-                <span className="text-base text-white font-semibold font-mono">{formatKRW(data.investmentTotals?.원금 || 0, true)}</span>
+                <span className="text-xs text-violet-500 dark:text-violet-400/70 uppercase font-semibold">투자 원금</span>
+                <span className="text-base text-zinc-800 dark:text-white font-semibold font-mono">{formatKRW(data.investmentTotals?.원금 || 0, true)}</span>
               </div>
             )}
             <div className="text-right">
-              <span className="text-xs text-violet-400/70 uppercase font-semibold block">주식 총 합계</span>
-              <span className="text-xl text-violet-400 font-bold font-mono">{formatKRW(data.totalStockKRW, true)}</span>
+              <span className="text-xs text-violet-500 dark:text-violet-400/70 uppercase font-semibold block">주식 총 합계</span>
+              <span className="text-xl text-violet-600 dark:text-violet-400 font-bold font-mono">{formatKRW(data.totalStockKRW, true)}</span>
             </div>
           </div>
         </div>
