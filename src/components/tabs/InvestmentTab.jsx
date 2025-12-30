@@ -592,13 +592,13 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
         {/* Account Tables */}
         <div className="glass-card flex flex-col animate-enter delay-400">
           <div className="h-12 border-b border-violet-500/20 flex items-center px-4 md:px-6 bg-violet-500/10 justify-between">
-            <h3 className="text-xs font-semibold text-violet-400 uppercase tracking-wider">Account Details</h3>
+            <h3 className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Account Details</h3>
             {data.hasIndividualStocks && (
               <div className="flex items-center gap-4">
-                <span className="text-sm font-semibold text-blue-400 uppercase">향화 영웅문</span>
+                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 uppercase">향화 영웅문</span>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition border border-green-500/30"
+                  className="bg-green-500/20 hover:bg-green-500/30 text-green-600 dark:text-green-400 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition border border-green-500/30"
                 >
                   <Plus size={14} /> 종목 추가
                 </button>
@@ -609,7 +609,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           {data.hasIndividualStocks ? (
             <div className="flex-1 overflow-x-auto">
               <table className="w-full min-w-[700px] text-left border-collapse">
-                <thead className="bg-violet-500/10 text-xs font-semibold text-violet-400 dark:text-violet-300 uppercase">
+                <thead className="bg-violet-500/10 text-xs font-semibold text-violet-600 dark:text-violet-300 uppercase">
                   <tr>
                     <th className="p-4">종목</th>
                     <th className="p-4 text-right">수량</th>
@@ -636,26 +636,26 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                     const profit = avgPrice > 0 ? ((price / avgPrice) - 1) * 100 : 0;
                     const profitAmount = s.qty * (price - avgPrice);
                     return (
-                      <tr key={s.ticker} className={`data-row border-b border-white/[0.04] animate-enter delay-${idx * 50} group`}>
-                        <td className="p-4 text-foreground">{s.name} <span className="text-violet-400/70 ml-1 font-mono text-xs">{s.ticker}</span></td>
-                        <td className="p-4 text-right text-zinc-300 font-mono">
+                      <tr key={s.ticker} className={`data-row border-b border-zinc-200 dark:border-white/[0.04] animate-enter delay-${idx * 50} group`}>
+                        <td className="p-4 text-foreground">{s.name} <span className="text-violet-600/70 dark:text-violet-400/70 ml-1 font-mono text-xs">{s.ticker}</span></td>
+                        <td className="p-4 text-right text-zinc-700 dark:text-zinc-300 font-mono">
                           <EditableCell
                             value={s.qty}
                             onSave={(newQty) => onUpdateStock && onUpdateStock(s.ticker, { qty: newQty })}
-                            className="text-zinc-300"
+                            className="text-zinc-700 dark:text-zinc-300"
                           />
                         </td>
-                        <td className="p-4 text-right text-amber-400 font-mono">
+                        <td className="p-4 text-right text-amber-600 dark:text-amber-400 font-mono">
                           <EditableCell
                             value={avgPrice.toFixed(2)}
                             onSave={(newAvgPrice) => onUpdateStock && onUpdateStock(s.ticker, { avgPrice: newAvgPrice })}
-                            className="text-amber-400"
+                            className="text-amber-600 dark:text-amber-400"
                           />
                         </td>
-                        <td className="p-4 text-right text-white font-mono">{formatUSD(price)}</td>
-                        <td className="p-4 text-right text-white font-bold font-mono">{formatUSD(valUSD)}</td>
-                        <td className="p-4 text-right text-violet-400 font-mono">{formatKRW(valKRW, true)}</td>
-                        <td className={`p-4 text-right font-mono ${profit >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
+                        <td className="p-4 text-right text-zinc-800 dark:text-white font-mono">{formatUSD(price)}</td>
+                        <td className="p-4 text-right text-zinc-800 dark:text-white font-bold font-mono">{formatUSD(valUSD)}</td>
+                        <td className="p-4 text-right text-violet-600 dark:text-violet-400 font-mono">{formatKRW(valKRW, true)}</td>
+                        <td className={`p-4 text-right font-mono ${profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           <div className="flex flex-col items-end">
                             <span>{formatPercent(profit)}</span>
                             <span className="text-xs opacity-70">{profitAmount >= 0 ? '+' : ''}{formatUSD(profitAmount)}</span>

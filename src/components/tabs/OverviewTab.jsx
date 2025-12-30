@@ -34,12 +34,12 @@ const SummaryCard = ({ title, value, type, delay = 0, subInfo }) => {
   return (
     <div className={`bento-card ${colorClass} border animate-enter delay-${delay} flex flex-col min-h-[120px] relative`}>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">{title}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted whitespace-nowrap">{title}</p>
         <div className={`p-1.5 rounded-lg ${colorClass}`}>
           <Icon size={14} className={textColorMap[type]} />
         </div>
       </div>
-      <p className={`text-2xl md:text-3xl font-bold font-mono ${textColorMap[type]} tracking-tight`}>
+      <p className={`text-2xl md:text-3xl font-bold font-mono ${textColorMap[type]} tracking-tight whitespace-nowrap`}>
         {value}
       </p>
       {/* 카드 내 서브 정보 */}
@@ -260,9 +260,9 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
           type="expense"
           delay={100}
           subInfo={stats.expenseCalc && stats.expenseCalc.hasPrevData && (
-            <div className="flex justify-between text-[10px]">
+            <div className="flex justify-between text-[10px] gap-1">
               <span className="whitespace-nowrap">전달+수입-현재</span>
-              <span className="font-mono">
+              <span className="font-mono whitespace-nowrap text-right">
                 {formatKRW(stats.expenseCalc.prevMonthBalance, true)}+{formatKRW(stats.expenseCalc.thisMonthIncome, true)}-{formatKRW(stats.expenseCalc.currentBalance, true)}
               </span>
             </div>
@@ -274,9 +274,9 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
           type={stats.netProfit >= 0 ? 'net' : 'netNegative'}
           delay={200}
           subInfo={(
-            <div className="flex justify-between">
-              <span>수입 - 지출</span>
-              <span className="font-mono">
+            <div className="flex justify-between gap-1">
+              <span className="whitespace-nowrap">수입 - 지출</span>
+              <span className="font-mono whitespace-nowrap">
                 {formatKRW(stats.income, true)} - {formatKRW(stats.expense, true)}
               </span>
             </div>
@@ -290,13 +290,13 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
           subInfo={(
             <div className="flex justify-between gap-2">
               {stats.assetsChange && stats.assetsChange.hasPrevData ? (
-                <span className={stats.assetsChange.changePercent >= 0 ? 'text-green-400' : 'text-rose-400'}>
+                <span className={`whitespace-nowrap ${stats.assetsChange.changePercent >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
                   전월 대비 {stats.assetsChange.changePercent >= 0 ? '+' : ''}{stats.assetsChange.changePercent}%
                 </span>
               ) : (
-                <span className="text-violet-400">주식 {formatKRW(stats.assetBreakdown?.stocks, true)}</span>
+                <span className="text-violet-400 whitespace-nowrap">주식 {formatKRW(stats.assetBreakdown?.stocks, true)}</span>
               )}
-              <span className="text-blue-400">현금 {formatKRW(stats.assetBreakdown?.cash, true)}</span>
+              <span className="text-blue-400 whitespace-nowrap">현금 {formatKRW(stats.assetBreakdown?.cash, true)}</span>
             </div>
           )}
         />
