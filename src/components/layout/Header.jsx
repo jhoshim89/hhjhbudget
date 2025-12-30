@@ -6,7 +6,7 @@ export default function Header({ exchangeRate, watchlist, yahooData }) {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <header className="min-h-14 bg-surface/60 backdrop-blur-xl border-b border-white/[0.06] flex items-center px-4 md:px-6 justify-between shrink-0 relative z-40">
+    <header className="min-h-14 bg-surface/60 backdrop-blur-xl border-b border-white/[0.06] flex items-center px-4 md:px-6 justify-between shrink-0 relative z-40 pt-[env(safe-area-inset-top)]">
       {/* Left: Logo */}
       <div className="flex items-center gap-3 md:gap-6 flex-shrink-0">
         <span className="text-lg md:text-xl font-display font-black tracking-tight text-foreground whitespace-nowrap">
