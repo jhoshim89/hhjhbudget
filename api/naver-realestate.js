@@ -1,11 +1,11 @@
 /**
  * 네이버 부동산 크롤러 (Browserless.io + Playwright)
- * SSR 페이지 DOM 스크래핑 방식
+ * PC 사이트 DOM 스크래핑 방식
  *
  * @description
- * - 모바일 페이지에서 직접 DOM 데이터 추출
+ * - PC 버전 사이트에서 데이터 추출 (모바일보다 안정적)
+ * - JavaScript 렌더링 대기
  * - Vercel Edge Cache + stale-while-revalidate 패턴
- * - 재시도 로직과 에러 핸들링
  */
 
 import { chromium } from 'playwright-core';
@@ -16,7 +16,7 @@ import { chromium } from 'playwright-core';
 const CONFIG = {
   CACHE_TTL: 6 * 60 * 60,         // 6시간 (초)
   STALE_TTL: 24 * 60 * 60,        // 24시간 (stale-while-revalidate)
-  PAGE_TIMEOUT: 20000,            // 페이지 로드 타임아웃
+  PAGE_TIMEOUT: 25000,            // 페이지 로드 타임아웃
   RETRY_COUNT: 2,
   RETRY_DELAY: 1000,
 };
@@ -142,9 +142,12 @@ async function connectBrowser() {
 
 async function createPage(browser) {
   const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-    viewport: { width: 390, height: 844 },
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    viewport: { width: 1920, height: 1080 },
     locale: 'ko-KR',
+    extraHTTPHeaders: {
+      'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+    },
   });
 
   const page = await context.newPage();
@@ -152,35 +155,37 @@ async function createPage(browser) {
 }
 
 // ============================================
-// DOM 스크래핑
+// PC 사이트 스크래핑
 // ============================================
 
 /**
- * 페이지에서 매물 데이터 추출
+ * PC 사이트에서 단지 매물 데이터 추출
  */
-async function extractArticlesFromPage(page, complexNo, tradeType) {
-  const tradeTpCdMap = {
+async function extractDataFromPC(page, complexNo, tradeType) {
+  const tradeTypeMap = {
     'sale': 'A1',
     'jeonse': 'B1',
     'monthly': 'B2',
   };
-  const tradeTpCd = tradeTpCdMap[tradeType] || 'A1';
+  const tradeTpCd = tradeTypeMap[tradeType] || 'A1';
 
-  // 페이지 로드
-  const pageUrl = `https://m.land.naver.com/complex/info/${complexNo}?tradTpCd=${tradeTpCd}&ptpNo=1`;
-  console.log(`[Scrape] Loading: ${pageUrl}`);
+  // PC 사이트 URL
+  const pageUrl = `https://new.land.naver.com/complexes/${complexNo}?ms=37.5,127,16&a=${tradeTpCd}&e=RETAIL`;
+  console.log(`[Scrape] Loading PC: ${pageUrl}`);
 
   await page.goto(pageUrl, {
-    waitUntil: 'domcontentloaded',
+    waitUntil: 'networkidle',
     timeout: CONFIG.PAGE_TIMEOUT,
   });
 
-  // 컨텐츠 로드 대기
-  await sleep(1500);
+  // JavaScript 렌더링 대기
+  await sleep(2500);
 
-  // 스크롤하여 lazy load 트리거
-  await page.evaluate(() => window.scrollTo(0, 500));
-  await sleep(500);
+  // 스크롤하여 더 많은 컨텐츠 로드
+  await page.evaluate(() => {
+    window.scrollTo(0, 500);
+  });
+  await sleep(1000);
 
   // DOM에서 데이터 추출
   const data = await page.evaluate((tradeType) => {
@@ -189,16 +194,20 @@ async function extractArticlesFromPage(page, complexNo, tradeType) {
       totalCount: 0,
       articles: [],
       priceRange: '',
-      debug: {},
+      debug: {
+        bodyLength: document.body?.innerHTML?.length || 0,
+        title: document.title,
+        url: window.location.href,
+      },
     };
 
-    // 매물 수 추출 - 여러 셀렉터 시도
+    // 매물 수 추출
     const countSelectors = [
-      '.complex_price .total em',
+      '.complex_summary .item_count em',
       '.article_count em',
-      '.complex_summary em',
-      '[class*="count"] em',
-      '.tab_area .on em',
+      '.complex_tab .on em',
+      '[class*="Count"] em',
+      '.tabItem--selected em',
     ];
 
     for (const selector of countSelectors) {
@@ -213,58 +222,50 @@ async function extractArticlesFromPage(page, complexNo, tradeType) {
       }
     }
 
-    // 가격 범위 추출
-    const priceSelectors = [
-      '.complex_price .price',
-      '.price_info .price',
-      '.article_price',
-    ];
-
-    for (const selector of priceSelectors) {
-      const el = document.querySelector(selector);
-      if (el) {
-        result.priceRange = el.textContent.trim();
-        result.debug.priceSelector = selector;
-        break;
-      }
+    // 가격 범위 추출 (시세 정보)
+    const priceEl = document.querySelector('.complex_price .price, .complex_summary .price');
+    if (priceEl) {
+      result.priceRange = priceEl.textContent.trim();
     }
 
     // 매물 목록 추출
     const articleSelectors = [
-      '.article_lst li',
-      '.complex_lst li',
-      '.item_list li',
-      '[class*="article"] li',
+      '.item_list .item',
+      '.ComplexArticleItem',
+      '[class*="ArticleItem"]',
+      '.article_list .item',
     ];
 
     for (const selector of articleSelectors) {
       const items = document.querySelectorAll(selector);
       if (items.length > 0) {
         result.debug.articleSelector = selector;
+        result.debug.articleCount = items.length;
+
         items.forEach((item, index) => {
           if (index >= 20) return;
 
-          // 가격 추출
-          const priceEl = item.querySelector('.price, .item_price, [class*="price"]');
-          const priceText = priceEl?.textContent?.trim() || '';
+          // 가격
+          const priceEl = item.querySelector('.price, .item_price, [class*="price"] span');
+          const priceText = priceEl?.textContent?.trim()?.replace(/\s+/g, ' ') || '';
 
-          // 면적 추출
+          // 면적
           const areaEl = item.querySelector('.area, .item_area, [class*="area"]');
           const areaText = areaEl?.textContent?.trim() || '';
 
-          // 층/방향 추출
-          const infoEl = item.querySelector('.info, .item_info, [class*="info"]');
-          const infoText = infoEl?.textContent?.trim() || '';
+          // 층
+          const floorEl = item.querySelector('.floor, [class*="floor"]');
+          const floorText = floorEl?.textContent?.trim() || '';
 
-          // 설명 추출
-          const descEl = item.querySelector('.desc, .item_desc, [class*="desc"]');
+          // 설명
+          const descEl = item.querySelector('.info, .item_info, [class*="desc"]');
           const descText = descEl?.textContent?.trim() || '';
 
           if (priceText) {
             result.articles.push({
               priceText,
               areaText,
-              infoText,
+              floorText,
               descText,
             });
           }
@@ -274,10 +275,6 @@ async function extractArticlesFromPage(page, complexNo, tradeType) {
     }
 
     result.count = result.articles.length;
-
-    // 페이지 전체 HTML 일부 (디버깅용)
-    result.debug.bodyLength = document.body?.innerHTML?.length || 0;
-    result.debug.title = document.title;
 
     return result;
   }, tradeType);
@@ -289,7 +286,7 @@ async function extractArticlesFromPage(page, complexNo, tradeType) {
  * 매물 데이터 정규화
  */
 function normalizeExtractedData(data, tradeType) {
-  if (!data || !data.articles) {
+  if (!data) {
     return {
       count: 0,
       totalCount: 0,
@@ -300,13 +297,13 @@ function normalizeExtractedData(data, tradeType) {
     };
   }
 
-  const normalized = data.articles.map(article => {
+  const normalized = (data.articles || []).map(article => {
     const price = parsePrice(article.priceText);
 
-    // 월세 파싱 (보증금/월세)
     let deposit = 0;
     let monthlyRent = 0;
 
+    // 월세 파싱 (보증금/월세)
     if (tradeType === 'monthly' && article.priceText.includes('/')) {
       const parts = article.priceText.split('/');
       deposit = parsePrice(parts[0]);
@@ -319,7 +316,7 @@ function normalizeExtractedData(data, tradeType) {
       monthlyRent,
       priceText: article.priceText,
       areaText: article.areaText,
-      floor: article.infoText,
+      floor: article.floorText,
       description: article.descText,
     };
   });
@@ -364,19 +361,19 @@ async function fetchComplexData(page, complex, area = 84) {
 
   try {
     // 매매 데이터
-    const saleData = await extractArticlesFromPage(page, complex.complexNo, 'sale');
+    const saleData = await extractDataFromPC(page, complex.complexNo, 'sale');
     result.sale = normalizeExtractedData(saleData, 'sale');
 
-    await sleep(400 + Math.random() * 300);
+    await sleep(500 + Math.random() * 300);
 
     // 전세 데이터
-    const jeonseData = await extractArticlesFromPage(page, complex.complexNo, 'jeonse');
+    const jeonseData = await extractDataFromPC(page, complex.complexNo, 'jeonse');
     result.jeonse = normalizeExtractedData(jeonseData, 'jeonse');
 
-    await sleep(400 + Math.random() * 300);
+    await sleep(500 + Math.random() * 300);
 
     // 월세 데이터
-    const monthlyData = await extractArticlesFromPage(page, complex.complexNo, 'monthly');
+    const monthlyData = await extractDataFromPC(page, complex.complexNo, 'monthly');
     result.monthly = normalizeExtractedData(monthlyData, 'monthly');
 
   } catch (error) {
@@ -431,7 +428,7 @@ async function fetchAllComplexes() {
           });
         }
 
-        await sleep(600 + Math.random() * 400);
+        await sleep(700 + Math.random() * 500);
       }
     }
 
