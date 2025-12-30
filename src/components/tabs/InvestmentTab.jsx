@@ -372,7 +372,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
       onClose={() => setIsAddModalOpen(false)}
       onAdd={onAddStock}
     />
-    <div className="flex flex-col gap-3 p-3 md:p-4">
+    <div className="flex flex-col gap-3 p-3 md:p-4 pb-mobile-nav">
       {/* Month Selector */}
       <div className="flex justify-center">
         <div className="inline-flex items-center bg-panel/50 backdrop-blur-sm rounded-full border border-white/[0.06] p-1">
@@ -400,7 +400,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           <p className="text-lg md:text-xl font-bold font-mono text-violet-400">{formatKRW(portfolioValue, true)}</p>
           {/* Hover Tooltip - 3개 계좌 */}
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-            <div className="bg-zinc-900 border border-white/10 rounded-xl p-3 shadow-2xl min-w-[180px]">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl min-w-[180px]">
               <p className="text-[10px] uppercase text-zinc-500 font-semibold mb-2 tracking-wider">계좌별 평가액</p>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between items-center">
@@ -417,7 +417,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                 </div>
               </div>
             </div>
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white dark:border-t-zinc-900"></div>
           </div>
         </div>
         <div className="bento-card-sm border-cyan-500/20 bg-cyan-500/5 animate-enter delay-50 relative group">
@@ -427,7 +427,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           {/* Hover Tooltip */}
           {stockDetails.length > 0 && (
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-              <div className="bg-zinc-900 border border-white/10 rounded-xl p-3 shadow-2xl min-w-[200px]">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl min-w-[200px]">
                 <p className="text-[10px] uppercase text-zinc-500 font-semibold mb-2 tracking-wider">종목별 원금</p>
                 <div className="space-y-1.5 text-xs">
                   {stockDetails.map(s => (
@@ -438,7 +438,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                   ))}
                 </div>
               </div>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white dark:border-t-zinc-900"></div>
             </div>
           )}
         </div>
@@ -453,7 +453,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           {/* Hover Tooltip */}
           {stockDetails.length > 0 && (
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-              <div className="bg-zinc-900 border border-white/10 rounded-xl p-3 shadow-2xl min-w-[220px]">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl min-w-[220px]">
                 <p className="text-[10px] uppercase text-zinc-500 font-semibold mb-2 tracking-wider">종목별 손익</p>
                 <div className="space-y-1.5 text-xs">
                   {stockDetails.map(s => (
@@ -471,7 +471,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                   ))}
                 </div>
               </div>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white dark:border-t-zinc-900"></div>
             </div>
           )}
         </div>
@@ -494,7 +494,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           {/* Hover Tooltip */}
           {dividendDetails.length > 0 && (
             <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
-              <div className="bg-zinc-900 border border-white/10 rounded-xl p-3 shadow-2xl min-w-[220px]">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl min-w-[220px]">
                 <p className="text-[10px] uppercase text-zinc-500 font-semibold mb-2 tracking-wider">종목/계좌별 예상 배당</p>
                 <div className="space-y-1.5 text-xs max-h-[200px] overflow-y-auto">
                   {dividendDetails.map(d => (
@@ -508,7 +508,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                   ))}
                 </div>
               </div>
-              <div className="absolute top-full right-4 border-4 border-transparent border-t-zinc-900"></div>
+              <div className="absolute top-full right-4 border-4 border-transparent border-t-white dark:border-t-zinc-900"></div>
             </div>
           )}
         </div>
@@ -528,7 +528,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                   className={`px-2 py-0.5 text-xs font-semibold rounded transition-colors ${
                     selectedBenchmarks.includes(b)
                       ? b === 'SPY' ? 'bg-blue-500/30 text-blue-300' : b === 'QQQ' ? 'bg-green-500/30 text-green-300' : 'bg-amber-500/30 text-amber-300'
-                      : 'bg-white/5 text-zinc-500'
+                      : 'bg-zinc-200 dark:bg-white/5 text-zinc-600 dark:text-zinc-500'
                   }`}
                 >
                   {b}
@@ -562,8 +562,8 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                       const colorMap = { portfolio: '#8B5CF6', spy: '#3B82F6', qqq: '#22C55E', tqqq: '#F59E0B' };
                       const nameMap = { portfolio: '내 포트폴리오', spy: 'SPY', qqq: 'QQQ', tqqq: 'TQQQ' };
                       return (
-                        <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl">
-                          <p className="text-white font-semibold text-xs mb-2">{label}</p>
+                        <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl">
+                          <p className="text-zinc-800 dark:text-white font-semibold text-xs mb-2">{label}</p>
                           <div className="space-y-1">
                             {sortedPayload.map((entry) => (
                               <div key={entry.dataKey} className="flex justify-between items-center gap-4 text-xs">
@@ -607,8 +607,8 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           </div>
 
           {data.hasIndividualStocks ? (
-            <div className="flex-1">
-              <table className="w-full text-left border-collapse">
+            <div className="flex-1 overflow-x-auto">
+              <table className="w-full min-w-[700px] text-left border-collapse">
                 <thead className="bg-violet-500/10 text-xs font-semibold text-violet-400 dark:text-violet-300 uppercase">
                   <tr>
                     <th className="p-4">종목</th>

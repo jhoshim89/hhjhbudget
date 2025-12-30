@@ -16,7 +16,7 @@ export default function InputConsole(props) {
 
   return (
     <div className="flex flex-col h-full">
-      <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+      <h3 className="text-sm font-bold text-zinc-800 dark:text-white mb-6 flex items-center gap-2">
         <Terminal size={16} /> 데이터 입력 콘솔
       </h3>
       
@@ -25,19 +25,19 @@ export default function InputConsole(props) {
         <div className="grid grid-cols-3 gap-2">
           <button 
             onClick={() => setActiveTab('expense')}
-            className={`py-3 text-sm font-bold rounded transition ${activeTab === 'expense' ? 'bg-blue-600 text-white' : 'bg-background text-gray-400 border border-gray-700 hover:text-white'}`}
+            className={`py-3 text-sm font-bold rounded transition ${activeTab === 'expense' ? 'bg-blue-600 text-white' : 'bg-background text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
           >
             지출 (Expense)
           </button>
           <button 
             onClick={() => setActiveTab('income')}
-            className={`py-3 text-sm font-bold rounded transition ${activeTab === 'income' ? 'bg-blue-600 text-white' : 'bg-background text-gray-400 border border-gray-700 hover:text-white'}`}
+            className={`py-3 text-sm font-bold rounded transition ${activeTab === 'income' ? 'bg-blue-600 text-white' : 'bg-background text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
           >
             수입 (Income)
           </button>
           <button 
             onClick={() => setActiveTab('assets')}
-            className={`py-3 text-sm font-bold rounded transition ${activeTab === 'assets' ? 'bg-blue-600 text-white' : 'bg-background text-gray-400 border border-gray-700 hover:text-white'}`}
+            className={`py-3 text-sm font-bold rounded transition ${activeTab === 'assets' ? 'bg-blue-600 text-white' : 'bg-background text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white'}`}
           >
             자산 (Assets)
           </button>

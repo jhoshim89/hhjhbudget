@@ -389,15 +389,15 @@ export default function AnnualTab({ currentData, investmentData, monthlyHistory 
                     const data = payload[0].payload;
                     const diff = data.amount - data.avg;
                     return (
-                      <div className="bg-zinc-900 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl">
-                        <div className="text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
+                      <div className="bg-white dark:bg-zinc-900 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl">
+                        <div className="text-zinc-800 dark:text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
                         <div className="flex justify-between items-center gap-4">
-                          <span className="text-zinc-400 text-xs">카드값</span>
-                          <span className="text-rose-400 font-mono font-semibold text-sm">{formatKRW(data.amount, true)}</span>
+                          <span className="text-zinc-600 dark:text-zinc-400 text-xs">카드값</span>
+                          <span className="text-rose-500 dark:text-rose-400 font-mono font-semibold text-sm">{formatKRW(data.amount, true)}</span>
                         </div>
-                        <div className="flex justify-between items-center gap-4 mt-1 pt-1 border-t border-white/[0.06]">
+                        <div className="flex justify-between items-center gap-4 mt-1 pt-1 border-t border-zinc-200 dark:border-white/[0.06]">
                           <span className="text-zinc-500 text-[10px]">평균 대비</span>
-                          <span className={`font-mono font-semibold text-xs ${diff >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+                          <span className={`font-mono font-semibold text-xs ${diff >= 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`}>
                             {diff >= 0 ? '+' : ''}{formatKRW(diff, true)}
                           </span>
                         </div>
@@ -470,11 +470,11 @@ export default function AnnualTab({ currentData, investmentData, monthlyHistory 
                     if (!active || !payload || !payload[0]) return null;
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-zinc-900 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl">
-                        <div className="text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
+                      <div className="bg-white dark:bg-zinc-900 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl">
+                        <div className="text-zinc-800 dark:text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
                         <div className="flex justify-between items-center gap-4">
-                          <span className="text-zinc-400 text-xs">매수액</span>
-                          <span className="text-cyan-400 font-mono font-semibold text-sm">{formatKRW(data.invested, true)}</span>
+                          <span className="text-zinc-600 dark:text-zinc-400 text-xs">매수액</span>
+                          <span className="text-cyan-500 dark:text-cyan-400 font-mono font-semibold text-sm">{formatKRW(data.invested, true)}</span>
                         </div>
                       </div>
                     );

@@ -32,8 +32,8 @@ export default function StockTable({ stocks = [], prices = {}, exchangeRate = 13
             const isPositive = profitRate >= 0;
 
             return (
-              <tr key={stock.ticker} className="data-row border-b border-border hover:bg-white/5 transition-colors">
-                <td className="p-4 font-bold text-white flex items-center gap-2">
+              <tr key={stock.ticker} className="data-row border-b border-border hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors">
+                <td className="p-4 font-bold text-zinc-800 dark:text-white flex items-center gap-2">
                   <span className={`w-6 h-6 rounded flex items-center justify-center text-xs ${isPositive ? 'bg-blue-900/50 text-blue-400' : 'bg-red-900/50 text-red-400'}`}>
                     {stock.ticker[0]}
                   </span>
@@ -41,8 +41,8 @@ export default function StockTable({ stocks = [], prices = {}, exchangeRate = 13
                 </td>
                 <td className="p-4 text-right text-gray-300">{stock.qty}</td>
                 <td className="p-4 text-right text-gray-500">${avgPrice.toLocaleString()}</td>
-                <td className="p-4 text-right text-white">${price.toLocaleString()}</td>
-                <td className="p-4 text-right font-bold text-white">{formatKRW(marketValueKRW)}</td>
+                <td className="p-4 text-right text-zinc-800 dark:text-white">${price.toLocaleString()}</td>
+                <td className="p-4 text-right font-bold text-zinc-800 dark:text-white">{formatKRW(marketValueKRW)}</td>
                 <td className={`p-4 text-right font-bold ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
                   <span className={`px-2 py-1 rounded ${isPositive ? 'bg-emerald-900/10' : 'bg-red-900/10'}`}>
                     {isPositive ? '+' : ''}{profitRate.toFixed(1)}%

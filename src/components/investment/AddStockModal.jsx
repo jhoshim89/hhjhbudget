@@ -95,13 +95,13 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-white">종목 추가</h3>
+          <h3 className="text-lg font-bold text-zinc-800 dark:text-white">종목 추가</h3>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-white/[0.05] rounded-lg"
+            className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors p-1.5 hover:bg-zinc-100 dark:hover:bg-white/[0.05] rounded-lg"
           >
             <X size={18} />
           </button>
@@ -125,20 +125,20 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                 }}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="종목명, 티커, 영문명으로 검색..."
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
               />
             </div>
             {/* 검색 결과 드롭다운 */}
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-10 w-full mt-2 bg-zinc-900/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl max-h-48 overflow-auto">
+              <div className="absolute z-10 w-full mt-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-2xl max-h-48 overflow-auto">
                 {suggestions.map((stock) => (
                   <button
                     key={stock.ticker}
                     type="button"
                     onClick={() => handleSelectStock(stock)}
-                    className="w-full px-4 py-3 text-left hover:bg-white/[0.05] flex items-center justify-between transition-colors first:rounded-t-xl last:rounded-b-xl"
+                    className="w-full px-4 py-3 text-left hover:bg-zinc-100 dark:hover:bg-white/[0.05] flex items-center justify-between transition-colors first:rounded-t-xl last:rounded-b-xl"
                   >
-                    <span className="text-white font-medium">{stock.name}</span>
+                    <span className="text-zinc-800 dark:text-white font-medium">{stock.name}</span>
                     <span className="text-zinc-500 font-mono text-sm">{stock.ticker}</span>
                   </button>
                 ))}
@@ -150,13 +150,13 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
           {formData.ticker && (
             <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-white font-bold">{formData.name}</p>
+                <p className="text-zinc-800 dark:text-white font-bold">{formData.name}</p>
                 <p className="text-violet-400 font-mono text-sm">{formData.ticker}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setFormData(prev => ({ ...prev, ticker: '', name: '' }))}
-                className="text-zinc-400 hover:text-white p-1 hover:bg-white/[0.05] rounded-lg transition-colors"
+                className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1 hover:bg-zinc-100 dark:hover:bg-white/[0.05] rounded-lg transition-colors"
               >
                 <X size={16} />
               </button>
@@ -165,7 +165,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
 
           {/* 직접 입력 옵션 */}
           {!formData.ticker && (
-            <div className="border-t border-white/[0.06] pt-4">
+            <div className="border-t border-zinc-200 dark:border-white/[0.06] pt-4">
               <p className="text-xs text-zinc-500 mb-3">또는 직접 입력:</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -177,7 +177,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                     value={formData.ticker}
                     onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
                     placeholder="AAPL"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-2.5 text-white font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-zinc-800 dark:text-white font-mono text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
                 </div>
                 <div>
@@ -189,7 +189,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="애플"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-zinc-800 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                 value={formData.qty}
                 onChange={(e) => setFormData({ ...formData, qty: e.target.value })}
                 placeholder="100"
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white font-mono placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white font-mono placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
               />
             </div>
 
@@ -220,7 +220,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
                 value={formData.avgPrice}
                 onChange={(e) => setFormData({ ...formData, avgPrice: e.target.value })}
                 placeholder="150.00"
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white font-mono placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white font-mono placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
               />
             </div>
           </div>
@@ -229,7 +229,7 @@ export default function AddStockModal({ isOpen, onClose, onAdd }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 hover:bg-white/[0.02] transition-all font-semibold"
+              className="flex-1 px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.02] transition-all font-semibold"
             >
               취소
             </button>

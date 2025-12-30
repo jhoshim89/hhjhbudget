@@ -23,7 +23,7 @@ export default function AssetSummary({ totalAssets, prevAssets }) {
         <div>
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">총 순자산 (Total Liquidity)</h2>
           <div className="flex items-baseline gap-4">
-            <span className="text-5xl font-black text-white tracking-tight">{formatKRW(totalAssets)}</span>
+            <span className="text-5xl font-black text-zinc-800 dark:text-white tracking-tight">{formatKRW(totalAssets)}</span>
             {change && (
               <span className={`text-lg font-bold px-2 py-0.5 rounded ${isPositive ? 'text-emerald-500 bg-emerald-900/20' : 'text-red-500 bg-red-900/20'}`}>
                 {isPositive ? '▲' : '▼'} {change}%

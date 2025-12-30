@@ -97,22 +97,22 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
   return (
     <div className="space-y-4">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-white">단지 비교</h3>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-base md:text-lg font-semibold text-zinc-800 dark:text-white whitespace-nowrap">단지 비교</h3>
           {lastUpdated && (
-            <span className="text-xs text-zinc-500">
+            <span className="text-[10px] md:text-xs text-zinc-500 whitespace-nowrap">
               {lastUpdated.toLocaleString('ko-KR')} 기준
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
             onClick={() => setEditMode(!editMode)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm whitespace-nowrap transition-colors ${
               editMode
                 ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
-                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
+                : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
             }`}
           >
             {editMode ? '완료' : '편집'}
@@ -120,10 +120,10 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 px-2 md:px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-lg text-xs md:text-sm whitespace-nowrap transition-colors disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            새로고침
+            <span className="hidden sm:inline">새로고침</span>
           </button>
         </div>
       </div>
@@ -132,7 +132,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px]">
           <thead>
-            <tr className="text-left text-xs text-zinc-500 uppercase tracking-wider border-b border-zinc-800">
+            <tr className="text-left text-xs text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
               {editMode && <th className="pb-3 pr-4 w-8"></th>}
               <th className="pb-3 pr-4">단지명</th>
               <th className="pb-3 pr-4">평형</th>
@@ -163,7 +163,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                 return (
                   <tr
                     key={`${complex.id}-${areaKey}`}
-                    className={`border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors ${
+                    className={`border-b border-zinc-200 dark:border-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/30 transition-colors ${
                       complex.isMine ? 'bg-teal-500/5' : ''
                     }`}
                   >
@@ -190,7 +190,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                             </span>
                           )}
                           <div>
-                            <p className="font-medium text-white">{complex.name}</p>
+                            <p className="font-medium text-zinc-800 dark:text-white">{complex.name}</p>
                             <p className="text-xs text-zinc-500">{complex.region}</p>
                           </div>
                         </div>
@@ -199,7 +199,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
 
                     {/* 평형 */}
                     <td className="py-3 pr-4">
-                      <span className="px-2 py-0.5 bg-zinc-800 text-zinc-300 text-xs rounded">
+                      <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs rounded">
                         {areaKey}㎡
                       </span>
                     </td>
@@ -208,7 +208,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                     <td className="py-3 pr-4">
                       {areaData.sale?.count > 0 ? (
                         <div>
-                          <p className="font-medium text-white">
+                          <p className="font-medium text-zinc-800 dark:text-white">
                             {formatPriceRange(areaData.sale.minPrice, areaData.sale.maxPrice)}
                           </p>
                           <p className="text-xs text-zinc-500">{areaData.sale.count}건</p>
@@ -268,7 +268,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
 
       {/* 제외된 단지 목록 */}
       {excludedData.length > 0 && (
-        <div className="mt-6 p-4 bg-zinc-800/30 rounded-xl">
+        <div className="mt-6 p-4 bg-zinc-100 dark:bg-zinc-800/30 rounded-xl">
           <div className="flex items-center gap-2 mb-3">
             <ChevronDown size={14} className="text-zinc-500" />
             <span className="text-sm text-zinc-400">비교에서 제외됨 ({excludedData.length})</span>
@@ -278,7 +278,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
               <button
                 key={complex.id}
                 onClick={() => handleInclude(complex.id)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700/50 hover:bg-teal-500/20 text-zinc-400 hover:text-teal-400 rounded-lg text-sm transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700/50 hover:bg-teal-500/20 text-zinc-600 dark:text-zinc-400 hover:text-teal-400 rounded-lg text-sm transition-colors"
               >
                 <Plus size={12} />
                 {complex.name}

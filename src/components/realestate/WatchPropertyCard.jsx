@@ -51,8 +51,8 @@ export default function WatchPropertyCard({ property, priceHistory = [], onRemov
             <Home size={16} className="text-teal-400" />
           </div>
           <div>
-            <h4 className="font-semibold text-white text-sm">{property.name}</h4>
-            <p className="text-[10px] text-zinc-500">{property.area}㎡</p>
+            <h4 className="font-semibold text-zinc-800 dark:text-white text-sm">{property.name}</h4>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-500">{property.area}㎡</p>
           </div>
         </div>
 
@@ -94,25 +94,25 @@ export default function WatchPropertyCard({ property, priceHistory = [], onRemov
       {latestPrice ? (
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] text-zinc-500">매매</span>
-            <span className="text-sm font-bold text-white">{formatPrice(latestPrice.salePrice)}</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500">매매</span>
+            <span className="text-sm font-bold text-zinc-800 dark:text-white">{formatPrice(latestPrice.salePrice)}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-[10px] text-zinc-500">전세</span>
-            <span className="text-xs text-zinc-300">{formatPrice(latestPrice.jeonsePrice)}</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500">전세</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-300">{formatPrice(latestPrice.jeonsePrice)}</span>
           </div>
           {latestPrice.monthlyRent > 0 && (
             <div className="flex justify-between items-center">
-              <span className="text-[10px] text-zinc-500">월세</span>
-              <span className="text-xs text-zinc-300">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-500">월세</span>
+              <span className="text-xs text-zinc-600 dark:text-zinc-300">
                 {formatPrice(latestPrice.monthlyDeposit)}/{(latestPrice.monthlyRent / 10000).toFixed(0)}만
               </span>
             </div>
           )}
           {latestPrice.listingCount > 0 && (
             <div className="flex justify-between items-center">
-              <span className="text-[10px] text-zinc-500">매물</span>
-              <span className="text-xs text-zinc-400">{latestPrice.listingCount}건</span>
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-500">매물</span>
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">{latestPrice.listingCount}건</span>
             </div>
           )}
         </div>

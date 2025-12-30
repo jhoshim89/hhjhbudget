@@ -17,7 +17,7 @@ export default function KeyMetrics({ bondBalance, income, expense }) {
       <div className="px-6 flex items-center justify-between">
         <div>
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">안전 자산 (Bonds)</p>
-          <p className="text-2xl font-bold text-white">{formatKRW(bondBalance)}</p>
+          <p className="text-2xl font-bold text-zinc-800 dark:text-white">{formatKRW(bondBalance)}</p>
         </div>
         <div className="text-right">
           <span className="px-2 py-1 bg-amber-900/30 text-amber-500 text-xs font-bold rounded">YIELD 4.2%</span>

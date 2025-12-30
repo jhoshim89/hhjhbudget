@@ -256,7 +256,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   };
 
   return (
-    <div className="flex flex-col bg-surface/50 h-full">
+    <div className="flex flex-col bg-surface/50 h-full pb-mobile-nav">
       {/* Month Selector - Sticky */}
       <div className="sticky top-0 z-10 p-3 flex justify-center border-b border-white/[0.06] bg-surface/95 backdrop-blur-md">
         <div className="inline-flex items-center bg-panel/50 backdrop-blur-sm rounded-full border border-white/[0.06] p-1">

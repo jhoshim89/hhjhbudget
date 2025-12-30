@@ -63,7 +63,7 @@ export default function PasswordGate({ children }) {
           </div>
 
           {/* 타이틀 */}
-          <h1 className="text-xl font-bold text-center text-white mb-2">
+          <h1 className="text-xl font-bold text-center text-zinc-800 dark:text-white mb-2">
             가계부 대시보드
           </h1>
           <p className="text-sm text-zinc-500 text-center mb-6">
@@ -79,8 +79,8 @@ export default function PasswordGate({ children }) {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="비밀번호"
                 autoFocus
-                className="w-full px-4 py-3 bg-zinc-900/50 border border-white/[0.08] rounded-xl
-                         text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50
+                className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/[0.08] rounded-xl
+                         text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-blue-500/50
                          transition-colors pr-12"
               />
               <button

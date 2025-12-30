@@ -133,21 +133,21 @@ export default function AddWatchlistModal({ isOpen, onClose, onAdd, existingStoc
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-zinc-900/95 backdrop-blur-xl border border-amber-500/20 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-amber-500/20 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-amber-500/5">
-          <h3 className="text-lg font-bold text-amber-400">관심종목 추가</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06] bg-amber-500/5">
+          <h3 className="text-lg font-bold text-amber-500 dark:text-amber-400">관심종목 추가</h3>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-white/[0.05] rounded-lg"
+            className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors p-1.5 hover:bg-zinc-100 dark:hover:bg-white/[0.05] rounded-lg"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* 검색 입력 */}
-        <div className="p-4 border-b border-white/[0.06]">
+        <div className="p-4 border-b border-zinc-200 dark:border-white/[0.06]">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <input
@@ -156,7 +156,7 @@ export default function AddWatchlistModal({ isOpen, onClose, onAdd, existingStoc
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="종목명, 티커, 영문명으로 검색..."
-              className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+              className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
             />
           </div>
         </div>
@@ -169,14 +169,14 @@ export default function AddWatchlistModal({ isOpen, onClose, onAdd, existingStoc
                 key={stock.ticker}
                 onClick={() => handleSelectStock(stock)}
                 disabled={stock.isExisting}
-                className={`w-full px-6 py-3 text-left flex items-center justify-between transition-colors border-b border-white/[0.03] last:border-b-0 ${
+                className={`w-full px-6 py-3 text-left flex items-center justify-between transition-colors border-b border-zinc-100 dark:border-white/[0.03] last:border-b-0 ${
                   stock.isExisting
-                    ? 'opacity-50 cursor-not-allowed bg-zinc-800/30'
+                    ? 'opacity-50 cursor-not-allowed bg-zinc-100 dark:bg-zinc-800/30'
                     : 'hover:bg-amber-500/10 cursor-pointer'
                 }`}
               >
                 <div className="flex flex-col">
-                  <span className="text-white font-medium">{stock.name}</span>
+                  <span className="text-zinc-800 dark:text-white font-medium">{stock.name}</span>
                   <span className="text-zinc-500 text-xs font-mono">{stock.ticker}</span>
                 </div>
                 {stock.isExisting ? (
@@ -202,7 +202,7 @@ export default function AddWatchlistModal({ isOpen, onClose, onAdd, existingStoc
         </div>
 
         {/* 푸터 안내 */}
-        <div className="px-6 py-3 bg-zinc-800/30 border-t border-white/[0.06]">
+        <div className="px-6 py-3 bg-zinc-100 dark:bg-zinc-800/30 border-t border-zinc-200 dark:border-white/[0.06]">
           <p className="text-[10px] text-zinc-500 text-center">
             종목을 선택하면 관심종목에 바로 추가됩니다
           </p>

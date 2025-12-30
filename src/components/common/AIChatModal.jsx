@@ -43,16 +43,16 @@ export default function AIChatModal({ isOpen, onClose, context, actionHandlers =
     <div className={containerClass}>
       {/* 백드롭 */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* 모달 컨테이너 */}
-      <div className="relative w-full h-[85vh] md:w-[420px] md:h-full md:max-h-screen bg-zinc-900 rounded-t-3xl md:rounded-none shadow-2xl animate-slide-up md:animate-slide-left overflow-hidden">
+      <div className="relative w-full h-[85vh] md:w-[420px] md:h-full md:max-h-screen bg-white dark:bg-zinc-900 rounded-t-3xl md:rounded-none shadow-2xl animate-slide-up md:animate-slide-left overflow-hidden">
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl transition-colors"
+          className="absolute top-3 right-3 z-10 p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
           aria-label="닫기"
         >
           <X size={20} />
@@ -60,7 +60,7 @@ export default function AIChatModal({ isOpen, onClose, context, actionHandlers =
 
         {/* 모바일 드래그 핸들 */}
         <div className="md:hidden flex justify-center pt-3 pb-1">
-          <div className="w-12 h-1 bg-zinc-700 rounded-full" />
+          <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
         </div>
 
         {/* AI 채팅 패널 */}

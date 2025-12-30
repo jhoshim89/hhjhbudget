@@ -36,7 +36,7 @@ export default function PropertySummaryCard({ complex, onSelect }) {
             </span>
           )}
           <div>
-            <h4 className="font-semibold text-white text-sm">{complex.name}</h4>
+            <h4 className="font-semibold text-zinc-800 dark:text-white text-sm">{complex.name}</h4>
             <p className="text-[10px] text-zinc-500">{complex.region}</p>
           </div>
         </div>
@@ -48,7 +48,7 @@ export default function PropertySummaryCard({ complex, onSelect }) {
                 className={`px-1.5 py-0.5 text-[10px] rounded ${
                   area === '84' || (!complex.areas['84'] && area === '80')
                     ? 'bg-teal-500/20 text-teal-400'
-                    : 'bg-zinc-800 text-zinc-500'
+                    : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-500'
                 }`}
               >
                 {area}㎡
@@ -65,7 +65,7 @@ export default function PropertySummaryCard({ complex, onSelect }) {
           <div className="text-right">
             {primaryArea.sale?.count > 0 ? (
               <>
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-zinc-800 dark:text-white">
                   {formatPriceRange(primaryArea.sale.minPrice, primaryArea.sale.maxPrice)}
                 </p>
                 <p className="text-[10px] text-zinc-500">{primaryArea.sale.count}건</p>
@@ -112,9 +112,9 @@ export default function PropertySummaryCard({ complex, onSelect }) {
       </div>
 
       {/* 푸터 */}
-      <div className="mt-3 pt-3 border-t border-zinc-800/50 flex items-center justify-between">
+      <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800/50 flex items-center justify-between">
         <span className="text-xs text-zinc-500">총 매물</span>
-        <span className={`text-sm font-semibold ${totalListings > 10 ? 'text-emerald-400' : 'text-zinc-300'}`}>
+        <span className={`text-sm font-semibold ${totalListings > 10 ? 'text-emerald-500 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-300'}`}>
           {totalListings}건
         </span>
       </div>

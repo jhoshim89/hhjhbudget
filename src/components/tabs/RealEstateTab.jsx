@@ -91,7 +91,7 @@ export default function RealEstateTab({ data, handlers }) {
   }, [loans]);
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6 pb-mobile-nav">
       {/* 요약 카드 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <div className="bento-card-sm animate-enter delay-0">
@@ -99,10 +99,10 @@ export default function RealEstateTab({ data, handlers }) {
             <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
               <Building2 size={16} className="text-violet-400" />
             </div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">내 부동산</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">내 부동산</span>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-white">{formatPrice(totalAssets)}</p>
-          <p className="text-[10px] text-zinc-500">{myProperties.length}건</p>
+          <p className="text-xl md:text-2xl font-bold text-zinc-800 dark:text-white">{formatPrice(totalAssets)}</p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-500">{myProperties.length}건</p>
         </div>
 
         <div className="bento-card-sm animate-enter delay-50">
@@ -110,10 +110,10 @@ export default function RealEstateTab({ data, handlers }) {
             <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
               <CreditCard size={16} className="text-rose-400" />
             </div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">총 대출</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">총 대출</span>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-rose-400">{formatPrice(totalDebt)}</p>
-          <p className="text-[10px] text-zinc-500">{loans.length}건</p>
+          <p className="text-xl md:text-2xl font-bold text-rose-500 dark:text-rose-400">{formatPrice(totalDebt)}</p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-500">{loans.length}건</p>
         </div>
 
         <div className="bento-card-sm animate-enter delay-100">
@@ -121,12 +121,12 @@ export default function RealEstateTab({ data, handlers }) {
             <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
               <Wallet size={16} className="text-emerald-400" />
             </div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">순자산</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">순자산</span>
           </div>
-          <p className={`text-xl md:text-2xl font-bold ${netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <p className={`text-xl md:text-2xl font-bold ${netWorth >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
             {netWorth >= 0 ? '' : '-'}{formatPrice(Math.abs(netWorth))}
           </p>
-          <p className="text-[10px] text-zinc-500">자산 - 대출</p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-500">자산 - 대출</p>
         </div>
 
         <div className="bento-card-sm animate-enter delay-150">
@@ -134,10 +134,10 @@ export default function RealEstateTab({ data, handlers }) {
             <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
               <TrendingDown size={16} className="text-amber-400" />
             </div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">월 상환금</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500 uppercase tracking-wider">월 상환금</span>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-amber-400">{formatPrice(loans.reduce((sum, l) => sum + (l.monthlyPayment || 0), 0))}</p>
-          <p className="text-[10px] text-zinc-500">매월 지출</p>
+          <p className="text-xl md:text-2xl font-bold text-amber-500 dark:text-amber-400">{formatPrice(loans.reduce((sum, l) => sum + (l.monthlyPayment || 0), 0))}</p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-500">매월 지출</p>
         </div>
       </div>
 
@@ -151,7 +151,7 @@ export default function RealEstateTab({ data, handlers }) {
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
                 activeSubTab === tab.id
                   ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
-                  : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 border border-transparent'
+                  : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-transparent'
               }`}
             >
               <tab.icon size={14} />
@@ -174,7 +174,7 @@ export default function RealEstateTab({ data, handlers }) {
               className={`p-2 rounded-lg transition-colors ${
                 marketViewMode === 'card'
                   ? 'bg-teal-500/20 text-teal-400'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
               <LayoutGrid size={16} />
@@ -184,7 +184,7 @@ export default function RealEstateTab({ data, handlers }) {
               className={`p-2 rounded-lg transition-colors ${
                 marketViewMode === 'table'
                   ? 'bg-teal-500/20 text-teal-400'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
               <Table2 size={16} />
@@ -237,7 +237,7 @@ export default function RealEstateTab({ data, handlers }) {
                 <div className="w-16 h-16 rounded-2xl bg-teal-500/10 flex items-center justify-center mb-4">
                   <Home size={32} className="text-teal-400 opacity-50" />
                 </div>
-                <h4 className="text-lg font-semibold text-white mb-2">관심 부동산이 없습니다</h4>
+                <h4 className="text-lg font-semibold text-zinc-800 dark:text-white mb-2">관심 부동산이 없습니다</h4>
                 <p className="text-sm text-zinc-500 mb-4">관심 있는 아파트를 추가하고 시세를 추적해보세요</p>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
@@ -271,7 +271,7 @@ export default function RealEstateTab({ data, handlers }) {
                 <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4">
                   <Building2 size={32} className="text-violet-400 opacity-50" />
                 </div>
-                <h4 className="text-lg font-semibold text-white mb-2">보유 부동산이 없습니다</h4>
+                <h4 className="text-lg font-semibold text-zinc-800 dark:text-white mb-2">보유 부동산이 없습니다</h4>
                 <p className="text-sm text-zinc-500 mb-4">내 부동산을 등록하고 자산을 관리해보세요</p>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
@@ -305,7 +305,7 @@ export default function RealEstateTab({ data, handlers }) {
                 <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4">
                   <Landmark size={32} className="text-amber-400 opacity-50" />
                 </div>
-                <h4 className="text-lg font-semibold text-white mb-2">대출이 없습니다</h4>
+                <h4 className="text-lg font-semibold text-zinc-800 dark:text-white mb-2">대출이 없습니다</h4>
                 <p className="text-sm text-zinc-500 mb-4">대출을 등록하고 상환 계획을 관리해보세요</p>
                 <button
                   onClick={() => setIsAddModalOpen(true)}

@@ -58,7 +58,7 @@ export default function LoanCard({ loan, property, onUpdate, onRemove }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-xl font-bold text-white">{bank || type}</h4>
+              <h4 className="text-xl font-bold text-zinc-800 dark:text-white">{bank || type}</h4>
               <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-full">{rate}%</span>
             </div>
             {property && <p className="text-sm text-zinc-400 mt-1">{property.name}</p>}
@@ -69,34 +69,34 @@ export default function LoanCard({ loan, property, onUpdate, onRemove }) {
 
       {/* 대출 잔액 */}
       <div className="p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-2xl mb-6">
-        <p className="text-xs text-zinc-400 mb-1">대출 잔액</p>
-        <p className="text-3xl font-bold text-white">{formatPrice(currentBalance)}</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">대출 잔액</p>
+        <p className="text-3xl font-bold text-zinc-800 dark:text-white">{formatPrice(currentBalance)}</p>
         <p className="text-xs text-zinc-500 mt-1">최초 대출금 {formatPrice(amount)}</p>
       </div>
 
       {/* 상세 정보 그리드 */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="p-4 bg-zinc-800/50 rounded-xl">
+        <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown size={14} className="text-rose-400" />
-            <span className="text-xs text-zinc-400">월 상환금</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">월 상환금</span>
           </div>
-          <p className="text-lg font-bold text-white">{formatPrice(savedMonthlyPayment || monthlyPayment)}</p>
+          <p className="text-lg font-bold text-zinc-800 dark:text-white">{formatPrice(savedMonthlyPayment || monthlyPayment)}</p>
         </div>
-        <div className="p-4 bg-zinc-800/50 rounded-xl">
+        <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <Percent size={14} className="text-amber-400" />
-            <span className="text-xs text-zinc-400">예상 월 이자</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">예상 월 이자</span>
           </div>
-          <p className="text-lg font-bold text-amber-400">{formatPrice(monthlyInterest)}</p>
+          <p className="text-lg font-bold text-amber-500 dark:text-amber-400">{formatPrice(monthlyInterest)}</p>
         </div>
       </div>
 
       {/* 마지막 납부 내역 */}
       {lastPaymentDate && (
-        <div className="p-4 bg-zinc-800/30 rounded-xl mb-6">
+        <div className="p-4 bg-zinc-100 dark:bg-zinc-800/30 rounded-xl mb-6">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-zinc-300">최근 납부 내역</span>
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">최근 납부 내역</span>
             <span className="text-xs text-zinc-500">{lastPaymentDate}</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -113,14 +113,14 @@ export default function LoanCard({ loan, property, onUpdate, onRemove }) {
       )}
 
       {/* 기간 정보 */}
-      <div className="flex items-center justify-between p-4 bg-zinc-800/30 rounded-xl mb-6">
+      <div className="flex items-center justify-between p-4 bg-zinc-100 dark:bg-zinc-800/30 rounded-xl mb-6">
         <div className="flex items-center gap-2">
           <Calendar size={14} className="text-zinc-500" />
-          <span className="text-sm text-zinc-400">시작일: {startDate}</span>
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">시작일: {startDate}</span>
         </div>
         <div className="text-sm">
-          <span className="text-zinc-400">남은 기간: </span>
-          <span className="text-white font-semibold">
+          <span className="text-zinc-600 dark:text-zinc-400">남은 기간: </span>
+          <span className="text-zinc-800 dark:text-white font-semibold">
             {yearsRemaining > 0 && `${yearsRemaining}년 `}{monthsRemainder}개월
           </span>
         </div>

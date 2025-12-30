@@ -73,7 +73,7 @@ function SortableStockItem({ stock, stockData, isSelected, onSelect, onRemove, e
       <button
         {...attributes}
         {...listeners}
-        className="p-1 text-zinc-600 hover:text-zinc-400 cursor-grab active:cursor-grabbing"
+        className="p-1 text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 cursor-grab active:cursor-grabbing"
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical size={14} />
@@ -109,7 +109,7 @@ function SortableStockItem({ stock, stockData, isSelected, onSelect, onRemove, e
           e.stopPropagation();
           onRemove(stock.ticker);
         }}
-        className="p-1 text-zinc-600 opacity-0 group-hover:opacity-100 hover:text-rose-400 transition-all"
+        className="p-1 text-zinc-400 dark:text-zinc-600 opacity-0 group-hover:opacity-100 hover:text-rose-400 transition-all"
       >
         <X size={14} />
       </button>
@@ -308,21 +308,21 @@ function DetailChart({ stock, stockData, exchangeRate, chartRange, onChartRangeC
   return (
     <div className="flex-1 flex flex-col min-h-0 p-4">
       {/* 종목 헤더 */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <span className="text-2xl font-bold text-amber-400 font-mono">{stock.ticker}</span>
-            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-semibold ${
+      <div className="flex items-start justify-between mb-4 gap-2">
+        <div className="min-w-0 flex-shrink">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-lg md:text-2xl font-bold text-amber-400 font-mono">{stock.ticker}</span>
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs md:text-sm font-semibold ${
               isPositive ? 'bg-green-500/20 text-green-400' : 'bg-rose-500/20 text-rose-400'
             }`}>
-              {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+              {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
               {isPositive ? '+' : ''}{changePercent.toFixed(2)}%
             </span>
           </div>
-          <p className="text-sm text-zinc-400">{stock.name}</p>
+          <p className="text-xs md:text-sm text-zinc-400 truncate">{stock.name}</p>
         </div>
-        <div className="text-right">
-          <p className="text-3xl font-bold font-mono text-foreground">{displayPrice}</p>
+        <div className="text-right flex-shrink-0">
+          <p className="text-xl md:text-3xl font-bold font-mono text-foreground">{displayPrice}</p>
           {isCrypto && exchangeRate && (
             <p className="text-sm text-zinc-400 font-mono">
               ₩{Math.round(price * exchangeRate).toLocaleString('ko-KR')}
@@ -354,7 +354,7 @@ function DetailChart({ stock, stockData, exchangeRate, chartRange, onChartRangeC
             className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
               chartRange === value
                 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]'
+                : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.03]'
             }`}
           >
             {label}
@@ -484,7 +484,7 @@ export default function WatchlistTab({ stocks, prices, loading, onAddStock, onRe
         existingStocks={existingTickers}
       />
 
-      <div className="flex flex-col h-full p-3 md:p-4">
+      <div className="flex flex-col h-full p-3 md:p-4 pb-mobile-nav">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -513,9 +513,9 @@ export default function WatchlistTab({ stocks, prices, loading, onAddStock, onRe
             <RefreshCw size={32} className="text-amber-400 animate-spin" />
           </div>
         ) : stocks && stocks.length > 0 ? (
-          <div className="flex-1 flex gap-4 min-h-0">
+          <div className="flex-1 flex flex-col md:flex-row gap-4 min-h-0 overflow-y-auto md:overflow-visible">
             {/* 왼쪽: 종목 리스트 */}
-            <div className="w-80 flex-shrink-0 flex flex-col min-h-0">
+            <div className="w-full md:w-80 flex-shrink-0 flex flex-col min-h-0 max-h-[280px] md:max-h-none">
               <div className="text-xs text-zinc-500 mb-2 px-1">드래그하여 순서 변경</div>
               <div className="flex-1 overflow-y-auto pr-1 space-y-1">
                 <DndContext
@@ -544,7 +544,7 @@ export default function WatchlistTab({ stocks, prices, loading, onAddStock, onRe
             </div>
 
             {/* 오른쪽: 상세 차트 */}
-            <div className="flex-1 bento-card border-amber-500/20 bg-amber-500/5 flex flex-col min-h-0">
+            <div className="flex-1 bento-card border-amber-500/20 bg-amber-500/5 flex flex-col min-h-[300px] md:min-h-0">
               <DetailChart
                 stock={selectedStock}
                 stockData={selectedStockData}

@@ -11,12 +11,12 @@ export default function DesktopAIChatPanel({ isOpen, onClose, context, actionHan
   if (!isOpen) return null;
 
   return (
-    <div className="hidden md:flex flex-col w-[400px] h-full bg-zinc-900 border-l border-white/[0.06] animate-slide-in-right flex-shrink-0">
+    <div className="hidden md:flex flex-col w-[400px] h-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-white/[0.06] animate-slide-in-right flex-shrink-0">
       {/* Header with close button */}
-      <div className="flex items-center justify-end p-2 border-b border-white/[0.06]">
+      <div className="flex items-center justify-end p-2 border-b border-zinc-200 dark:border-white/[0.06]">
         <button
           onClick={onClose}
-          className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xl transition-colors"
+          className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
           aria-label="닫기"
         >
           <X size={20} />

@@ -57,8 +57,8 @@ export default function MyPropertyCard({ property, loans = [], onUpdate, onRemov
             <Building2 size={28} className="text-violet-400" />
           </div>
           <div>
-            <h4 className="text-xl font-bold text-white">{name}</h4>
-            <p className="text-sm text-zinc-400">{area}㎡ · {purchaseDate} 매입</p>
+            <h4 className="text-xl font-bold text-zinc-800 dark:text-white">{name}</h4>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{area}㎡ · {purchaseDate} 매입</p>
           </div>
         </div>
 
@@ -75,26 +75,26 @@ export default function MyPropertyCard({ property, loans = [], onUpdate, onRemov
       <div className="p-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 rounded-2xl mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-zinc-400 mb-1">현재 평가액</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">현재 평가액</p>
             {isEditing ? (
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="w-32 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-lg text-white focus:outline-none focus:border-violet-500"
+                  className="w-32 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-lg text-zinc-800 dark:text-white focus:outline-none focus:border-violet-500"
                   autoFocus
                 />
                 <button onClick={handleSave} className="p-2 text-emerald-400 hover:bg-emerald-500/20 rounded-lg">
                   <Check size={18} />
                 </button>
-                <button onClick={handleCancel} className="p-2 text-zinc-500 hover:bg-zinc-700 rounded-lg">
+                <button onClick={handleCancel} className="p-2 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg">
                   <X size={18} />
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <p className="text-3xl font-bold text-white">{formatPrice(currentValue || purchasePrice)}</p>
+                <p className="text-3xl font-bold text-zinc-800 dark:text-white">{formatPrice(currentValue || purchasePrice)}</p>
                 <button onClick={handleEdit} className="p-2 text-zinc-500 hover:text-violet-400 hover:bg-violet-500/20 rounded-lg transition-colors">
                   <Edit3 size={16} />
                 </button>
@@ -102,38 +102,38 @@ export default function MyPropertyCard({ property, loans = [], onUpdate, onRemov
             )}
           </div>
           <div className="text-right">
-            <p className="text-xs text-zinc-500">매입가</p>
-            <p className="text-lg font-semibold text-zinc-400">{formatPrice(purchasePrice)}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-500">매입가</p>
+            <p className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">{formatPrice(purchasePrice)}</p>
           </div>
         </div>
       </div>
 
       {/* 손익 & 순자산 */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="p-4 bg-zinc-800/50 rounded-xl">
-          <p className="text-xs text-zinc-400 mb-2">평가 손익</p>
-          <p className={`text-xl font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
+        <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">평가 손익</p>
+          <p className={`text-xl font-bold ${isProfit ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
             {isProfit ? '+' : ''}{formatPrice(profit)}
           </p>
         </div>
-        <div className="p-4 bg-zinc-800/50 rounded-xl">
-          <p className="text-xs text-zinc-400 mb-2">순자산</p>
-          <p className="text-xl font-bold text-white">{formatPrice(equity)}</p>
-          <p className="text-[10px] text-zinc-500">자산 - 대출</p>
+        <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">순자산</p>
+          <p className="text-xl font-bold text-zinc-800 dark:text-white">{formatPrice(equity)}</p>
+          <p className="text-[10px] text-zinc-500 dark:text-zinc-500">자산 - 대출</p>
         </div>
       </div>
 
       {/* 대출 정보 */}
       {loans.length > 0 && (
-        <div className="p-4 bg-zinc-800/30 rounded-xl mb-4">
-          <p className="text-xs text-zinc-400 uppercase tracking-wider mb-3">연결된 대출</p>
+        <div className="p-4 bg-zinc-100 dark:bg-zinc-800/30 rounded-xl mb-4">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">연결된 대출</p>
           {loans.map(loan => (
-            <div key={loan.id} className="flex justify-between items-center py-2 border-b border-zinc-700/50 last:border-0">
+            <div key={loan.id} className="flex justify-between items-center py-2 border-b border-zinc-200 dark:border-zinc-700/50 last:border-0">
               <div>
-                <span className="text-sm text-zinc-300">{loan.bank || loan.type || '대출'}</span>
-                <span className="text-xs text-amber-400 ml-2">({loan.rate}%)</span>
+                <span className="text-sm text-zinc-600 dark:text-zinc-300">{loan.bank || loan.type || '대출'}</span>
+                <span className="text-xs text-amber-500 dark:text-amber-400 ml-2">({loan.rate}%)</span>
               </div>
-              <span className="text-sm font-semibold text-zinc-200">{formatPrice(loan.balance || loan.amount)}</span>
+              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{formatPrice(loan.balance || loan.amount)}</span>
             </div>
           ))}
         </div>

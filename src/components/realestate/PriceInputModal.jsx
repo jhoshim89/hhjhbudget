@@ -47,8 +47,8 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 w-full max-w-md animate-enter">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-6 w-full max-w-md animate-enter">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -56,11 +56,11 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
               <TrendingUp size={20} className="text-teal-400" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">시세 입력</h3>
+              <h3 className="text-lg font-bold text-zinc-800 dark:text-white">시세 입력</h3>
               <p className="text-xs text-zinc-500">{property.name} {property.area}㎡</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 text-zinc-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -76,7 +76,7 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+              className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
               required
             />
           </div>
@@ -93,7 +93,7 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
               value={formData.salePrice}
               onChange={handleChange}
               placeholder="4200000000"
-              className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+              className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
             />
           </div>
 
@@ -109,7 +109,7 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
               value={formData.jeonsePrice}
               onChange={handleChange}
               placeholder="1800000000"
-              className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+              className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
             />
           </div>
 
@@ -125,7 +125,7 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
                 value={formData.monthlyDeposit}
                 onChange={handleChange}
                 placeholder="800000000"
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+                className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
               />
             </div>
             <div>
@@ -138,7 +138,7 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
                 value={formData.monthlyRent}
                 onChange={handleChange}
                 placeholder="3500000"
-                className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+                className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
               />
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
               value={formData.listingCount}
               onChange={handleChange}
               placeholder="23"
-              className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+              className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
             />
           </div>
 
@@ -163,7 +163,7 @@ export default function PriceInputModal({ isOpen, onClose, property, onSubmit })
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 border border-zinc-700 text-zinc-400 hover:bg-white/[0.02] rounded-xl font-medium transition-colors"
+              className="flex-1 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.02] rounded-xl font-medium transition-colors"
             >
               취소
             </button>

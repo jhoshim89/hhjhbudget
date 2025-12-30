@@ -72,24 +72,24 @@ const CustomTooltip = ({ active, payload }) => {
   };
 
   return (
-    <div className="bg-zinc-900 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
-      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/10">
+    <div className="bg-white dark:bg-zinc-900 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
+      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-zinc-200 dark:border-white/10">
         <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-        <span className="text-white font-bold text-sm">{data.displayMonth}</span>
+        <span className="text-zinc-800 dark:text-white font-bold text-sm">{data.displayMonth}</span>
       </div>
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-zinc-400 text-xs">수입</span>
-          <span className="text-green-400 font-mono font-semibold text-sm">{formatManWon(income)}</span>
+          <span className="text-zinc-600 dark:text-zinc-400 text-xs">수입</span>
+          <span className="text-green-500 dark:text-green-400 font-mono font-semibold text-sm">{formatManWon(income)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-zinc-400 text-xs">지출</span>
-          <span className="text-rose-400 font-mono font-semibold text-sm">{formatManWon(expense)}</span>
+          <span className="text-zinc-600 dark:text-zinc-400 text-xs">지출</span>
+          <span className="text-rose-500 dark:text-rose-400 font-mono font-semibold text-sm">{formatManWon(expense)}</span>
         </div>
-        <div className="flex justify-between items-center pt-2 border-t border-white/10">
-          <span className="text-zinc-400 text-xs">순수익</span>
-          <span className={`font-mono font-bold text-sm ${net >= 0 ? 'text-blue-400' : 'text-amber-400'}`}>
+        <div className="flex justify-between items-center pt-2 border-t border-zinc-200 dark:border-white/10">
+          <span className="text-zinc-600 dark:text-zinc-400 text-xs">순수익</span>
+          <span className={`font-mono font-bold text-sm ${net >= 0 ? 'text-blue-500 dark:text-blue-400' : 'text-amber-500 dark:text-amber-400'}`}>
             {net >= 0 ? '+' : ''}{formatManWon(net)}
           </span>
         </div>
@@ -227,7 +227,7 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
   }, [chartData]);
 
   return (
-    <div className="flex flex-col gap-3 p-3 md:p-4">
+    <div className="flex flex-col gap-3 p-3 md:p-4 pb-mobile-nav">
       {/* Month Selector */}
       <div className="flex justify-center">
         <div className="inline-flex items-center bg-panel/50 backdrop-blur-sm rounded-full border border-white/[0.06] p-1">
@@ -260,8 +260,8 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
           type="expense"
           delay={100}
           subInfo={stats.expenseCalc && stats.expenseCalc.hasPrevData && (
-            <div className="flex justify-between">
-              <span>전달+수입-현재</span>
+            <div className="flex justify-between text-[10px]">
+              <span className="whitespace-nowrap">전달+수입-현재</span>
               <span className="font-mono">
                 {formatKRW(stats.expenseCalc.prevMonthBalance, true)}+{formatKRW(stats.expenseCalc.thisMonthIncome, true)}-{formatKRW(stats.expenseCalc.currentBalance, true)}
               </span>
@@ -509,8 +509,8 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
                     const data = payload[0].payload;
                     const diff = data.amount - data.avg;
                     return (
-                      <div className="bg-zinc-900 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl">
-                        <div className="text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
+                      <div className="bg-white dark:bg-zinc-900 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl">
+                        <div className="text-zinc-800 dark:text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
                         <div className="flex justify-between items-center gap-4">
                           <span className="text-zinc-400 text-xs">카드값</span>
                           <span className="text-rose-400 font-mono font-semibold text-sm">{formatKRW(data.amount, true)}</span>

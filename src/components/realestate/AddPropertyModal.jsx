@@ -79,12 +79,12 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 w-full max-w-md animate-enter">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200 dark:border-white/[0.08] rounded-2xl p-6 w-full max-w-md animate-enter">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-white">부동산 추가</h3>
-          <button onClick={onClose} className="p-1 text-zinc-500 hover:text-white transition-colors">
+          <h3 className="text-lg font-bold text-zinc-800 dark:text-white">부동산 추가</h3>
+          <button onClick={onClose} className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -97,8 +97,8 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
               onClick={() => setTab(t.id)}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
                 tab === t.id
-                  ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
-                  : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800'
+                  ? 'bg-teal-500/20 text-teal-500 dark:text-teal-400 border border-teal-500/30'
+                  : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
               }`}
             >
               <t.icon size={14} />
@@ -122,7 +122,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="래미안 원베일리"
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
                   required
                 />
               </div>
@@ -137,7 +137,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.area}
                     onChange={handleChange}
                     placeholder="84"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
                     required
                   />
                 </div>
@@ -151,7 +151,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.regionCode}
                     onChange={handleChange}
                     placeholder="11680"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
                   />
                 </div>
               </div>
@@ -165,7 +165,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                   value={formData.address}
                   onChange={handleChange}
                   placeholder="서울시 서초구 반포동"
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-teal-500"
                 />
               </div>
             </>
@@ -184,7 +184,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="아파트명"
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
                   required
                 />
               </div>
@@ -199,7 +199,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.area}
                     onChange={handleChange}
                     placeholder="84"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500"
                     required
                   />
                 </div>
@@ -212,7 +212,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     name="purchaseDate"
                     value={formData.purchaseDate}
                     onChange={handleChange}
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white focus:outline-none focus:border-violet-500"
                     required
                   />
                 </div>
@@ -228,7 +228,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.purchasePrice}
                     onChange={handleChange}
                     placeholder="500000000"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500"
                     required
                   />
                 </div>
@@ -242,7 +242,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.currentValue}
                     onChange={handleChange}
                     placeholder="520000000"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-violet-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-violet-500"
                   />
                 </div>
               </div>
@@ -260,7 +260,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                   name="propertyId"
                   value={formData.propertyId}
                   onChange={handleChange}
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="">선택 안 함</option>
                   {myProperties.map(p => (
@@ -279,7 +279,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.amount}
                     onChange={handleChange}
                     placeholder="300000000"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
                     required
                   />
                 </div>
@@ -293,7 +293,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.rate}
                     onChange={handleChange}
                     placeholder="4.5"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
                     required
                   />
                 </div>
@@ -308,7 +308,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleChange}
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
@@ -321,7 +321,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                     value={formData.term}
                     onChange={handleChange}
                     placeholder="360"
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -333,7 +333,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="원리금균등">원리금균등</option>
                   <option value="원금균등">원금균등</option>
@@ -348,7 +348,7 @@ export default function AddPropertyModal({ isOpen, onClose, onAddWatch, onAddMy,
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 border border-zinc-700 text-zinc-400 hover:bg-white/[0.02] rounded-xl font-medium transition-colors"
+              className="flex-1 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.02] rounded-xl font-medium transition-colors"
             >
               취소
             </button>

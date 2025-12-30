@@ -58,7 +58,7 @@ export default function WatchlistCard({
           e.stopPropagation();
           onRemove && onRemove();
         }}
-        className="absolute top-2 right-2 p-1.5 rounded-lg bg-zinc-800/80 text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 hover:text-rose-400 transition-all duration-200 z-10"
+        className="absolute top-2 right-2 p-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 hover:text-rose-400 transition-all duration-200 z-10"
         title="관심종목에서 삭제"
       >
         <X size={14} />
