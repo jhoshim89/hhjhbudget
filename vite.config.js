@@ -10,6 +10,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'robots.txt'],
       manifest: {
+        id: '/',
         name: 'Budget Dashboard',
         short_name: 'Budget',
         description: '가계부 대시보드 - 수입, 지출, 투자 관리',
