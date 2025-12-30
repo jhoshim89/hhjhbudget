@@ -50,7 +50,7 @@ const TARGET_COMPLEXES = [
 ];
 
 /**
- * Browserless에 연결
+ * Browserless에 연결 (Playwright용)
  */
 async function connectBrowser() {
   const token = process.env.BROWSERLESS_API_KEY;
@@ -58,8 +58,9 @@ async function connectBrowser() {
     throw new Error('BROWSERLESS_API_KEY 환경변수가 설정되지 않았습니다');
   }
 
-  const browser = await chromium.connectOverCDP(
-    `wss://chrome.browserless.io?token=${token}`
+  // Browserless.io Playwright 전용 엔드포인트
+  const browser = await chromium.connect(
+    `wss://production-sfo.browserless.io/chromium/playwright?token=${token}`
   );
 
   return browser;
