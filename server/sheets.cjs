@@ -1178,6 +1178,396 @@ async function updateRealEstate(id, updates) {
   }
 }
 
+// ============================================
+// 부동산 시세 히스토리 (별도 시트: "부동산시세")
+// ============================================
+
+const PRICE_HISTORY_SHEET = '부동산시세';
+
+// 부동산시세 시트 가져오기 (없으면 생성)
+async function getOrCreatePriceHistorySheet() {
+  try {
+    const sheetInfo = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const priceSheet = sheetInfo.data.sheets.find(
+      s => s.properties.title === PRICE_HISTORY_SHEET
+    );
+
+    if (priceSheet) {
+      return priceSheet.properties.sheetId;
+    }
+
+    // 시트가 없으면 생성
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: PRICE_HISTORY_SHEET }
+          }
+        }]
+      }
+    });
+
+    // 헤더 추가
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${PRICE_HISTORY_SHEET}!A1:L1`,
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: [['date', 'complexId', 'complexName', 'area', 'saleCount', 'saleMin', 'saleMax', 'jeonseCount', 'jeonseMin', 'jeonseMax', 'monthlyCount', 'updatedAt']]
+      },
+    });
+
+    return response.data.replies[0].addSheet.properties.sheetId;
+  } catch (error) {
+    console.error('Error getting/creating price history sheet:', error.message);
+    throw error;
+  }
+}
+
+// 오늘 시세 데이터 조회
+async function getTodayPriceData(date) {
+  try {
+    await getOrCreatePriceHistorySheet();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${PRICE_HISTORY_SHEET}!A:L`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return null;
+
+    // 해당 날짜 데이터 필터링
+    const todayData = rows.slice(1)
+      .filter(row => row[0] === date)
+      .map(([date, complexId, complexName, area, saleCount, saleMin, saleMax, jeonseCount, jeonseMin, jeonseMax, monthlyCount, updatedAt]) => ({
+        date,
+        complexId,
+        complexName,
+        area: parseInt(area) || 0,
+        saleCount: parseInt(saleCount) || 0,
+        saleMin: parseInt(saleMin) || 0,
+        saleMax: parseInt(saleMax) || 0,
+        jeonseCount: parseInt(jeonseCount) || 0,
+        jeonseMin: parseInt(jeonseMin) || 0,
+        jeonseMax: parseInt(jeonseMax) || 0,
+        monthlyCount: parseInt(monthlyCount) || 0,
+        updatedAt,
+      }));
+
+    return todayData.length > 0 ? todayData : null;
+  } catch (error) {
+    console.error('Error getting today price data:', error.message);
+    return null;
+  }
+}
+
+// 시세 데이터 저장 (upsert)
+async function savePriceHistory(records) {
+  try {
+    const sheetId = await getOrCreatePriceHistorySheet();
+
+    // 현재 데이터 가져오기
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${PRICE_HISTORY_SHEET}!A:L`,
+    });
+
+    const existingRows = response.data.values || [];
+
+    // 새 데이터 준비 (중복 체크)
+    const existingKeys = new Set();
+    existingRows.slice(1).forEach(row => {
+      if (row[0] && row[1] && row[3]) {
+        existingKeys.add(`${row[0]}_${row[1]}_${row[3]}`); // date_complexId_area
+      }
+    });
+
+    const newRecords = records.filter(r =>
+      !existingKeys.has(`${r.date}_${r.complexId}_${r.area}`)
+    );
+
+    if (newRecords.length === 0) {
+      console.log('[Sheets] No new price records to save');
+      return { saved: 0 };
+    }
+
+    // 새 데이터 추가
+    const values = newRecords.map(r => [
+      r.date,
+      r.complexId,
+      r.complexName,
+      r.area,
+      r.saleCount,
+      r.saleMin,
+      r.saleMax,
+      r.jeonseCount,
+      r.jeonseMin,
+      r.jeonseMax,
+      r.monthlyCount,
+      r.updatedAt || new Date().toISOString(),
+    ]);
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${PRICE_HISTORY_SHEET}!A:L`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values },
+    });
+
+    console.log(`[Sheets] Saved ${newRecords.length} price records`);
+    return { saved: newRecords.length };
+  } catch (error) {
+    console.error('Error saving price history:', error.message);
+    throw error;
+  }
+}
+
+// 시세 히스토리 조회 (특정 단지, 평형, 기간)
+async function getPriceHistory(complexId, area, days = 30) {
+  try {
+    await getOrCreatePriceHistorySheet();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${PRICE_HISTORY_SHEET}!A:L`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return [];
+
+    // 날짜 기준 계산
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+
+    // 필터링 및 정렬
+    return rows.slice(1)
+      .filter(row => {
+        const matchComplex = !complexId || row[1] === complexId;
+        const matchArea = !area || parseInt(row[3]) === area;
+        const matchDate = row[0] >= cutoffStr;
+        return matchComplex && matchArea && matchDate;
+      })
+      .map(([date, cId, complexName, a, saleCount, saleMin, saleMax, jeonseCount, jeonseMin, jeonseMax, monthlyCount, updatedAt]) => ({
+        date,
+        complexId: cId,
+        complexName,
+        area: parseInt(a) || 0,
+        saleCount: parseInt(saleCount) || 0,
+        saleMin: parseInt(saleMin) || 0,
+        saleMax: parseInt(saleMax) || 0,
+        jeonseCount: parseInt(jeonseCount) || 0,
+        jeonseMin: parseInt(jeonseMin) || 0,
+        jeonseMax: parseInt(jeonseMax) || 0,
+        monthlyCount: parseInt(monthlyCount) || 0,
+        updatedAt,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  } catch (error) {
+    console.error('Error getting price history:', error.message);
+    return [];
+  }
+}
+
+// ============================================
+// 매물 상세 (별도 시트: "매물상세")
+// ============================================
+
+const ARTICLE_DETAIL_SHEET = '매물상세';
+
+// 매물상세 시트 가져오기 (없으면 생성)
+async function getOrCreateArticleDetailSheet() {
+  try {
+    const sheetInfo = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    const articleSheet = sheetInfo.data.sheets.find(
+      s => s.properties.title === ARTICLE_DETAIL_SHEET
+    );
+
+    if (articleSheet) {
+      return articleSheet.properties.sheetId;
+    }
+
+    // 시트가 없으면 생성
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          addSheet: {
+            properties: { title: ARTICLE_DETAIL_SHEET }
+          }
+        }]
+      }
+    });
+
+    // 헤더 추가
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${ARTICLE_DETAIL_SHEET}!A1:K1`,
+      valueInputOption: 'USER_ENTERED',
+      resource: {
+        values: [['date', 'complexId', 'complexName', 'area', 'tradeType', 'price', 'deposit', 'monthlyRent', 'floor', 'articleNo', 'updatedAt']]
+      },
+    });
+
+    return response.data.replies[0].addSheet.properties.sheetId;
+  } catch (error) {
+    console.error('Error getting/creating article detail sheet:', error.message);
+    throw error;
+  }
+}
+
+// 오늘 매물상세 데이터 존재 여부 확인
+async function getTodayArticleDetails(date) {
+  try {
+    await getOrCreateArticleDetailSheet();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${ARTICLE_DETAIL_SHEET}!A:K`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return null;
+
+    // 해당 날짜 데이터 필터링
+    const todayData = rows.slice(1)
+      .filter(row => row[0] === date)
+      .map(([date, complexId, complexName, area, tradeType, price, deposit, monthlyRent, floor, articleNo, updatedAt]) => ({
+        date,
+        complexId,
+        complexName,
+        area: parseFloat(area) || 0,
+        tradeType,
+        price: parseInt(price) || 0,
+        deposit: parseInt(deposit) || 0,
+        monthlyRent: parseInt(monthlyRent) || 0,
+        floor,
+        articleNo,
+        updatedAt,
+      }));
+
+    return todayData.length > 0 ? todayData : null;
+  } catch (error) {
+    console.error('Error getting today article details:', error.message);
+    return null;
+  }
+}
+
+// 매물상세 저장
+async function saveArticleDetails(records) {
+  try {
+    await getOrCreateArticleDetailSheet();
+
+    // 현재 데이터 가져오기 (중복 체크용)
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${ARTICLE_DETAIL_SHEET}!A:K`,
+    });
+
+    const existingRows = response.data.values || [];
+
+    // 기존 키 세트 (date_complexId_articleNo)
+    const existingKeys = new Set();
+    existingRows.slice(1).forEach(row => {
+      if (row[0] && row[1] && row[9]) {
+        existingKeys.add(`${row[0]}_${row[1]}_${row[9]}`);
+      }
+    });
+
+    // 새 데이터만 필터링
+    const newRecords = records.filter(r =>
+      !existingKeys.has(`${r.date}_${r.complexId}_${r.articleNo}`)
+    );
+
+    if (newRecords.length === 0) {
+      console.log('[Sheets] No new article details to save');
+      return { saved: 0 };
+    }
+
+    // 새 데이터 추가
+    const values = newRecords.map(r => [
+      r.date,
+      r.complexId,
+      r.complexName,
+      r.area,
+      r.tradeType,
+      r.price || '',
+      r.deposit || '',
+      r.monthlyRent || '',
+      r.floor || '',
+      r.articleNo,
+      r.updatedAt || new Date().toISOString(),
+    ]);
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${ARTICLE_DETAIL_SHEET}!A:K`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values },
+    });
+
+    console.log(`[Sheets] Saved ${newRecords.length} article details`);
+    return { saved: newRecords.length };
+  } catch (error) {
+    console.error('Error saving article details:', error.message);
+    throw error;
+  }
+}
+
+// 매물상세 히스토리 조회
+async function getArticleDetailHistory(complexId, tradeType, days = 30) {
+  try {
+    await getOrCreateArticleDetailSheet();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${ARTICLE_DETAIL_SHEET}!A:K`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length <= 1) return [];
+
+    // 날짜 기준 계산
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const cutoffStr = cutoffDate.toISOString().slice(0, 10);
+
+    // 필터링 및 정렬
+    return rows.slice(1)
+      .filter(row => {
+        const matchComplex = !complexId || row[1] === complexId;
+        const matchTradeType = !tradeType || row[4] === tradeType;
+        const matchDate = row[0] >= cutoffStr;
+        return matchComplex && matchTradeType && matchDate;
+      })
+      .map(([date, cId, complexName, area, tType, price, deposit, monthlyRent, floor, articleNo, updatedAt]) => ({
+        date,
+        complexId: cId,
+        complexName,
+        area: parseFloat(area) || 0,
+        tradeType: tType,
+        price: parseInt(price) || 0,
+        deposit: parseInt(deposit) || 0,
+        monthlyRent: parseInt(monthlyRent) || 0,
+        floor,
+        articleNo,
+        updatedAt,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  } catch (error) {
+    console.error('Error getting article detail history:', error.message);
+    return [];
+  }
+}
+
 // 부동산 데이터 삭제
 async function removeRealEstate(id) {
   try {
@@ -1262,4 +1652,12 @@ module.exports = {
   addPriceRecord,
   updateRealEstate,
   removeRealEstate,
+  // 부동산 시세 히스토리
+  getTodayPriceData,
+  savePriceHistory,
+  getPriceHistory,
+  // 매물 상세
+  getTodayArticleDetails,
+  saveArticleDetails,
+  getArticleDetailHistory,
 };
