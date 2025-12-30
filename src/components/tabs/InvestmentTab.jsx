@@ -611,14 +611,14 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
               <table className="w-full min-w-[700px] text-left border-collapse">
                 <thead className="bg-violet-500/10 text-xs font-semibold text-violet-600 dark:text-violet-300 uppercase">
                   <tr>
-                    <th className="p-4">종목</th>
-                    <th className="p-4 text-right">수량</th>
-                    <th className="p-4 text-right">평단가</th>
-                    <th className="p-4 text-right">현재가</th>
-                    <th className="p-4 text-right">평가액($)</th>
-                    <th className="p-4 text-right">평가액(₩)</th>
-                    <th className="p-4 text-right">수익률</th>
-                    <th className="p-4 w-10"></th>
+                    <th className="p-3 md:p-4 whitespace-nowrap">종목</th>
+                    <th className="p-3 md:p-4 text-right whitespace-nowrap">수량</th>
+                    <th className="p-3 md:p-4 text-right whitespace-nowrap">평단가</th>
+                    <th className="p-3 md:p-4 text-right whitespace-nowrap">현재가</th>
+                    <th className="p-3 md:p-4 text-right whitespace-nowrap">평가액($)</th>
+                    <th className="p-3 md:p-4 text-right whitespace-nowrap">평가액(₩)</th>
+                    <th className="p-3 md:p-4 text-right whitespace-nowrap">수익률</th>
+                    <th className="p-3 md:p-4 w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="text-sm font-medium">
@@ -637,31 +637,34 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                     const profitAmount = s.qty * (price - avgPrice);
                     return (
                       <tr key={s.ticker} className={`data-row border-b border-zinc-200 dark:border-white/[0.04] animate-enter delay-${idx * 50} group`}>
-                        <td className="p-4 text-foreground">{s.name} <span className="text-violet-600/70 dark:text-violet-400/70 ml-1 font-mono text-xs">{s.ticker}</span></td>
-                        <td className="p-4 text-right text-zinc-700 dark:text-zinc-300 font-mono">
+                        <td className="p-3 md:p-4 text-foreground whitespace-nowrap">
+                          <div>{s.name}</div>
+                          <span className="text-violet-600/70 dark:text-violet-400/70 font-mono text-xs">{s.ticker}</span>
+                        </td>
+                        <td className="p-3 md:p-4 text-right text-zinc-700 dark:text-zinc-300 font-mono whitespace-nowrap">
                           <EditableCell
                             value={s.qty}
                             onSave={(newQty) => onUpdateStock && onUpdateStock(s.ticker, { qty: newQty })}
                             className="text-zinc-700 dark:text-zinc-300"
                           />
                         </td>
-                        <td className="p-4 text-right text-amber-600 dark:text-amber-400 font-mono">
+                        <td className="p-3 md:p-4 text-right text-amber-600 dark:text-amber-400 font-mono whitespace-nowrap">
                           <EditableCell
                             value={avgPrice.toFixed(2)}
                             onSave={(newAvgPrice) => onUpdateStock && onUpdateStock(s.ticker, { avgPrice: newAvgPrice })}
                             className="text-amber-600 dark:text-amber-400"
                           />
                         </td>
-                        <td className="p-4 text-right text-zinc-800 dark:text-white font-mono">{formatUSD(price)}</td>
-                        <td className="p-4 text-right text-zinc-800 dark:text-white font-bold font-mono">{formatUSD(valUSD)}</td>
-                        <td className="p-4 text-right text-violet-600 dark:text-violet-400 font-mono">{formatKRW(valKRW, true)}</td>
-                        <td className={`p-4 text-right font-mono ${profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <td className="p-3 md:p-4 text-right text-zinc-800 dark:text-white font-mono whitespace-nowrap">{formatUSD(price)}</td>
+                        <td className="p-3 md:p-4 text-right text-zinc-800 dark:text-white font-bold font-mono whitespace-nowrap">{formatUSD(valUSD)}</td>
+                        <td className="p-3 md:p-4 text-right text-violet-600 dark:text-violet-400 font-mono whitespace-nowrap">{formatKRW(valKRW, true)}</td>
+                        <td className={`p-3 md:p-4 text-right font-mono whitespace-nowrap ${profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           <div className="flex flex-col items-end">
                             <span>{formatPercent(profit)}</span>
                             <span className="text-xs opacity-70">{profitAmount >= 0 ? '+' : ''}{formatUSD(profitAmount)}</span>
                           </div>
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-3 md:p-4 text-center">
                           <button
                             onClick={() => onDeleteStock && onDeleteStock(s.ticker)}
                             className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-500 transition-all"

@@ -38,7 +38,7 @@ export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, onAIC
         <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
         <span className="text-sm tracking-tight flex-1">{item.label}</span>
         {item.shortcut && (
-          <span className="text-[10px] text-zinc-500 dark:text-zinc-500 font-mono px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800/50">
+          <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-mono px-1.5 py-0.5 rounded bg-zinc-300 dark:bg-zinc-800/50">
             {item.shortcut}
           </span>
         )}
