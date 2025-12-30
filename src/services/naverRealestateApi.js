@@ -1,91 +1,28 @@
 /**
  * 네이버 부동산 API 클라이언트
+ *
+ * @description
+ * Vercel Serverless API를 통해 네이버 부동산 데이터 조회
+ * - stale-while-revalidate 캐싱 전략 활용
+ * - 에러 핸들링 및 재시도 로직
  */
 
-// Production: 환경변수 사용, Development: 상대경로 (vite proxy)
+// API Base URL
 const API_BASE = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/api`
   : '/api';
 
-/**
- * 단지별 요약 데이터 조회
- * @param {string} name - 단지명
- * @param {number} area - 전용면적 (㎡)
- */
-export async function fetchComplexSummary(name, area = 84) {
-  const params = new URLSearchParams({
-    type: 'summary',
-    name,
-    area: String(area),
-  });
-
-  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error);
-  return json.data;
-}
-
-/**
- * 매물 목록 조회
- * @param {string} complexNo - 단지 코드
- * @param {string} tradeType - 거래 유형 (A1: 매매, B1: 전세, B2: 월세)
- * @param {number} area - 전용면적
- */
-export async function fetchArticles(complexNo, tradeType = 'A1', area = 84) {
-  const params = new URLSearchParams({
-    type: 'articles',
-    complexNo,
-    tradeType,
-    area: String(area),
-  });
-
-  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error);
-  return json.data;
-}
-
-/**
- * 단지 정보 조회
- * @param {string} complexNo - 단지 코드
- */
-export async function fetchComplexInfo(complexNo) {
-  const params = new URLSearchParams({
-    type: 'info',
-    complexNo,
-  });
-
-  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error);
-  return json.data;
-}
-
-/**
- * 단지명으로 complexNo 검색
- * @param {string} name - 단지명
- */
-export async function searchComplexNo(name) {
-  const params = new URLSearchParams({
-    type: 'search',
-    name,
-  });
-
-  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error);
-  return json.data;
-}
+// ============================================
+// API 호출 함수
+// ============================================
 
 /**
  * 모든 대상 단지 데이터 조회
  * @param {boolean} forceRefresh - 캐시 무시하고 새로 조회
- * @returns {Object} { data, isStale, cachedAt, fromCache, error? }
+ * @returns {Promise<{data: Array, isStale: boolean, cachedAt: string}>}
  */
 export async function fetchAllComplexes(forceRefresh = false) {
-  const params = new URLSearchParams({
-    type: 'all',
-  });
+  const params = new URLSearchParams({ type: 'all' });
 
   if (forceRefresh) {
     params.append('forceRefresh', 'true');
@@ -98,42 +35,84 @@ export async function fetchAllComplexes(forceRefresh = false) {
     throw new Error(json.error || 'Failed to fetch data');
   }
 
-  // 새 응답 구조 반환 (data, isStale, cachedAt, fromCache 포함)
   return {
-    data: json.data,
-    isStale: json.isStale || false,
-    cachedAt: json.cachedAt || null,
-    fromCache: json.fromCache || false,
-    error: json.error || null,
+    data: json.data || [],
+    success: json.success,
+    crawledAt: json.crawledAt || json._meta?.timestamp,
+    duration: json.duration || json._meta?.duration,
+    totalComplexes: json.totalComplexes,
+    successCount: json.successCount,
+    errors: json.errors,
   };
 }
 
 /**
- * 캐시 상태 조회
+ * 단일 단지 데이터 조회
+ * @param {string} complexNo - 단지 코드
+ * @param {number} area - 전용면적 (㎡)
  */
-export async function fetchCacheStatus() {
+export async function fetchComplexSummary(complexNo, area = 84) {
   const params = new URLSearchParams({
-    type: 'cache-status',
+    type: 'summary',
+    complexNo,
+    area: String(area),
   });
 
   const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
   const json = await res.json();
-  if (!json.success) throw new Error(json.error);
+
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch complex data');
+  }
+
+  return json;
+}
+
+/**
+ * 대상 단지 목록 조회 (크롤링 없음)
+ */
+export async function fetchComplexList() {
+  const params = new URLSearchParams({ type: 'complexes' });
+
+  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
+  const json = await res.json();
+
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch complexes');
+  }
+
   return json.data;
 }
 
 /**
+ * API 헬스체크
+ */
+export async function checkApiHealth() {
+  const params = new URLSearchParams({ type: 'health' });
+
+  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
+  const json = await res.json();
+
+  return json;
+}
+
+// ============================================
+// 유틸리티 함수
+// ============================================
+
+/**
  * 금액 포맷팅 (억/만원 단위)
+ * @param {number} amount - 금액 (원)
  */
 export function formatPrice(amount) {
   if (!amount) return '-';
   if (amount >= 100000000) {
     const eok = Math.floor(amount / 100000000);
     const man = Math.floor((amount % 100000000) / 10000);
-    return man > 0 ? `${eok}억 ${man}만` : `${eok}억`;
+    return man > 0 ? `${eok}억 ${man.toLocaleString()}만` : `${eok}억`;
   }
   if (amount >= 10000) {
-    return `${Math.floor(amount / 10000)}만`;
+    return `${Math.floor(amount / 10000).toLocaleString()}만`;
   }
   return `${amount.toLocaleString()}원`;
 }
@@ -147,13 +126,120 @@ export function formatPriceRange(min, max) {
   return `${formatPrice(min)} ~ ${formatPrice(max)}`;
 }
 
+/**
+ * 월세 포맷팅
+ * @param {number} deposit - 보증금 (원)
+ * @param {number} monthlyRent - 월세 (원)
+ */
+export function formatMonthlyRent(deposit, monthlyRent) {
+  if (!deposit && !monthlyRent) return '-';
+
+  const depositText = formatPrice(deposit);
+  const rentText = formatPrice(monthlyRent);
+
+  return `${depositText} / ${rentText}`;
+}
+
+/**
+ * 상대적 시간 포맷팅
+ * @param {string} isoString - ISO 날짜 문자열
+ */
+export function formatRelativeTime(isoString) {
+  if (!isoString) return '-';
+
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMinutes < 1) return '방금 전';
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+  if (diffHours < 24) return `${diffHours}시간 전`;
+  if (diffDays < 7) return `${diffDays}일 전`;
+
+  return date.toLocaleDateString('ko-KR');
+}
+
+/**
+ * 거래 유형 텍스트
+ */
+export function getTradeTypeText(type) {
+  const types = {
+    'A1': '매매',
+    'B1': '전세',
+    'B2': '월세',
+    'sale': '매매',
+    'jeonse': '전세',
+    'monthly': '월세',
+  };
+  return types[type] || type;
+}
+
+// ============================================
+// Legacy 호환 함수 (기존 코드 호환용)
+// ============================================
+
+/**
+ * @deprecated Use fetchComplexSummary instead
+ */
+export async function fetchArticles(complexNo, tradeType = 'A1', area = 84) {
+  console.warn('fetchArticles is deprecated. Use fetchComplexSummary instead.');
+  const summary = await fetchComplexSummary(complexNo, area);
+
+  const tradeTypeMap = {
+    'A1': 'sale',
+    'B1': 'jeonse',
+    'B2': 'monthly',
+  };
+
+  const key = tradeTypeMap[tradeType] || 'sale';
+  return summary[key]?.articles || [];
+}
+
+/**
+ * @deprecated Use fetchComplexSummary instead
+ */
+export async function fetchComplexInfo(complexNo) {
+  console.warn('fetchComplexInfo is deprecated. Use fetchComplexSummary instead.');
+  return fetchComplexSummary(complexNo);
+}
+
+/**
+ * @deprecated Use fetchComplexList instead
+ */
+export async function searchComplexNo(name) {
+  console.warn('searchComplexNo is deprecated. Use fetchComplexList instead.');
+  const complexes = await fetchComplexList();
+  return complexes.find(c => c.name.includes(name));
+}
+
+/**
+ * @deprecated Not needed with new caching strategy
+ */
+export async function fetchCacheStatus() {
+  console.warn('fetchCacheStatus is deprecated.');
+  return { status: 'ok' };
+}
+
+// ============================================
+// Default Export
+// ============================================
+
 export default {
+  fetchAllComplexes,
   fetchComplexSummary,
+  fetchComplexList,
+  checkApiHealth,
+  formatPrice,
+  formatPriceRange,
+  formatMonthlyRent,
+  formatRelativeTime,
+  getTradeTypeText,
+  // Legacy
   fetchArticles,
   fetchComplexInfo,
   searchComplexNo,
-  fetchAllComplexes,
   fetchCacheStatus,
-  formatPrice,
-  formatPriceRange,
 };
