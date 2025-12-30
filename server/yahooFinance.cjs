@@ -15,35 +15,40 @@ const CACHE_TTL = {
   history: 5 * 60 * 1000, // 히스토리: 5분
 };
 
-// 데모 가격 (API 실패 시 폴백)
+// 데모 가격 (API 실패 시 폴백) - dividendYield는 실제 배당률(%)
 const DEMO_PRICES = {
   // 환율
-  'KRW=X': { price: 1450.0, change: 5.2, changePercent: 0.36, currency: 'KRW' },
+  'KRW=X': { price: 1450.0, change: 5.2, changePercent: 0.36, currency: 'KRW', dividendYield: 0 },
   // 크립토
-  'BTC-USD': { price: 95000.0, change: 1250.0, changePercent: 1.33, currency: 'USD' },
-  'ETH-USD': { price: 3350.0, change: 45.0, changePercent: 1.36, currency: 'USD' },
-  // 빅테크
-  AAPL: { price: 195.0, change: 2.5, changePercent: 1.3, currency: 'USD' },
-  NVDA: { price: 140.5, change: -3.2, changePercent: -2.2, currency: 'USD' },
-  TSLA: { price: 248.0, change: 5.8, changePercent: 2.4, currency: 'USD' },
-  MSFT: { price: 415.0, change: 3.1, changePercent: 0.75, currency: 'USD' },
-  GOOGL: { price: 175.0, change: -1.2, changePercent: -0.68, currency: 'USD' },
-  GOOG: { price: 176.0, change: -1.0, changePercent: -0.56, currency: 'USD' },
-  AMZN: { price: 185.0, change: 2.8, changePercent: 1.54, currency: 'USD' },
-  META: { price: 520.0, change: 8.5, changePercent: 1.66, currency: 'USD' },
-  AVGO: { price: 225.0, change: 4.5, changePercent: 2.04, currency: 'USD' },
-  TSM: { price: 195.0, change: 3.2, changePercent: 1.67, currency: 'USD' },
-  // ETF
-  SPY: { price: 595.0, change: 3.5, changePercent: 0.59, currency: 'USD' },
-  QQQ: { price: 480.0, change: 4.2, changePercent: 0.88, currency: 'USD' },
-  SCHD: { price: 82.0, change: 0.3, changePercent: 0.37, currency: 'USD' },
-  TQQQ: { price: 72.0, change: 1.8, changePercent: 2.56, currency: 'USD' },
-  VOO: { price: 545.0, change: 3.2, changePercent: 0.59, currency: 'USD' },
+  'BTC-USD': { price: 95000.0, change: 1250.0, changePercent: 1.33, currency: 'USD', dividendYield: 0 },
+  'ETH-USD': { price: 3350.0, change: 45.0, changePercent: 1.36, currency: 'USD', dividendYield: 0 },
+  // 빅테크 (실제 배당률 기준)
+  AAPL: { price: 195.0, change: 2.5, changePercent: 1.3, currency: 'USD', dividendYield: 0.44 },
+  NVDA: { price: 140.5, change: -3.2, changePercent: -2.2, currency: 'USD', dividendYield: 0.03 },
+  TSLA: { price: 248.0, change: 5.8, changePercent: 2.4, currency: 'USD', dividendYield: 0 }, // 무배당
+  MSFT: { price: 415.0, change: 3.1, changePercent: 0.75, currency: 'USD', dividendYield: 0.79 },
+  GOOGL: { price: 175.0, change: -1.2, changePercent: -0.68, currency: 'USD', dividendYield: 0.46 },
+  GOOG: { price: 176.0, change: -1.0, changePercent: -0.56, currency: 'USD', dividendYield: 0.46 },
+  AMZN: { price: 185.0, change: 2.8, changePercent: 1.54, currency: 'USD', dividendYield: 0 }, // 무배당
+  META: { price: 520.0, change: 8.5, changePercent: 1.66, currency: 'USD', dividendYield: 0.38 },
+  AVGO: { price: 225.0, change: 4.5, changePercent: 2.04, currency: 'USD', dividendYield: 1.23 },
+  TSM: { price: 195.0, change: 3.2, changePercent: 1.67, currency: 'USD', dividendYield: 1.35 },
+  // ETF (실제 배당률 기준)
+  SPY: { price: 595.0, change: 3.5, changePercent: 0.59, currency: 'USD', dividendYield: 1.22 },
+  QQQ: { price: 480.0, change: 4.2, changePercent: 0.88, currency: 'USD', dividendYield: 0.55 },
+  SCHD: { price: 82.0, change: 0.3, changePercent: 0.37, currency: 'USD', dividendYield: 3.48 },
+  TQQQ: { price: 72.0, change: 1.8, changePercent: 2.56, currency: 'USD', dividendYield: 0 }, // 레버리지 ETF
+  VOO: { price: 545.0, change: 3.2, changePercent: 0.59, currency: 'USD', dividendYield: 1.24 },
+  VTI: { price: 280.0, change: 1.5, changePercent: 0.54, currency: 'USD', dividendYield: 1.32 },
   // 성장주
-  PLTR: { price: 78.0, change: 4.2, changePercent: 5.69, currency: 'USD' },
-  AMD: { price: 125.0, change: -2.1, changePercent: -1.65, currency: 'USD' },
-  INTC: { price: 22.0, change: 0.3, changePercent: 1.38, currency: 'USD' },
-  COIN: { price: 265.0, change: 8.5, changePercent: 3.31, currency: 'USD' },
+  PLTR: { price: 78.0, change: 4.2, changePercent: 5.69, currency: 'USD', dividendYield: 0 }, // 무배당
+  AMD: { price: 125.0, change: -2.1, changePercent: -1.65, currency: 'USD', dividendYield: 0 }, // 무배당
+  INTC: { price: 22.0, change: 0.3, changePercent: 1.38, currency: 'USD', dividendYield: 2.27 },
+  COIN: { price: 265.0, change: 8.5, changePercent: 3.31, currency: 'USD', dividendYield: 0 }, // 무배당
+  // 배당주
+  O: { price: 57.0, change: -0.3, changePercent: -0.52, currency: 'USD', dividendYield: 5.58 }, // Realty Income
+  JEPI: { price: 56.0, change: 0.2, changePercent: 0.36, currency: 'USD', dividendYield: 7.15 },
+  JEPQ: { price: 55.0, change: 0.3, changePercent: 0.55, currency: 'USD', dividendYield: 9.20 },
 };
 
 // 캐시에서 데이터 조회
@@ -91,6 +96,41 @@ async function fetchYahooFinance(ticker, range = '7d') {
   }
 
   return json.chart.result[0];
+}
+
+// Yahoo Finance quoteSummary API에서 배당률 조회
+async function fetchDividendYield(ticker) {
+  const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=summaryDetail`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const json = await response.json();
+    const summaryDetail = json?.quoteSummary?.result?.[0]?.summaryDetail;
+
+    if (summaryDetail?.dividendYield?.raw !== undefined) {
+      // raw 값은 0.0123 형태 (1.23%를 의미)
+      return summaryDetail.dividendYield.raw * 100;
+    }
+
+    // trailingAnnualDividendYield도 확인 (일부 종목)
+    if (summaryDetail?.trailingAnnualDividendYield?.raw !== undefined) {
+      return summaryDetail.trailingAnnualDividendYield.raw * 100;
+    }
+
+    return 0; // 배당 없음
+  } catch (error) {
+    console.error(`Failed to fetch dividend yield for ${ticker}:`, error.message);
+    return null;
+  }
 }
 
 // 주가 데이터 파싱 (OHLC 포함)
@@ -159,6 +199,7 @@ function generateDemoData(ticker) {
     change: Math.random() * 10 - 5,
     changePercent: Math.random() * 5 - 2.5,
     currency: 'USD',
+    dividendYield: 0, // 기본값: 배당 없음
   };
 
   // 7일간 가상 OHLC 히스토리 생성
@@ -210,10 +251,16 @@ async function getTickerData(ticker, range) {
     return { ...cachedQuote, history: cachedHistory };
   }
 
-  // 2. Yahoo Finance API 호출
+  // 2. Yahoo Finance API 호출 (가격 데이터 + 배당률 병렬 조회)
   try {
-    const result = await fetchYahooFinance(ticker, range);
+    const [result, dividendYield] = await Promise.all([
+      fetchYahooFinance(ticker, range),
+      fetchDividendYield(ticker),
+    ]);
     const parsed = parseQuoteData(result);
+
+    // 배당률 추가 (소수점 2자리)
+    parsed.dividendYield = dividendYield !== null ? Number(dividendYield.toFixed(2)) : 0;
 
     // 캐시 저장
     setCache('quotes', ticker, {
@@ -222,6 +269,7 @@ async function getTickerData(ticker, range) {
       changePercent: parsed.changePercent,
       currency: parsed.currency,
       previousClose: parsed.previousClose,
+      dividendYield: parsed.dividendYield,
     });
     setCache('history', `${ticker}_${range}`, parsed.history);
 

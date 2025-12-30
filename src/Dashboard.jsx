@@ -882,6 +882,7 @@ export default function Dashboard() {
       QQQ: yahooData?.['QQQ']?.history || [],
       TQQQ: yahooData?.['TQQQ']?.history || [],
     },
+    yahooData: yahooData || {}, // 배당률 등 추가 정보용
     history: investmentHistory || [],
     manual: {
       kakao: hyangKakao,
