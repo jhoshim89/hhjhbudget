@@ -38,5 +38,6 @@ walkthrough.md
 !package.json
 !package-lock.json
 !tsconfig.json
+!vercel.json
 .vercel
 .env*.local
