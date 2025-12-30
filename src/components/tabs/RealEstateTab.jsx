@@ -150,7 +150,7 @@ export default function RealEstateTab({ data, handlers }) {
               onClick={() => setActiveSubTab(tab.id)}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${
                 activeSubTab === tab.id
-                  ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
+                  ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/30'
                   : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-transparent'
               }`}
             >
@@ -158,7 +158,7 @@ export default function RealEstateTab({ data, handlers }) {
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
                 <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
-                  activeSubTab === tab.id ? 'bg-teal-500/30' : 'bg-zinc-700'
+                  activeSubTab === tab.id ? 'bg-teal-500/30 text-teal-700 dark:text-teal-300' : 'bg-zinc-300 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
                 }`}>
                   {tab.count}
                 </span>
@@ -173,7 +173,7 @@ export default function RealEstateTab({ data, handlers }) {
               onClick={() => setMarketViewMode('card')}
               className={`p-2 rounded-lg transition-colors ${
                 marketViewMode === 'card'
-                  ? 'bg-teal-500/20 text-teal-400'
+                  ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
@@ -183,7 +183,7 @@ export default function RealEstateTab({ data, handlers }) {
               onClick={() => setMarketViewMode('table')}
               className={`p-2 rounded-lg transition-colors ${
                 marketViewMode === 'table'
-                  ? 'bg-teal-500/20 text-teal-400'
+                  ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
               }`}
             >
@@ -195,7 +195,7 @@ export default function RealEstateTab({ data, handlers }) {
         {activeSubTab !== 'market' && (
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-medium transition-colors whitespace-nowrap"
           >
             <Plus size={16} />
             추가

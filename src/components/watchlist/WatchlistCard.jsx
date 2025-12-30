@@ -69,7 +69,7 @@ export default function WatchlistCard({
         <span className="text-sm font-bold text-amber-400 font-mono tracking-wide">
           {ticker}
         </span>
-        <div className={`flex items-center gap-1 text-xs font-semibold ${isPositive ? 'text-green-400' : 'text-rose-400'}`}>
+        <div className={`flex items-center gap-1 text-xs font-semibold whitespace-nowrap ${isPositive ? 'text-green-400' : 'text-rose-400'}`}>
           {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
           <span>{isPositive ? '+' : ''}{changePercent.toFixed(2)}%</span>
         </div>

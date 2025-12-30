@@ -75,7 +75,7 @@ export default function MyPropertyCard({ property, loans = [], onUpdate, onRemov
       <div className="p-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 rounded-2xl mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">현재 평가액</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 whitespace-nowrap">현재 평가액</p>
             {isEditing ? (
               <div className="flex items-center gap-2">
                 <input
@@ -102,7 +102,7 @@ export default function MyPropertyCard({ property, loans = [], onUpdate, onRemov
             )}
           </div>
           <div className="text-right">
-            <p className="text-xs text-zinc-500 dark:text-zinc-500">매입가</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-500 whitespace-nowrap">매입가</p>
             <p className="text-lg font-semibold text-zinc-600 dark:text-zinc-400">{formatPrice(purchasePrice)}</p>
           </div>
         </div>
@@ -111,13 +111,13 @@ export default function MyPropertyCard({ property, loans = [], onUpdate, onRemov
       {/* 손익 & 순자산 */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">평가 손익</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2 whitespace-nowrap">평가 손익</p>
           <p className={`text-xl font-bold ${isProfit ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
             {isProfit ? '+' : ''}{formatPrice(profit)}
           </p>
         </div>
         <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">순자산</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2 whitespace-nowrap">순자산</p>
           <p className="text-xl font-bold text-zinc-800 dark:text-white">{formatPrice(equity)}</p>
           <p className="text-[10px] text-zinc-500 dark:text-zinc-500">자산 - 대출</p>
         </div>

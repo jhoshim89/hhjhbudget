@@ -78,7 +78,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
   const SortButton = ({ label, sortKeyName }) => (
     <button
       onClick={() => toggleSort(sortKeyName)}
-      className="flex items-center gap-1 hover:text-teal-400 transition-colors"
+      className="flex items-center gap-1 hover:text-teal-400 transition-colors whitespace-nowrap"
     >
       {label}
       <ArrowUpDown size={12} className={sortKey === sortKeyName ? 'text-teal-400' : 'text-zinc-600'} />
@@ -111,7 +111,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
             onClick={() => setEditMode(!editMode)}
             className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm whitespace-nowrap transition-colors ${
               editMode
-                ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
+                ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/30'
                 : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
             }`}
           >
@@ -185,7 +185,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                       <td className="py-3 pr-4" rowSpan={areas.length}>
                         <div className="flex items-center gap-2">
                           {complex.isMine && (
-                            <span className="px-1.5 py-0.5 bg-teal-500/20 text-teal-400 text-[10px] rounded">
+                            <span className="px-1.5 py-0.5 bg-teal-500/20 text-teal-600 dark:text-teal-400 text-[10px] rounded">
                               내 집
                             </span>
                           )}

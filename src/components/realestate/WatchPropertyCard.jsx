@@ -94,11 +94,11 @@ export default function WatchPropertyCard({ property, priceHistory = [], onRemov
       {latestPrice ? (
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-500">매매</span>
-            <span className="text-sm font-bold text-zinc-800 dark:text-white">{formatPrice(latestPrice.salePrice)}</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500 whitespace-nowrap">매매</span>
+            <span className="text-sm font-bold text-zinc-800 dark:text-white whitespace-nowrap">{formatPrice(latestPrice.salePrice)}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-500">전세</span>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-500 whitespace-nowrap">전세</span>
             <span className="text-xs text-zinc-600 dark:text-zinc-300">{formatPrice(latestPrice.jeonsePrice)}</span>
           </div>
           {latestPrice.monthlyRent > 0 && (

@@ -396,8 +396,8 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
       {/* Hero Summary Cards - Bento Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bento-card-sm border-violet-500/20 bg-violet-500/5 animate-enter delay-0 relative group">
-          <p className="text-xs font-semibold text-violet-300/80 uppercase tracking-wider mb-1">주식 평가액</p>
-          <p className="text-lg md:text-xl font-bold font-mono text-violet-400">{formatKRW(portfolioValue, true)}</p>
+          <p className="text-xs font-semibold text-violet-600 dark:text-violet-300/80 uppercase tracking-wider mb-1 whitespace-nowrap">주식 평가액</p>
+          <p className="text-lg md:text-xl font-bold font-mono text-violet-600 dark:text-violet-400">{formatKRW(portfolioValue, true)}</p>
           {/* Hover Tooltip - 3개 계좌 */}
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl min-w-[180px]">
@@ -405,15 +405,15 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">향화영웅문</span>
-                  <span className="text-violet-400 font-mono font-semibold">{formatKRW(accountValues.향화영웅문, true)}</span>
+                  <span className="text-violet-600 dark:text-violet-400 font-mono font-semibold">{formatKRW(accountValues.향화영웅문, true)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">향화카카오</span>
-                  <span className="text-amber-400 font-mono font-semibold">{formatKRW(accountValues.향화카카오, true)}</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-mono font-semibold">{formatKRW(accountValues.향화카카오, true)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">재호영웅문</span>
-                  <span className="text-blue-400 font-mono font-semibold">{formatKRW(accountValues.재호영웅문, true)}</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-mono font-semibold">{formatKRW(accountValues.재호영웅문, true)}</span>
                 </div>
               </div>
             </div>
@@ -421,8 +421,8 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           </div>
         </div>
         <div className="bento-card-sm border-cyan-500/20 bg-cyan-500/5 animate-enter delay-50 relative group">
-          <p className="text-xs font-semibold text-cyan-300/80 uppercase tracking-wider mb-1">투자 원금</p>
-          <p className="text-lg md:text-xl font-bold font-mono text-cyan-400">{formatKRW(investedPrincipal, true)}</p>
+          <p className="text-xs font-semibold text-cyan-600 dark:text-cyan-300/80 uppercase tracking-wider mb-1 whitespace-nowrap">투자 원금</p>
+          <p className="text-lg md:text-xl font-bold font-mono text-cyan-600 dark:text-cyan-400">{formatKRW(investedPrincipal, true)}</p>
           <p className="text-xs text-cyan-600 dark:text-cyan-300/70 mt-1">향화영웅문</p>
           {/* Hover Tooltip */}
           {stockDetails.length > 0 && (
@@ -433,7 +433,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                   {stockDetails.map(s => (
                     <div key={s.ticker} className="flex justify-between items-center">
                       <span className="text-zinc-400">{s.ticker}</span>
-                      <span className="text-cyan-400 font-mono font-semibold">{formatKRW(s.principal, true)}</span>
+                      <span className="text-cyan-600 dark:text-cyan-400 font-mono font-semibold">{formatKRW(s.principal, true)}</span>
                     </div>
                   ))}
                 </div>
@@ -443,11 +443,11 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           )}
         </div>
         <div className={`bento-card-sm animate-enter delay-100 relative group ${profitAmount >= 0 ? 'border-green-500/20 bg-green-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}>
-          <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-1">평가 손익</p>
+          <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider mb-1 whitespace-nowrap">평가 손익</p>
           <p className={`text-lg md:text-xl font-bold font-mono ${profitAmount >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
             {profitAmount >= 0 ? '+' : ''}{formatKRW(profitAmount, true)}
           </p>
-          <p className={`text-xs mt-1 font-semibold ${profitAmount >= 0 ? 'text-green-300/70' : 'text-rose-300/70'}`}>
+          <p className={`text-xs mt-1 font-semibold ${profitAmount >= 0 ? 'text-green-600 dark:text-green-300/70' : 'text-rose-600 dark:text-rose-300/70'}`}>
             {profitPercent >= 0 ? '+' : ''}{profitPercent.toFixed(1)}%
           </p>
           {/* Hover Tooltip */}
@@ -463,7 +463,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                         <span className={`font-mono font-semibold ${s.profit >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
                           {s.profit >= 0 ? '+' : ''}{formatKRW(s.profit, true)}
                         </span>
-                        <span className={`text-[10px] ${s.profitPct >= 0 ? 'text-green-300/70' : 'text-rose-300/70'}`}>
+                        <span className={`text-[10px] ${s.profitPct >= 0 ? 'text-green-600 dark:text-green-300/70' : 'text-rose-600 dark:text-rose-300/70'}`}>
                           {s.profitPct >= 0 ? '+' : ''}{s.profitPct.toFixed(1)}%
                         </span>
                       </div>
@@ -476,21 +476,21 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
           )}
         </div>
         <div className="bento-card-sm border-amber-500/20 bg-amber-500/5 animate-enter delay-150">
-          <p className="text-xs font-semibold text-amber-300/80 uppercase tracking-wider mb-1">채권 자산</p>
-          <p className="text-lg md:text-xl font-bold font-mono text-amber-400">{formatKRW(bonds.balance, true)}</p>
+          <p className="text-xs font-semibold text-amber-600 dark:text-amber-300/80 uppercase tracking-wider mb-1 whitespace-nowrap">채권 자산</p>
+          <p className="text-lg md:text-xl font-bold font-mono text-amber-600 dark:text-amber-400">{formatKRW(bonds.balance, true)}</p>
           {bonds.monthsLeft !== undefined && (
             <p className="text-xs text-amber-600 dark:text-amber-300/70 mt-1">만기 {bonds.monthsLeft}개월</p>
           )}
         </div>
         <div className="bento-card-sm border-blue-500/20 bg-blue-500/5 animate-enter delay-200">
-          <p className="text-xs font-semibold text-blue-300/80 uppercase tracking-wider mb-1">총 투자자산</p>
-          <p className="text-lg md:text-xl font-bold font-mono text-blue-400">{formatKRW(data.totalInvestmentKRW, true)}</p>
+          <p className="text-xs font-semibold text-blue-600 dark:text-blue-300/80 uppercase tracking-wider mb-1 whitespace-nowrap">총 투자자산</p>
+          <p className="text-lg md:text-xl font-bold font-mono text-blue-600 dark:text-blue-400">{formatKRW(data.totalInvestmentKRW, true)}</p>
           <p className="text-xs text-blue-600 dark:text-blue-300/70 mt-1">주식+채권</p>
         </div>
         <div className="bento-card-sm border-teal-500/20 bg-teal-500/5 animate-enter delay-250 relative group">
-          <p className="text-xs font-semibold text-teal-300/80 uppercase tracking-wider mb-1">예상 연 배당</p>
-          <p className="text-lg md:text-xl font-bold font-mono text-teal-400">{formatKRW(estimatedAnnualDividend, true)}</p>
-          <p className="text-xs text-teal-600 dark:text-teal-300/70 mt-1">월 {formatKRW(estimatedAnnualDividend / 12, true)}</p>
+          <p className="text-xs font-semibold text-teal-600 dark:text-teal-300/80 uppercase tracking-wider mb-1 whitespace-nowrap">예상 연 배당</p>
+          <p className="text-lg md:text-xl font-bold font-mono text-teal-600 dark:text-teal-400">{formatKRW(estimatedAnnualDividend, true)}</p>
+          <p className="text-xs text-teal-700 dark:text-teal-300/70 mt-1">월 {formatKRW(estimatedAnnualDividend / 12, true)}</p>
           {/* Hover Tooltip */}
           {dividendDetails.length > 0 && (
             <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
@@ -503,7 +503,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                         <span className="text-zinc-400">{d.name}</span>
                         <span className="text-zinc-600 text-[10px]">({d.yieldRate}%)</span>
                       </div>
-                      <span className="text-teal-400 font-mono font-semibold">{formatKRW(d.dividend, true)}</span>
+                      <span className="text-teal-600 dark:text-teal-400 font-mono font-semibold">{formatKRW(d.dividend, true)}</span>
                     </div>
                   ))}
                 </div>
@@ -518,8 +518,8 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
       <div className="flex flex-col gap-3">
         {/* Portfolio Allocation - Compact */}
         <div className="glass-card animate-enter delay-300 border-violet-500/10">
-          <div className="h-10 border-b border-white/[0.06] flex items-center justify-between px-4 bg-violet-500/10">
-            <h3 className="text-xs font-semibold text-violet-400 uppercase tracking-wider">Portfolio vs Benchmark</h3>
+          <div className="h-10 border-b border-violet-200 dark:border-white/[0.06] flex items-center justify-between px-4 bg-violet-500/10">
+            <h3 className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wider">Portfolio vs Benchmark</h3>
             <div className="flex gap-2">
               {['SPY', 'QQQ', 'TQQQ'].map(b => (
                 <button
@@ -527,7 +527,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                   onClick={() => toggleBenchmark(b)}
                   className={`px-2 py-0.5 text-xs font-semibold rounded transition-colors ${
                     selectedBenchmarks.includes(b)
-                      ? b === 'SPY' ? 'bg-blue-500/30 text-blue-300' : b === 'QQQ' ? 'bg-green-500/30 text-green-300' : 'bg-amber-500/30 text-amber-300'
+                      ? b === 'SPY' ? 'bg-blue-500/30 text-blue-600 dark:text-blue-300' : b === 'QQQ' ? 'bg-green-500/30 text-green-600 dark:text-green-300' : 'bg-amber-500/30 text-amber-600 dark:text-amber-300'
                       : 'bg-zinc-200 dark:bg-white/5 text-zinc-600 dark:text-zinc-500'
                   }`}
                 >

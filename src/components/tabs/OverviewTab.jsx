@@ -307,7 +307,7 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
         {/* Chart Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 whitespace-nowrap">
               <span className="w-2 h-2 rounded-full bg-blue-400"></span>
               수입/지출 추이
             </h3>

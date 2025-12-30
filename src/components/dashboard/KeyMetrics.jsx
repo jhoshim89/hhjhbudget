@@ -16,7 +16,7 @@ export default function KeyMetrics({ bondBalance, income, expense }) {
     <div className="bg-panel border border-border grid grid-rows-3 divide-y divide-border h-full rounded-lg">
       <div className="px-6 flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">안전 자산 (Bonds)</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 whitespace-nowrap">안전 자산 (Bonds)</p>
           <p className="text-2xl font-bold text-zinc-800 dark:text-white">{formatKRW(bondBalance)}</p>
         </div>
         <div className="text-right">
@@ -25,13 +25,13 @@ export default function KeyMetrics({ bondBalance, income, expense }) {
       </div>
       <div className="px-6 flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">이번 달 수입</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 whitespace-nowrap">이번 달 수입</p>
           <p className="text-2xl font-bold text-emerald-400">{formatKRW(income)}</p>
         </div>
       </div>
       <div className="px-6 flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">이번 달 지출</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 whitespace-nowrap">이번 달 지출</p>
           <p className="text-2xl font-bold text-red-400">{formatKRW(expense)}</p>
         </div>
         <div className="text-right">

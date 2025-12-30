@@ -69,7 +69,7 @@ export default function LoanCard({ loan, property, onUpdate, onRemove }) {
 
       {/* 대출 잔액 */}
       <div className="p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-2xl mb-6">
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">대출 잔액</p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 whitespace-nowrap">대출 잔액</p>
         <p className="text-3xl font-bold text-zinc-800 dark:text-white">{formatPrice(currentBalance)}</p>
         <p className="text-xs text-zinc-500 mt-1">최초 대출금 {formatPrice(amount)}</p>
       </div>
@@ -79,14 +79,14 @@ export default function LoanCard({ loan, property, onUpdate, onRemove }) {
         <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown size={14} className="text-rose-400" />
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">월 상환금</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">월 상환금</span>
           </div>
           <p className="text-lg font-bold text-zinc-800 dark:text-white">{formatPrice(savedMonthlyPayment || monthlyPayment)}</p>
         </div>
         <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <Percent size={14} className="text-amber-400" />
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">예상 월 이자</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap">예상 월 이자</span>
           </div>
           <p className="text-lg font-bold text-amber-500 dark:text-amber-400">{formatPrice(monthlyInterest)}</p>
         </div>
@@ -118,7 +118,7 @@ export default function LoanCard({ loan, property, onUpdate, onRemove }) {
           <Calendar size={14} className="text-zinc-500" />
           <span className="text-sm text-zinc-600 dark:text-zinc-400">시작일: {startDate}</span>
         </div>
-        <div className="text-sm">
+        <div className="text-sm whitespace-nowrap">
           <span className="text-zinc-600 dark:text-zinc-400">남은 기간: </span>
           <span className="text-zinc-800 dark:text-white font-semibold">
             {yearsRemaining > 0 && `${yearsRemaining}년 `}{monthsRemainder}개월
