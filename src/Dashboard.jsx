@@ -900,6 +900,7 @@ export default function Dashboard() {
       배당: investmentTotals.배당,
     },
     hasIndividualStocks,
+    yahooData, // 배당률 데이터 포함
   };
 
   const inputData = { manualAccounts, assets, fixedIncomes, variableIncomes, fixedExpenses, cardExpense };

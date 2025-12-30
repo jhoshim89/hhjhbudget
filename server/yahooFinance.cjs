@@ -3,6 +3,15 @@
  * 실시간 주가 데이터 조회 및 캐싱
  */
 
+const fs = require('fs');
+const path = require('path');
+const YahooFinance = require('yahoo-finance2').default;
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+
+// 배당 캐시 설정 (파일 기반, 7일 TTL)
+const DIVIDEND_CACHE_FILE = path.join(__dirname, '.dividend-cache.json');
+const DIVIDEND_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7일
+
 // 메모리 캐시
 const cache = {
   quotes: new Map(),
@@ -200,6 +209,100 @@ function generateDemoData(ticker) {
   };
 }
 
+// ============================================
+// 배당 데이터 조회 및 캐싱 (7일 TTL, 파일 기반)
+// ============================================
+
+// 배당 캐시 파일 로드
+function loadDividendCache() {
+  try {
+    if (fs.existsSync(DIVIDEND_CACHE_FILE)) {
+      return JSON.parse(fs.readFileSync(DIVIDEND_CACHE_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Failed to load dividend cache:', e.message);
+  }
+  return {};
+}
+
+// 배당 캐시 파일 저장
+function saveDividendCache(cache) {
+  try {
+    fs.writeFileSync(DIVIDEND_CACHE_FILE, JSON.stringify(cache, null, 2));
+  } catch (e) {
+    console.error('Failed to save dividend cache:', e.message);
+  }
+}
+
+// Yahoo Finance에서 배당 데이터 조회 (yahoo-finance2 라이브러리 사용)
+async function fetchDividendData(ticker) {
+  const result = await yahooFinance.quoteSummary(ticker, { modules: ['summaryDetail'] });
+  const summaryDetail = result?.summaryDetail;
+
+  if (!summaryDetail) {
+    throw new Error('No summaryDetail in response');
+  }
+
+  // ETF는 yield, 주식은 dividendYield 또는 trailingAnnualDividendYield
+  const dividendYield = summaryDetail.yield
+    || summaryDetail.dividendYield
+    || summaryDetail.trailingAnnualDividendYield
+    || 0;
+
+  return {
+    dividendYield, // 0.0374 = 3.74%
+    dividendRate: summaryDetail.dividendRate || 0,
+    trailingAnnualDividendYield: summaryDetail.trailingAnnualDividendYield || 0,
+  };
+}
+
+// 배당 데이터 조회 (캐시 우선, 7일 TTL)
+async function getDividendData(tickers) {
+  const cache = loadDividendCache();
+  const now = Date.now();
+  const results = {};
+  const tickersToFetch = [];
+
+  // 캐시 확인
+  for (const ticker of tickers) {
+    const cached = cache[ticker];
+    if (cached && (now - cached.timestamp < DIVIDEND_CACHE_TTL)) {
+      // 캐시 유효
+      results[ticker] = { ...cached.data, dividendStale: false };
+    } else if (cached) {
+      // 캐시 만료 - stale로 표시하고 재조회 시도
+      results[ticker] = { ...cached.data, dividendStale: true };
+      tickersToFetch.push(ticker);
+    } else {
+      // 캐시 없음
+      tickersToFetch.push(ticker);
+    }
+  }
+
+  // 새로 조회 필요한 티커
+  for (const ticker of tickersToFetch) {
+    try {
+      const data = await fetchDividendData(ticker);
+      results[ticker] = { ...data, dividendStale: false };
+      cache[ticker] = { data, timestamp: now };
+      console.log(`Fetched dividend for ${ticker}: ${(data.dividendYield * 100).toFixed(2)}%`);
+    } catch (error) {
+      console.error(`Failed to fetch dividend for ${ticker}:`, error.message);
+      // 에러 시 기존 stale 데이터 유지, 없으면 0
+      if (!results[ticker]) {
+        results[ticker] = { dividendYield: 0, dividendRate: 0, dividendStale: true };
+      }
+    }
+  }
+
+  // 변경사항 저장
+  if (tickersToFetch.length > 0) {
+    saveDividendCache(cache);
+  }
+
+  return results;
+}
+
 // 단일 티커 데이터 조회
 async function getTickerData(ticker, range) {
   // 1. 캐시 확인
@@ -287,6 +390,19 @@ async function yahooFinanceHandler(req, res) {
         data[ticker] = generateDemoData(ticker);
       }
     });
+
+    // 배당 데이터 조회 및 병합 (별도 캐시, 7일 TTL)
+    try {
+      const dividends = await getDividendData(tickerList);
+      tickerList.forEach(ticker => {
+        if (data[ticker] && dividends[ticker]) {
+          data[ticker].dividendYield = dividends[ticker].dividendYield || 0;
+          data[ticker].dividendStale = dividends[ticker].dividendStale || false;
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch dividend data:', error.message);
+    }
 
     return res.json({
       success: true,

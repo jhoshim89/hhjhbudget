@@ -95,21 +95,6 @@ const EditableCell = ({ value, onSave, type = 'number', className = '' }) => {
   );
 };
 
-// Dividend yields
-const DIVIDEND_YIELDS = {
-  'NVDA': 0.03,
-  'AAPL': 0.50,
-  'MSFT': 0.75,
-  'GOOGL': 0.50,
-  'TSLA': 0,
-  'SPY': 1.30,
-  'QQQ': 0.55,
-  'TQQQ': 0,
-  'VOO': 1.35,
-  'VTI': 1.40,
-  'SCHD': 3.50,
-};
-
 export default function InvestmentTab({ data, handlers, selectedMonth, onMonthChange, changeHistory = [], onClearHistory, onDeleteHistoryItem, onRefreshHistory }) {
   const { exchangeRate, stocks, bonds, benchmarks, benchmarkHistory } = data;
   const { onAddStock, onDeleteStock, onUpdateStock } = handlers || {};
@@ -134,7 +119,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
     재호영웅문: data.manual?.jaeho || 0,
   }), [data.manual]);
 
-  // 예상 연 배당 (향화영웅문만)
+  // 예상 연 배당 (향화영웅문만) - Yahoo Finance API에서 실시간 배당률 조회
   const { estimatedAnnualDividend, dividendDetails } = useMemo(() => {
     const details = [];
 
@@ -143,17 +128,20 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
       stocks.list.filter(s => s.account === '향화영웅문').forEach(s => {
         const price = data.stockPrices[s.ticker] || 0;
         const value = s.qty * price * exchangeRate;
-        const yieldRate = DIVIDEND_YIELDS[s.ticker] || 0.5;
+        // yahooData에서 배당률 가져오기 (0.0135 = 1.35%)
+        const yahooStock = data.yahooData?.[s.ticker];
+        const yieldRate = (yahooStock?.dividendYield || 0) * 100;
+        const isStale = yahooStock?.dividendStale || false;
         const dividend = value * yieldRate / 100;
-        if (dividend > 0) {
-          details.push({ name: s.ticker, value, yieldRate, dividend });
+        if (dividend > 0 || yieldRate > 0) {
+          details.push({ name: s.ticker, value, yieldRate, dividend, stale: isStale });
         }
       });
     }
 
     const total = details.reduce((sum, d) => sum + d.dividend, 0);
     return { estimatedAnnualDividend: total, dividendDetails: details };
-  }, [data.hasIndividualStocks, stocks.list, data.stockPrices, exchangeRate]);
+  }, [data.hasIndividualStocks, stocks.list, data.stockPrices, data.yahooData, exchangeRate]);
 
   const portfolioValue = data.totalStockKRW;
 
