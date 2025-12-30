@@ -1,10 +1,9 @@
 /**
  * 네이버 부동산 API (Browserless.io + Playwright)
- * Best Practice: 직접 API 호출 방식
+ * Best Practice: 네트워크 인터셉트 방식
  *
  * @description
- * - 네이버 내부 API를 직접 호출 (DOM 스크래핑 X)
- * - 브라우저 세션으로 쿠키/헤더 자동 처리
+ * - 페이지 로드 시 발생하는 API 호출을 인터셉트
  * - Vercel Edge Cache + stale-while-revalidate 패턴
  * - 재시도 로직과 에러 핸들링
  */
@@ -17,29 +16,9 @@ import { chromium } from 'playwright-core';
 const CONFIG = {
   CACHE_TTL: 6 * 60 * 60,         // 6시간 (초)
   STALE_TTL: 24 * 60 * 60,        // 24시간 (stale-while-revalidate)
-  PAGE_TIMEOUT: 20000,            // 페이지 로드 타임아웃
-  API_TIMEOUT: 10000,             // API 호출 타임아웃
+  PAGE_TIMEOUT: 25000,            // 페이지 로드 타임아웃
   RETRY_COUNT: 2,
   RETRY_DELAY: 1000,
-};
-
-// 네이버 부동산 API 엔드포인트
-const NAVER_API = {
-  // 매물 목록 (모바일)
-  ARTICLES: (complexNo, tradeTpCd) =>
-    `https://m.land.naver.com/cluster/ajax/articleList?itemId=${complexNo}&tradTpCd=${tradeTpCd}&ptpNo=1&mapKey=&lgeo=&showR0=&cortarNo=&page=1`,
-
-  // 단지 정보 (PC)
-  COMPLEX_INFO: (complexNo) =>
-    `https://new.land.naver.com/api/complexes/${complexNo}`,
-
-  // 시세 정보 (PC)
-  PRICE_INFO: (complexNo, area) =>
-    `https://new.land.naver.com/api/complexes/${complexNo}/prices?complexNo=${complexNo}&tradeType=A1&areaNo=${area}&year=5`,
-
-  // 실거래가 (PC)
-  REAL_PRICE: (complexNo) =>
-    `https://new.land.naver.com/api/complexes/${complexNo}/real-prices`,
 };
 
 // 대상 단지 목록
@@ -137,12 +116,10 @@ async function connectBrowser() {
   return browser;
 }
 
-async function createPage(browser, mobile = true) {
+async function createPage(browser) {
   const context = await browser.newContext({
-    userAgent: mobile
-      ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
-      : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    viewport: mobile ? { width: 390, height: 844 } : { width: 1920, height: 1080 },
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    viewport: { width: 390, height: 844 },
     locale: 'ko-KR',
   });
 
@@ -151,165 +128,175 @@ async function createPage(browser, mobile = true) {
 }
 
 // ============================================
-// 네이버 부동산 API 호출
+// 네이버 부동산 데이터 수집
 // ============================================
 
 /**
- * 브라우저 세션에서 API 직접 호출
+ * 페이지에서 API 응답을 인터셉트하여 데이터 수집
  */
-async function callNaverApi(page, url, referer) {
-  const result = await page.evaluate(async ({ url, referer }) => {
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json, text/javascript, */*; q=0.01',
-          'Referer': referer,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const text = await response.text();
-
-      // JSON 파싱 시도
-      try {
-        return { success: true, data: JSON.parse(text) };
-      } catch {
-        // JSONP나 다른 형식일 수 있음
-        return { success: true, data: text };
-      }
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }, { url, referer });
-
-  if (!result.success) {
-    throw new Error(result.error);
-  }
-
-  return result.data;
-}
-
-/**
- * 매물 목록 조회 (모바일 API)
- */
-async function fetchArticles(page, complexNo, tradeType = 'A1') {
-  const referer = `https://m.land.naver.com/complex/info/${complexNo}?tradTpCd=${tradeType}`;
-  const url = NAVER_API.ARTICLES(complexNo, tradeType);
-
-  console.log(`[API] Fetching articles: ${complexNo} / ${tradeType}`);
-
-  const data = await callNaverApi(page, url, referer);
-
-  // 응답 구조 파싱
-  const articles = data?.result?.list || data?.articleList || [];
-  const totalCount = data?.result?.totAtclCnt || data?.totalCount || articles.length;
-
-  return {
-    articles: articles.map(article => normalizeArticle(article, tradeType)),
-    totalCount,
-    raw: data, // 디버깅용
+async function fetchComplexDataWithIntercept(page, complexNo, tradeType) {
+  const tradeTpCdMap = {
+    'sale': 'A1',
+    'jeonse': 'B1',
+    'monthly': 'B2',
   };
-}
+  const tradeTpCd = tradeTpCdMap[tradeType] || 'A1';
 
-/**
- * 단지 정보 조회 (PC API)
- */
-async function fetchComplexInfo(page, complexNo) {
-  const referer = `https://new.land.naver.com/complexes/${complexNo}`;
-  const url = NAVER_API.COMPLEX_INFO(complexNo);
+  let interceptedData = null;
 
-  console.log(`[API] Fetching complex info: ${complexNo}`);
+  // Response 인터셉트 설정
+  const responseHandler = async (response) => {
+    const url = response.url();
+
+    // 매물 목록 API 응답 캡처
+    if (url.includes('/cluster/ajax/articleList') || url.includes('/api/articles')) {
+      try {
+        const data = await response.json();
+        console.log(`[Intercept] Captured API response for ${tradeType}`);
+        interceptedData = data;
+      } catch (e) {
+        console.warn(`[Intercept] Failed to parse: ${e.message}`);
+      }
+    }
+  };
+
+  page.on('response', responseHandler);
 
   try {
-    const data = await callNaverApi(page, url, referer);
-    return {
-      success: true,
-      data: {
-        name: data?.complexName || data?.name,
-        address: data?.address,
-        totalHouseholdCount: data?.totalHouseholdCount,
-        highFloor: data?.highFloor,
-        lowFloor: data?.lowFloor,
-        useApproveYmd: data?.useApproveYmd,
-        dealCount: data?.dealCount,
+    // 페이지 로드 (API 호출 트리거)
+    const pageUrl = `https://m.land.naver.com/complex/info/${complexNo}?tradTpCd=${tradeTpCd}&ptpNo=1`;
+    console.log(`[Fetch] Loading: ${pageUrl}`);
+
+    await page.goto(pageUrl, {
+      waitUntil: 'networkidle',
+      timeout: CONFIG.PAGE_TIMEOUT,
+    });
+
+    // 추가 대기 (API 응답 수신 보장)
+    await sleep(2000);
+
+    // 매물 목록 버튼 클릭 시도 (더 많은 API 호출 유도)
+    try {
+      const articleBtn = await page.$('a[href*="article"], .complex_item a');
+      if (articleBtn) {
+        await articleBtn.click();
+        await sleep(1500);
       }
-    };
-  } catch (error) {
-    console.warn(`[API] Complex info failed: ${error.message}`);
-    return { success: false, error: error.message };
+    } catch (e) {
+      // 무시
+    }
+
+  } finally {
+    page.off('response', responseHandler);
   }
+
+  return interceptedData;
+}
+
+/**
+ * DOM에서 직접 데이터 추출 (폴백)
+ */
+async function extractDataFromDOM(page, tradeType) {
+  return await page.evaluate((tradeType) => {
+    const result = {
+      count: 0,
+      articles: [],
+      priceRange: null,
+    };
+
+    // 매물 수 추출
+    const countEl = document.querySelector('.item_num, .complex_summary .count, [class*="count"]');
+    if (countEl) {
+      const match = countEl.textContent.match(/(\d+)/);
+      if (match) result.count = parseInt(match[1]);
+    }
+
+    // 가격 범위 추출
+    const priceEl = document.querySelector('.complex_price .price, .price_area, [class*="price"]');
+    if (priceEl) {
+      result.priceRange = priceEl.textContent.trim();
+    }
+
+    // 매물 목록 추출
+    const items = document.querySelectorAll('.article_box, .item_inner, [class*="article"]');
+    items.forEach((item, index) => {
+      if (index >= 20) return;
+
+      const priceText = item.querySelector('.price, [class*="price"]')?.textContent?.trim() || '';
+      const areaText = item.querySelector('.info, .area, [class*="area"]')?.textContent?.trim() || '';
+      const floorText = item.querySelector('.floor, [class*="floor"]')?.textContent?.trim() || '';
+
+      if (priceText) {
+        result.articles.push({
+          priceText,
+          areaText,
+          floorText,
+        });
+      }
+    });
+
+    return result;
+  }, tradeType);
 }
 
 /**
  * 매물 데이터 정규화
  */
-function normalizeArticle(article, tradeType) {
-  // 가격 처리
-  let price = 0;
-  let deposit = 0;
-  let monthlyRent = 0;
-
-  if (tradeType === 'B2') {
-    // 월세: 보증금/월세
-    deposit = parseInt(article.warrantPrc || article.prc || 0) * 10000;
-    monthlyRent = parseInt(article.rentPrc || 0) * 10000;
-    price = deposit;
-  } else {
-    // 매매/전세
-    price = parseInt(article.prc || article.dealOrWarrantPrc || 0) * 10000;
-  }
-
-  return {
-    articleNo: article.atclNo || '',
-    price,
-    deposit,
-    monthlyRent,
-    priceText: article.hanPrc || formatPrice(price),
-    area: parseFloat(article.spc2 || article.excluUseAr || 0),
-    areaText: article.spc2 ? `${article.spc2}㎡` : '',
-    floor: article.flrInfo || '',
-    direction: article.direction || '',
-    description: article.atclFetrDesc || '',
-    confirmDate: article.atclCfmYmd || '',
-    realtorName: article.rltrNm || '',
-    articleConfirmYmd: article.atclCfmYmd || '',
-  };
-}
-
-/**
- * 매물 통계 계산
- */
-function calculateStats(articles) {
-  if (!articles || articles.length === 0) {
+function normalizeArticles(data, tradeType) {
+  if (!data) {
     return {
       count: 0,
       minPrice: 0,
       maxPrice: 0,
       avgPrice: 0,
+      totalCount: 0,
       articles: [],
     };
   }
 
-  const prices = articles.map(a => a.price).filter(p => p > 0);
+  // API 응답 구조
+  const articles = data?.result?.list || data?.articleList || data?.articles || [];
+  const totalCount = data?.result?.totAtclCnt || data?.totalCount || articles.length;
+
+  const normalized = articles.slice(0, 20).map(article => {
+    let price = 0;
+    let deposit = 0;
+    let monthlyRent = 0;
+
+    if (tradeType === 'monthly') {
+      deposit = parseInt(article.warrantPrc || article.prc || 0) * 10000;
+      monthlyRent = parseInt(article.rentPrc || 0) * 10000;
+      price = deposit;
+    } else {
+      price = parseInt(article.prc || article.dealOrWarrantPrc || 0) * 10000;
+    }
+
+    return {
+      articleNo: article.atclNo || '',
+      price,
+      deposit,
+      monthlyRent,
+      priceText: article.hanPrc || formatPrice(price),
+      area: parseFloat(article.spc2 || article.excluUseAr || 0),
+      areaText: article.spc2 ? `${article.spc2}㎡` : '',
+      floor: article.flrInfo || '',
+      direction: article.direction || '',
+      description: article.atclFetrDesc || '',
+      confirmDate: article.atclCfmYmd || '',
+    };
+  });
+
+  const prices = normalized.map(a => a.price).filter(p => p > 0);
 
   return {
-    count: articles.length,
+    count: normalized.length,
+    totalCount,
     minPrice: prices.length > 0 ? Math.min(...prices) : 0,
     maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
     avgPrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
-    articles: articles.slice(0, 20), // 최대 20개
+    articles: normalized,
   };
 }
-
-// ============================================
-// 단지별 데이터 조회
-// ============================================
 
 /**
  * 단일 단지 전체 데이터 조회
@@ -329,35 +316,49 @@ async function fetchComplexData(page, complex, area = 84) {
     sale: null,
     jeonse: null,
     monthly: null,
-    complexInfo: null,
   };
 
   try {
-    // 먼저 페이지 로드 (쿠키 획득)
-    await page.goto(`https://m.land.naver.com/complex/info/${complex.complexNo}`, {
-      waitUntil: 'domcontentloaded',
-      timeout: CONFIG.PAGE_TIMEOUT,
-    });
-    await sleep(500);
-
     // 매매 데이터
-    const saleData = await fetchArticles(page, complex.complexNo, 'A1');
-    result.sale = calculateStats(saleData.articles);
-    result.sale.totalCount = saleData.totalCount;
+    const saleData = await fetchComplexDataWithIntercept(page, complex.complexNo, 'sale');
+    result.sale = normalizeArticles(saleData, 'sale');
 
-    await sleep(300 + Math.random() * 200);
+    // DOM에서 추가 데이터 추출 (폴백)
+    if (result.sale.count === 0) {
+      const domData = await extractDataFromDOM(page, 'sale');
+      if (domData.count > 0) {
+        result.sale.count = domData.count;
+        result.sale.totalCount = domData.count;
+      }
+    }
+
+    await sleep(500 + Math.random() * 300);
 
     // 전세 데이터
-    const jeonseData = await fetchArticles(page, complex.complexNo, 'B1');
-    result.jeonse = calculateStats(jeonseData.articles);
-    result.jeonse.totalCount = jeonseData.totalCount;
+    const jeonseData = await fetchComplexDataWithIntercept(page, complex.complexNo, 'jeonse');
+    result.jeonse = normalizeArticles(jeonseData, 'jeonse');
 
-    await sleep(300 + Math.random() * 200);
+    if (result.jeonse.count === 0) {
+      const domData = await extractDataFromDOM(page, 'jeonse');
+      if (domData.count > 0) {
+        result.jeonse.count = domData.count;
+        result.jeonse.totalCount = domData.count;
+      }
+    }
+
+    await sleep(500 + Math.random() * 300);
 
     // 월세 데이터
-    const monthlyData = await fetchArticles(page, complex.complexNo, 'B2');
-    result.monthly = calculateStats(monthlyData.articles);
-    result.monthly.totalCount = monthlyData.totalCount;
+    const monthlyData = await fetchComplexDataWithIntercept(page, complex.complexNo, 'monthly');
+    result.monthly = normalizeArticles(monthlyData, 'monthly');
+
+    if (result.monthly.count === 0) {
+      const domData = await extractDataFromDOM(page, 'monthly');
+      if (domData.count > 0) {
+        result.monthly.count = domData.count;
+        result.monthly.totalCount = domData.count;
+      }
+    }
 
   } catch (error) {
     console.error(`[Fetch] Error for ${complex.name}:`, error.message);
@@ -379,7 +380,7 @@ async function fetchAllComplexes() {
 
   try {
     browser = await connectBrowser();
-    const page = await createPage(browser, true);
+    const page = await createPage(browser);
 
     for (const complex of TARGET_COMPLEXES) {
       // 타임아웃 체크 (50초 제한)
@@ -411,8 +412,7 @@ async function fetchAllComplexes() {
           });
         }
 
-        // 단지 간 딜레이
-        await sleep(1000 + Math.random() * 500);
+        await sleep(800 + Math.random() * 500);
       }
     }
 
@@ -446,7 +446,7 @@ async function fetchSingleComplex(complexNo, area = 84) {
 
   try {
     browser = await connectBrowser();
-    const page = await createPage(browser, true);
+    const page = await createPage(browser);
 
     const data = await withRetry(() => fetchComplexData(page, complex, area));
     return data;
