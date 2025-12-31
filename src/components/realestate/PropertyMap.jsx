@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { MapPin, Building2, Briefcase } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 // Leaflet 기본 마커 아이콘 수정 (webpack 이슈 해결)
@@ -15,15 +15,6 @@ L.Icon.Default.mergeOptions({
 // 커스텀 아이콘
 const workplaceIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const myHomeIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -61,22 +52,33 @@ function FitBounds({ positions }) {
 export default function PropertyMap({ complexes, selectedId, onSelectComplex }) {
   const [complexPositions, setComplexPositions] = useState([]);
 
-  // 직장 위치 (고정)
+  // 직장 위치 (동명대학교만)
   const workplaces = [
     { name: '동명대학교', lat: 35.1421, lng: 129.0992 },
-    { name: '경상국립대학교동물병원', lat: 35.1543, lng: 128.0979 },
   ];
 
   // 단지 주소 -> 좌표 변환 (Nominatim 무료 API)
+  // 내 집 제외, 부산 지역만 필터링
   useEffect(() => {
     if (!complexes?.length) return;
+
+    // 내 집 제외 + 부산 지역만 필터
+    const filtered = complexes.filter((c) => {
+      if (c.isMine) return false;
+      const region = c.region || c.address || '';
+      return region.includes('부산');
+    });
+
+    if (!filtered.length) {
+      setComplexPositions([]);
+      return;
+    }
 
     const geocodeComplex = async (complex) => {
       const address = complex.region || complex.address;
       if (!address) return null;
 
       try {
-        // Nominatim API (무료, 제한: 1req/sec)
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=kr&limit=1`,
           { headers: { 'Accept-Language': 'ko' } }
@@ -96,13 +98,11 @@ export default function PropertyMap({ complexes, selectedId, onSelectComplex }) 
       return null;
     };
 
-    // 순차적으로 geocoding (rate limit 준수)
     const geocodeAll = async () => {
       const results = [];
-      for (const complex of complexes) {
+      for (const complex of filtered) {
         const result = await geocodeComplex(complex);
         if (result) results.push(result);
-        // Rate limit: 1 request per second
         await new Promise((r) => setTimeout(r, 1100));
       }
       setComplexPositions(results);
@@ -130,10 +130,7 @@ export default function PropertyMap({ complexes, selectedId, onSelectComplex }) 
             <span className="w-2 h-2 rounded-full bg-yellow-500"></span> 직장
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span> 내 집
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-blue-500"></span> 단지
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span> 관심단지
           </span>
         </div>
       </div>
@@ -165,12 +162,12 @@ export default function PropertyMap({ complexes, selectedId, onSelectComplex }) 
             </Marker>
           ))}
 
-          {/* 단지 마커 */}
+          {/* 관심단지 마커 */}
           {complexPositions.map((complex, idx) => (
             <Marker
               key={`complex-${complex.id || idx}`}
               position={[complex.lat, complex.lng]}
-              icon={complex.isMine ? myHomeIcon : defaultIcon}
+              icon={defaultIcon}
               eventHandlers={{
                 click: () => onSelectComplex?.(complex.id),
               }}
@@ -179,9 +176,6 @@ export default function PropertyMap({ complexes, selectedId, onSelectComplex }) 
                 <div className="text-sm min-w-[120px]">
                   <div className="font-bold">{complex.name}</div>
                   <div className="text-xs text-zinc-500">{complex.region || ''}</div>
-                  {complex.isMine && (
-                    <div className="text-xs text-teal-500 mt-1">내 집</div>
-                  )}
                 </div>
               </Popup>
             </Marker>
