@@ -41,3 +41,4 @@ walkthrough.md
 !vercel.json
 .vercel
 .env*.local
+nul
