@@ -4,6 +4,7 @@ import { formatKRW, formatUSD, formatPercent } from '../../utils/formatters';
 import { Plus, Trash2, ChevronLeft, ChevronRight, Check, X, History, TrendingUp } from 'lucide-react';
 import AddStockModal from '../investment/AddStockModal';
 import { formatHistoryDate, aggregateByMonth } from '../../utils/investmentCalculator';
+import { getMarketStatusLabel } from '../../utils/marketHolidays';
 
 // Portfolio Bar Item - 그라데이션 바 리스트 스타일
 const PortfolioBarItem = ({ ticker, value, percent, profit, isLast }) => {
@@ -652,19 +653,21 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                             const { marketState, preMarketPrice, preMarketChangePercent, postMarketPrice, postMarketChangePercent } = stock;
                             
                             return (
-                              <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] leading-none">
-                                {/* 시장 상태 */}
-                                <span className={`font-bold text-[9px] px-1 rounded-[2px] ${
-                                  marketState === 'REGULAR' 
-                                    ? 'text-green-600 bg-green-100 dark:bg-green-900/30' 
-                                    : 'text-zinc-500 bg-zinc-100 dark:bg-zinc-800'
-                                }`}>
-                                  {marketState === 'REGULAR' ? 'OPEN' : 'CLOSED'}
-                                </span>
+                              <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] leading-none flex-wrap">
+                                {/* 시장 상태 - 휴장일 정보 포함 */}
+                                {(() => {
+                                  const statusInfo = getMarketStatusLabel(marketState, s.ticker);
+                                  return (
+                                    <span className={`font-bold text-[9px] px-1 rounded-[2px] ${statusInfo.className}`}>
+                                      {statusInfo.label}
+                                      {statusInfo.reason && <span className="ml-1 font-normal">({statusInfo.reason})</span>}
+                                    </span>
+                                  );
+                                })()}
                                 {/* 프리마켓 */}
                                 {preMarketPrice && (
                                   <>
-                                    <span className="text-zinc-400 text-[9px]">PRE</span>
+                                    <span className="text-amber-500 text-[9px] font-semibold">PRE</span>
                                     <span className="text-zinc-500">{formatUSD(preMarketPrice)}</span>
                                     <span className={preMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
                                       {preMarketChangePercent >= 0 ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
@@ -674,7 +677,7 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                                 {/* 애프터마켓 */}
                                 {postMarketPrice && (
                                   <>
-                                    <span className="text-zinc-400 text-[9px] ml-1">POST</span>
+                                    <span className="text-purple-500 text-[9px] font-semibold ml-1">POST</span>
                                     <span className="text-zinc-500">{formatUSD(postMarketPrice)}</span>
                                     <span className={postMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
                                       {postMarketChangePercent >= 0 ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%

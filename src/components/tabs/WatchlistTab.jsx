@@ -13,6 +13,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { createChart, CandlestickSeries } from 'lightweight-charts';
 import AddWatchlistModal, { DEFAULT_WATCHLIST } from '../watchlist/AddWatchlistModal';
 import { formatUSD } from '../../utils/formatters';
+import { getMarketStatusLabel, getUSMarketStatus } from '../../utils/marketHolidays';
 
 // 가격 포맷터 - 티커에 따라 다르게 표시
 function formatPrice(price, ticker, exchangeRate = 1450) {
@@ -103,19 +104,21 @@ function SortableStockItem({ stock, stockData, isSelected, onSelect, onRemove, e
           )}
         </div>
         {/* 시장 상태 + 프리/애프터 가격 (항상 표시) */}
-        <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
-          {/* 시장 상태 라벨 */}
-          <span className={`font-bold text-[9px] px-1 rounded-[2px] ${
-            marketState === 'REGULAR' 
-              ? 'text-green-600 bg-green-100 dark:bg-green-900/30' 
-              : 'text-zinc-500 bg-zinc-100 dark:bg-zinc-800'
-          }`}>
-            {marketState === 'REGULAR' ? 'OPEN' : 'CLOSED'}
-          </span>
+        <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap">
+          {/* 시장 상태 라벨 - 휴장일 정보 포함 */}
+          {(() => {
+            const statusInfo = getMarketStatusLabel(marketState, stock.ticker);
+            return (
+              <span className={`font-bold text-[9px] px-1 rounded-[2px] ${statusInfo.className}`}>
+                {statusInfo.label}
+                {statusInfo.reason && <span className="ml-1 font-normal">({statusInfo.reason})</span>}
+              </span>
+            );
+          })()}
           {/* 프리마켓 가격 */}
           {preMarketPrice && (
             <>
-              <span className="text-zinc-400 text-[9px]">PRE</span>
+              <span className="text-amber-500 text-[9px] font-semibold">PRE</span>
               <span className="text-zinc-500 font-mono">{formatUSD(preMarketPrice)}</span>
               <span className={preMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
                 {preMarketChangePercent >= 0 ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
@@ -125,7 +128,7 @@ function SortableStockItem({ stock, stockData, isSelected, onSelect, onRemove, e
           {/* 애프터마켓 가격 */}
           {postMarketPrice && (
             <>
-              <span className="text-zinc-400 text-[9px] ml-1">POST</span>
+              <span className="text-purple-500 text-[9px] font-semibold ml-1">POST</span>
               <span className="text-zinc-500 font-mono">{formatUSD(postMarketPrice)}</span>
               <span className={postMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
                 {postMarketChangePercent >= 0 ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%
@@ -535,6 +538,23 @@ export default function WatchlistTab({ stocks, prices, loading, onAddStock, onRe
                 {stocks?.length || 0}개 종목 모니터링 중
               </p>
             </div>
+            {/* 시장 상태 배지 */}
+            {(() => {
+              const status = getUSMarketStatus();
+              const bgColor = status.status === 'REGULAR' ? 'bg-green-500/10 border-green-500/30 text-green-500' :
+                status.status === 'PRE_MARKET' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                status.status === 'AFTER_HOURS' ? 'bg-purple-500/10 border-purple-500/30 text-purple-500' :
+                status.status === 'HOLIDAY' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' :
+                'bg-zinc-500/10 border-zinc-500/30 text-zinc-500';
+              return (
+                <div className={`ml-2 px-2 py-1 rounded-lg border text-xs font-medium ${bgColor}`}>
+                  <span>{status.displayText}</span>
+                  {status.nextSession && (
+                    <span className="ml-1.5 opacity-70 text-[10px]">→ {status.nextSession} (ET)</span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
