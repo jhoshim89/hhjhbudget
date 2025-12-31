@@ -5,6 +5,64 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/api`
   : '/api';
 
+// 프리/애프터 마켓 데이터 localStorage 캐시
+const PRE_POST_CACHE_KEY = 'yahoo_prepost_cache';
+
+function getPrePostCache() {
+  try {
+    const cached = localStorage.getItem(PRE_POST_CACHE_KEY);
+    return cached ? JSON.parse(cached) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setPrePostCache(ticker, data) {
+  try {
+    const cache = getPrePostCache();
+    cache[ticker] = {
+      ...data,
+      cachedAt: Date.now(),
+    };
+    localStorage.setItem(PRE_POST_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // localStorage 실패 무시
+  }
+}
+
+function mergePrePostData(ticker, apiData) {
+  const cache = getPrePostCache();
+  const cached = cache[ticker];
+  
+  // API에서 프리/애프터 데이터가 있으면 캐시 업데이트
+  if (apiData.preMarketPrice !== null || apiData.postMarketPrice !== null) {
+    setPrePostCache(ticker, {
+      preMarketPrice: apiData.preMarketPrice,
+      preMarketChange: apiData.preMarketChange,
+      preMarketChangePercent: apiData.preMarketChangePercent,
+      postMarketPrice: apiData.postMarketPrice,
+      postMarketChange: apiData.postMarketChange,
+      postMarketChangePercent: apiData.postMarketChangePercent,
+    });
+    return apiData;
+  }
+  
+  // API 데이터가 null이고 캐시가 있으면 캐시 사용
+  if (cached) {
+    return {
+      ...apiData,
+      preMarketPrice: cached.preMarketPrice,
+      preMarketChange: cached.preMarketChange,
+      preMarketChangePercent: cached.preMarketChangePercent,
+      postMarketPrice: cached.postMarketPrice,
+      postMarketChange: cached.postMarketChange,
+      postMarketChangePercent: cached.postMarketChangePercent,
+    };
+  }
+  
+  return apiData;
+}
+
 // 데모 가격 (API 실패 시 폴백)
 const DEMO_PRICES = {
   // 환율
@@ -130,11 +188,17 @@ export function useYahooFinance(tickers = [], options = {}) {
       const response = await fetch(url);
       const json = await response.json();
 
-      if (!json.success) {
+if (!json.success) {
         throw new Error(json.error || 'Failed to fetch stock data');
       }
 
-      setData(json.data);
+      // 프리/애프터 데이터 localStorage 캐시 적용
+      const mergedData = {};
+      for (const [ticker, tickerData] of Object.entries(json.data)) {
+        mergedData[ticker] = mergePrePostData(ticker, tickerData);
+      }
+
+      setData(mergedData);
       setLastUpdated(new Date(json.lastUpdated));
     } catch (err) {
       console.error('Yahoo Finance fetch error:', err);
