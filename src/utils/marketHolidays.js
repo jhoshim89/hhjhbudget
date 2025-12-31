@@ -131,13 +131,12 @@ export function getUSMarketStatus() {
       isPreMarket: false,
       isAfterHours: false,
       displayText: `휴장 (${holidayReason})`,
-      nextSession: '내일 PRE 04:00',
+      nextSession: '내일 PRE 18:00',
     };
   }
 
   // 주말 체크
   if (isWeekendDay) {
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : 2; // 일요일이면 1일, 토요일이면 2일
     return {
       isOpen: false,
       status: 'WEEKEND',
@@ -145,7 +144,7 @@ export function getUSMarketStatus() {
       isPreMarket: false,
       isAfterHours: false,
       displayText: '주말 휴장',
-      nextSession: `월요일 PRE 04:00`,
+      nextSession: '월 PRE 18:00',
     };
   }
 
@@ -153,7 +152,19 @@ export function getUSMarketStatus() {
   const earlyCloseReason = getEarlyCloseReason(todayStr);
   const effectiveClose = earlyCloseReason ? EARLY_CLOSE : MARKET_CLOSE;
 
-  // 프리마켓 (04:00 - 09:30)
+  // 한국 시간 변환 (ET + 14시간, 겨울 기준)
+  // 서머타임(3월~11월)은 +13시간이지만 간단히 +14로 통일
+  const toKST = (etHour, etMin = 0) => {
+    let kstHour = etHour + 14;
+    let nextDay = '';
+    if (kstHour >= 24) {
+      kstHour -= 24;
+      nextDay = '';
+    }
+    return `${String(kstHour).padStart(2, '0')}:${String(etMin).padStart(2, '0')}`;
+  };
+
+  // 프리마켓 (04:00 - 09:30 ET = 18:00 - 23:30 KST)
   if (currentTime >= PRE_MARKET_START && currentTime < MARKET_OPEN) {
     return {
       isOpen: false,
@@ -162,25 +173,26 @@ export function getUSMarketStatus() {
       isPreMarket: true,
       isAfterHours: false,
       displayText: '프리마켓',
-      nextSession: '정규장 09:30',
+      nextSession: `정규장 ${toKST(9, 30)}`,
     };
   }
 
-  // 정규장 (09:30 - 16:00 또는 13:00)
+  // 정규장 (09:30 - 16:00 ET = 23:30 - 06:00 KST)
   if (currentTime >= MARKET_OPEN && currentTime < effectiveClose) {
     const closeHour = Math.floor(effectiveClose / 60);
+    const closeMin = effectiveClose % 60;
     return {
       isOpen: true,
       status: 'REGULAR',
-      reason: earlyCloseReason ? `오늘 ${closeHour}시 조기 마감` : null,
+      reason: earlyCloseReason ? `오늘 ${toKST(closeHour)} 조기 마감` : null,
       isPreMarket: false,
       isAfterHours: false,
       displayText: earlyCloseReason ? '장중 (조기마감)' : '장중',
-      nextSession: `POST ${closeHour}:00`,
+      nextSession: `POST ${toKST(closeHour, closeMin)}`,
     };
   }
 
-  // 애프터마켓 (16:00 - 20:00)
+  // 애프터마켓 (16:00 - 20:00 ET = 06:00 - 10:00 KST)
   if (currentTime >= effectiveClose && currentTime < AFTER_HOURS_END) {
     return {
       isOpen: false,
@@ -189,19 +201,11 @@ export function getUSMarketStatus() {
       isPreMarket: false,
       isAfterHours: true,
       displayText: '애프터마켓',
-      nextSession: '마감 20:00',
+      nextSession: `마감 ${toKST(20)}`,
     };
   }
 
-  // 장 마감 (20:00 - 04:00)
-  // 다음 프리마켓 시작 시간 계산
-  const nextPreMarket = new Date(usNow);
-  if (currentTime >= AFTER_HOURS_END) {
-    // 오늘 애프터 끝났으면 내일 프리마켓
-    nextPreMarket.setDate(nextPreMarket.getDate() + 1);
-  }
-  nextPreMarket.setHours(4, 0, 0, 0);
-
+  // 장 마감 (20:00 - 04:00 ET = 10:00 - 18:00 KST)
   return {
     isOpen: false,
     status: 'CLOSED',
@@ -209,7 +213,7 @@ export function getUSMarketStatus() {
     isPreMarket: false,
     isAfterHours: false,
     displayText: '장 마감',
-    nextSession: 'PRE 04:00',
+    nextSession: `PRE ${toKST(4)}`,
   };
 }
 

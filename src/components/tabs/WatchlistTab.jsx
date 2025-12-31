@@ -550,7 +550,7 @@ export default function WatchlistTab({ stocks, prices, loading, onAddStock, onRe
                 <div className={`ml-2 px-2 py-1 rounded-lg border text-xs font-medium ${bgColor}`}>
                   <span>{status.displayText}</span>
                   {status.nextSession && (
-                    <span className="ml-1.5 opacity-70 text-[10px]">→ {status.nextSession} (ET)</span>
+                    <span className="ml-1.5 opacity-70 text-[10px]">→ {status.nextSession}</span>
                   )}
                 </div>
               );
