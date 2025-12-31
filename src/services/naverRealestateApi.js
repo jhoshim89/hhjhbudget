@@ -96,6 +96,65 @@ export async function checkApiHealth() {
   return json;
 }
 
+/**
+ * 매물 상세 히스토리 조회
+ * @param {string} complexId - 단지 ID (예: 'forena-songpa')
+ * @param {string} tradeType - 거래 유형 ('매매', '전세', '월세') - null이면 전체
+ * @param {number} days - 조회 기간 (일)
+ * @returns {Promise<{success: boolean, data: Array}>}
+ */
+export async function fetchArticleDetails(complexId, tradeType = null, days = 1) {
+  const params = new URLSearchParams({
+    type: 'article-history',
+    complexId,
+    days: String(days),
+  });
+
+  if (tradeType) {
+    params.append('tradeType', tradeType);
+  }
+
+  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
+  const json = await res.json();
+
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch article details');
+  }
+
+  return {
+    data: json.data || [],
+    success: json.success,
+  };
+}
+
+/**
+ * 시세 히스토리 조회 (동향 그래프용)
+ * @param {string} complexId - 단지 ID
+ * @param {number} area - 전용면적 (㎡)
+ * @param {number} days - 조회 기간 (일)
+ * @returns {Promise<{success: boolean, data: Array}>}
+ */
+export async function fetchPriceHistory(complexId, area = 84, days = 30) {
+  const params = new URLSearchParams({
+    type: 'price-history',
+    complexId,
+    area: String(area),
+    days: String(days),
+  });
+
+  const res = await fetch(`${API_BASE}/naver-realestate?${params}`);
+  const json = await res.json();
+
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch price history');
+  }
+
+  return {
+    data: json.data || [],
+    success: json.success,
+  };
+}
+
 // ============================================
 // 유틸리티 함수
 // ============================================
@@ -232,6 +291,8 @@ export default {
   fetchComplexSummary,
   fetchComplexList,
   checkApiHealth,
+  fetchArticleDetails,
+  fetchPriceHistory,
   formatPrice,
   formatPriceRange,
   formatMonthlyRent,

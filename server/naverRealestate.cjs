@@ -898,6 +898,18 @@ async function naverRealestateHandler(req, res) {
         };
         break;
 
+      case 'price-history':
+        // 시세 히스토리 조회 (동향 그래프용)
+        const { complexId: priceComplexId, area: priceArea, days: priceDays } = req.query;
+        if (!priceComplexId) {
+          return res.status(400).json({ success: false, error: 'complexId required' });
+        }
+        result = {
+          success: true,
+          data: await getPriceHistory(priceComplexId, parseInt(priceArea) || 84, parseInt(priceDays) || 30),
+        };
+        break;
+
       case 'article-history':
         // 매물상세 히스토리 조회
         const { complexId: artComplexId, tradeType: artTradeType, days: artDays } = req.query;

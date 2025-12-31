@@ -1,6 +1,261 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowUpDown, Home, TrendingUp, TrendingDown, RefreshCw, Loader2, X, Plus, ChevronDown } from 'lucide-react';
-import { formatPrice, formatPriceRange } from '../../services/naverRealestateApi';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ArrowUpDown, RefreshCw, Loader2, X, Plus, ChevronDown, ChevronRight, Home, Building2, Wallet } from 'lucide-react';
+import { formatPrice, formatPriceRange, fetchArticleDetails } from '../../services/naverRealestateApi';
+
+/**
+ * 월 실질비용 계산 (보증금 기회비용 포함)
+ * @param {number} deposit - 보증금 (만원)
+ * @param {number} rent - 월세 (만원)
+ * @param {number} rate - 기회비용률 (기본 5%)
+ */
+const calcMonthlyCost = (deposit, rent, rate = 0.05) => {
+  return rent + (deposit * rate / 12);
+};
+
+/**
+ * 전세 대출 월이자 계산
+ * @param {number} deposit - 전세금 (만원)
+ * @param {number} rate - 대출금리 (기본 4%)
+ */
+const calcJeonseMonthlyInterest = (deposit, rate = 0.04) => {
+  return deposit * rate / 12;
+};
+
+/**
+ * 가격 포맷 (만원 단위 -> 억/만 표시)
+ */
+const formatPriceMan = (man) => {
+  if (!man) return '-';
+  if (man >= 10000) {
+    const eok = Math.floor(man / 10000);
+    const rest = man % 10000;
+    return rest > 0 ? `${eok}억 ${rest.toLocaleString()}만` : `${eok}억`;
+  }
+  return `${man.toLocaleString()}만`;
+};
+
+/**
+ * 확장된 행 컴포넌트 - 매물 상세 표시
+ */
+function ExpandedRowContent({ complex, areaKey, colSpan }) {
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('jeonse');
+
+  useEffect(() => {
+    loadArticles();
+  }, [complex?.id, areaKey]);
+
+  const loadArticles = async () => {
+    if (!complex?.id) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await fetchArticleDetails(complex.id, null, 1);
+      const targetArea = parseFloat(areaKey) || 0;
+      const filtered = result.data.filter(article => {
+        return Math.abs(article.area - targetArea) <= 3;
+      });
+      setArticles(filtered);
+    } catch (err) {
+      console.error('[ExpandedRow] Error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tabs = [
+    { id: 'jeonse', label: '전세', icon: Building2, color: 'text-blue-500 dark:text-blue-400' },
+    { id: 'monthly', label: '월세', icon: Wallet, color: 'text-amber-500 dark:text-amber-400' },
+    { id: 'sale', label: '매매', icon: Home, color: 'text-zinc-800 dark:text-white' },
+  ];
+
+  const filteredArticles = articles.filter(article => {
+    const typeMap = { sale: '매매', jeonse: '전세', monthly: '월세' };
+    return article.tradeType === typeMap[activeTab];
+  });
+
+  // 동일 매물 그룹화
+  const groupedArticles = useMemo(() => {
+    const grouped = new Map();
+
+    filteredArticles.forEach(article => {
+      let key;
+      if (activeTab === 'sale') {
+        key = `${article.price}`;
+      } else if (activeTab === 'jeonse') {
+        key = `${article.deposit}`;
+      } else {
+        key = `${article.deposit}-${article.monthlyRent}`;
+      }
+
+      if (!grouped.has(key)) {
+        grouped.set(key, { ...article, count: 1 });
+      } else {
+        grouped.get(key).count++;
+      }
+    });
+
+    return Array.from(grouped.values())
+      .sort((a, b) => {
+        // 많은 순 → 가격 낮은 순
+        if (b.count !== a.count) return b.count - a.count;
+        const aPrice = a.price || a.deposit || 0;
+        const bPrice = b.price || b.deposit || 0;
+        return aPrice - bPrice;
+      });
+  }, [filteredArticles, activeTab]);
+
+  const getTabCount = (tabId) => {
+    const typeMap = { sale: '매매', jeonse: '전세', monthly: '월세' };
+    return articles.filter(a => a.tradeType === typeMap[tabId]).length;
+  };
+
+  return (
+    <tr>
+      <td colSpan={colSpan} className="p-0">
+        <div className="bg-zinc-50 dark:bg-zinc-800/30 border-t border-zinc-200 dark:border-zinc-700/50">
+          {/* 탭 */}
+          <div className="flex gap-2 p-3 border-b border-zinc-200 dark:border-zinc-700/50">
+            {tabs.map(tab => {
+              const count = getTabCount(tab.id);
+              return (
+                <button
+                  key={tab.id}
+                  onClick={(e) => { e.stopPropagation(); setActiveTab(tab.id); }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/30'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                  }`}
+                >
+                  <tab.icon size={12} />
+                  {tab.label}
+                  {count > 0 && (
+                    <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                      activeTab === tab.id
+                        ? 'bg-teal-500/30 text-teal-700 dark:text-teal-300'
+                        : 'bg-zinc-200 dark:bg-zinc-600 text-zinc-600 dark:text-zinc-300'
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 콘텐츠 */}
+          <div className="p-3 max-h-64 overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="animate-spin text-teal-400" size={20} />
+                <span className="ml-2 text-sm text-zinc-400">매물 조회 중...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-6">
+                <p className="text-rose-400 text-sm mb-1">조회 실패</p>
+                <p className="text-xs text-zinc-500">{error}</p>
+              </div>
+            ) : filteredArticles.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-zinc-500">해당 매물이 없습니다</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {/* 헤더 */}
+                <div className="grid grid-cols-4 gap-2 text-[10px] text-zinc-500 uppercase tracking-wider px-2 pb-1 border-b border-zinc-200 dark:border-zinc-700">
+                  {activeTab === 'sale' && (
+                    <>
+                      <span>매매가</span>
+                      <span></span>
+                      <span>층/면적</span>
+                      <span>날짜</span>
+                    </>
+                  )}
+                  {activeTab === 'jeonse' && (
+                    <>
+                      <span>전세금</span>
+                      <span>월이자(4%)</span>
+                      <span>층/면적</span>
+                      <span>날짜</span>
+                    </>
+                  )}
+                  {activeTab === 'monthly' && (
+                    <>
+                      <span>보증금/월세</span>
+                      <span>월비용</span>
+                      <span>층/면적</span>
+                      <span>날짜</span>
+                    </>
+                  )}
+                </div>
+
+                {groupedArticles.map((article, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2 bg-white dark:bg-zinc-800/50 rounded-lg"
+                  >
+                    <div className="flex-1 grid grid-cols-4 gap-2 items-center">
+                      {activeTab === 'sale' && (
+                        <>
+                          <span className="font-bold text-zinc-800 dark:text-white text-sm">
+                            {formatPriceMan(article.price)}
+                            {article.count > 1 && (
+                              <span className="ml-1 text-xs text-zinc-400 font-normal">({article.count}건)</span>
+                            )}
+                          </span>
+                          <span></span>
+                          <span className="text-xs text-zinc-500">{article.area}㎡</span>
+                          <span className="text-xs text-zinc-400">{article.date}</span>
+                        </>
+                      )}
+                      {activeTab === 'jeonse' && (
+                        <>
+                          <span className="font-bold text-blue-500 dark:text-blue-400 text-sm">
+                            {formatPriceMan(article.deposit)}
+                            {article.count > 1 && (
+                              <span className="ml-1 text-xs text-zinc-400 font-normal">({article.count}건)</span>
+                            )}
+                          </span>
+                          <span className="text-xs text-emerald-500 dark:text-emerald-400 font-medium">
+                            월 {calcJeonseMonthlyInterest(article.deposit).toFixed(1)}만
+                          </span>
+                          <span className="text-xs text-zinc-500">{article.area}㎡</span>
+                          <span className="text-xs text-zinc-400">{article.date}</span>
+                        </>
+                      )}
+                      {activeTab === 'monthly' && (
+                        <>
+                          <span className="font-bold text-amber-500 dark:text-amber-400 text-sm">
+                            {formatPriceMan(article.deposit)} / {article.monthlyRent}만
+                            {article.count > 1 && (
+                              <span className="ml-1 text-xs text-zinc-400 font-normal">({article.count}건)</span>
+                            )}
+                          </span>
+                          <span className="text-xs text-emerald-500 dark:text-emerald-400 font-medium">
+                            {calcMonthlyCost(article.deposit, article.monthlyRent).toFixed(1)}만/월
+                          </span>
+                          <span className="text-xs text-zinc-500">{article.area}㎡</span>
+                          <span className="text-xs text-zinc-400">{article.date}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </td>
+    </tr>
+  );
+}
 
 /**
  * 단지별 비교 테이블
@@ -10,6 +265,16 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
   const [sortOrder, setSortOrder] = useState('asc');
   const [excludedIds, setExcludedIds] = useState(new Set());
   const [editMode, setEditMode] = useState(false);
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  // 행 확장 토글
+  const toggleExpand = (rowKey) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey);
+      return next;
+    });
+  };
 
   // 비교에서 제외
   const handleExclude = (id) => {
@@ -42,16 +307,16 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
 
       switch (sortKey) {
         case 'sale':
-          aVal = aArea.sale?.avgPrice || 0;
-          bVal = bArea.sale?.avgPrice || 0;
+          aVal = aArea.sale?.avgPrice || aArea.sale?.minPrice || 0;
+          bVal = bArea.sale?.avgPrice || bArea.sale?.minPrice || 0;
           break;
         case 'jeonse':
-          aVal = aArea.jeonse?.avgPrice || 0;
-          bVal = bArea.jeonse?.avgPrice || 0;
+          aVal = aArea.jeonse?.avgPrice || aArea.jeonse?.minPrice || 0;
+          bVal = bArea.jeonse?.avgPrice || bArea.jeonse?.minPrice || 0;
           break;
         case 'monthly':
-          aVal = aArea.monthly?.avgRent || 0;
-          bVal = bArea.monthly?.avgRent || 0;
+          aVal = aArea.monthly?.count || 0;
+          bVal = bArea.monthly?.count || 0;
           break;
         case 'count':
           aVal = (aArea.sale?.count || 0) + (aArea.jeonse?.count || 0) + (aArea.monthly?.count || 0);
@@ -84,6 +349,9 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
       <ArrowUpDown size={12} className={sortKey === sortKeyName ? 'text-teal-400' : 'text-zinc-600'} />
     </button>
   );
+
+  // 컬럼 수 계산 (편집 모드에 따라)
+  const colCount = editMode ? 7 : 6;
 
   if (loading && data.length === 0) {
     return (
@@ -128,6 +396,11 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
         </div>
       </div>
 
+      {/* 공식 설명 */}
+      <div className="text-[10px] text-zinc-500 px-1">
+        💡 월비용 = 월세 + (보증금 × 5% ÷ 12) | 전세 월이자 = 전세금 × 4% ÷ 12
+      </div>
+
       {/* 테이블 */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px]">
@@ -152,26 +425,28 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
           </thead>
           <tbody className="text-sm">
             {sortedData.map((complex) => {
-              // 각 평형별로 행 생성
               const areas = Object.keys(complex.areas || {}).sort((a, b) => Number(a) - Number(b));
 
-              return areas.map((areaKey, idx) => {
+              return areas.flatMap((areaKey, idx) => {
                 const areaData = complex.areas[areaKey];
                 const isFirst = idx === 0;
                 const totalCount = (areaData.sale?.count || 0) + (areaData.jeonse?.count || 0) + (areaData.monthly?.count || 0);
+                const rowKey = `${complex.id}-${areaKey}`;
+                const isExpanded = expandedRows.has(rowKey);
 
-                return (
+                const rows = [
                   <tr
-                    key={`${complex.id}-${areaKey}`}
-                    className={`border-b border-zinc-200 dark:border-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/30 transition-colors ${
+                    key={rowKey}
+                    onClick={() => toggleExpand(rowKey)}
+                    className={`border-b border-zinc-200 dark:border-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer ${
                       complex.isMine ? 'bg-teal-500/5' : ''
-                    }`}
+                    } ${isExpanded ? 'bg-zinc-100 dark:bg-zinc-800/40' : ''}`}
                   >
                     {/* 제외 버튼 (편집 모드, 첫 행에만) */}
                     {editMode && isFirst && (
                       <td className="py-3 pr-2" rowSpan={areas.length}>
                         <button
-                          onClick={() => handleExclude(complex.id)}
+                          onClick={(e) => { e.stopPropagation(); handleExclude(complex.id); }}
                           className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
                           title="비교에서 제외"
                         >
@@ -197,11 +472,18 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                       </td>
                     )}
 
-                    {/* 평형 */}
+                    {/* 평형 + 확장 인디케이터 */}
                     <td className="py-3 pr-4">
-                      <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs rounded">
-                        {areaKey}㎡
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {isExpanded ? (
+                          <ChevronDown size={14} className="text-teal-400" />
+                        ) : (
+                          <ChevronRight size={14} className="text-zinc-400" />
+                        )}
+                        <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs rounded">
+                          {areaKey}㎡
+                        </span>
+                      </div>
                     </td>
 
                     {/* 매매 */}
@@ -232,14 +514,14 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                       )}
                     </td>
 
-                    {/* 월세 */}
+                    {/* 월세 - count만 표시 (avgDeposit/avgRent가 없으므로) */}
                     <td className="py-3 pr-4">
                       {areaData.monthly?.count > 0 ? (
                         <div>
                           <p className="font-medium text-amber-400">
-                            {formatPrice(areaData.monthly.avgDeposit)} / {formatPrice(areaData.monthly.avgRent)}
+                            {areaData.monthly.count}건
                           </p>
-                          <p className="text-xs text-zinc-500">{areaData.monthly.count}건</p>
+                          <p className="text-xs text-zinc-500">클릭하여 상세보기</p>
                         </div>
                       ) : (
                         <span className="text-zinc-600">-</span>
@@ -253,7 +535,21 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                       </span>
                     </td>
                   </tr>
-                );
+                ];
+
+                // 확장된 행 추가
+                if (isExpanded) {
+                  rows.push(
+                    <ExpandedRowContent
+                      key={`${rowKey}-expanded`}
+                      complex={complex}
+                      areaKey={areaKey}
+                      colSpan={colCount}
+                    />
+                  );
+                }
+
+                return rows;
               });
             })}
           </tbody>
