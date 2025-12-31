@@ -107,6 +107,18 @@ function parseQuoteData(result) {
     }
   }
 
+  // 프리마켓/애프터마켓 데이터 추출
+  const preMarketPrice = meta.preMarketPrice || null;
+  const preMarketChange = meta.preMarketChange || null;
+  const preMarketChangePercent = meta.preMarketChangePercent || null;
+
+  const postMarketPrice = meta.postMarketPrice || null;
+  const postMarketChange = meta.postMarketChange || null;
+  const postMarketChangePercent = meta.postMarketChangePercent || null;
+
+  // 마켓 상태 결정
+  const marketState = meta.marketState || 'CLOSED';
+
   return {
     price: Number(price.toFixed(2)),
     change: Number(change.toFixed(2)),
@@ -114,6 +126,16 @@ function parseQuoteData(result) {
     currency,
     history,
     previousClose: Number(previousClose.toFixed(2)),
+    // 프리마켓 데이터
+    preMarketPrice: preMarketPrice !== null ? Number(preMarketPrice.toFixed(2)) : null,
+    preMarketChange: preMarketChange !== null ? Number(preMarketChange.toFixed(2)) : null,
+    preMarketChangePercent: preMarketChangePercent !== null ? Number(preMarketChangePercent.toFixed(2)) : null,
+    // 애프터마켓 데이터
+    postMarketPrice: postMarketPrice !== null ? Number(postMarketPrice.toFixed(2)) : null,
+    postMarketChange: postMarketChange !== null ? Number(postMarketChange.toFixed(2)) : null,
+    postMarketChangePercent: postMarketChangePercent !== null ? Number(postMarketChangePercent.toFixed(2)) : null,
+    // 마켓 상태: PRE, REGULAR, POST, CLOSED
+    marketState,
   };
 }
 
@@ -167,13 +189,20 @@ async function getTickerData(ticker, range) {
     const result = await fetchYahooFinance(ticker, range);
     const parsed = parseQuoteData(result);
 
-    // 캐시 저장
+    // 캐시 저장 (프리/애프터마켓 데이터 포함)
     setCache('quotes', ticker, {
       price: parsed.price,
       change: parsed.change,
       changePercent: parsed.changePercent,
       currency: parsed.currency,
       previousClose: parsed.previousClose,
+      preMarketPrice: parsed.preMarketPrice,
+      preMarketChange: parsed.preMarketChange,
+      preMarketChangePercent: parsed.preMarketChangePercent,
+      postMarketPrice: parsed.postMarketPrice,
+      postMarketChange: parsed.postMarketChange,
+      postMarketChangePercent: parsed.postMarketChangePercent,
+      marketState: parsed.marketState,
     });
     setCache('history', `${ticker}_${range}`, parsed.history);
 

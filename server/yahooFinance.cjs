@@ -151,6 +151,18 @@ function parseQuoteData(result) {
     changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
   }
 
+  // 3. 프리마켓/애프터마켓 데이터 추출
+  const preMarketPrice = meta.preMarketPrice || null;
+  const preMarketChange = meta.preMarketChange || null;
+  const preMarketChangePercent = meta.preMarketChangePercent || null;
+
+  const postMarketPrice = meta.postMarketPrice || null;
+  const postMarketChange = meta.postMarketChange || null;
+  const postMarketChangePercent = meta.postMarketChangePercent || null;
+
+  // 4. 마켓 상태 결정
+  const marketState = meta.marketState || 'CLOSED';
+
   return {
     price: Number(price.toFixed(4)),
     change: Number(change.toFixed(4)),
@@ -158,6 +170,16 @@ function parseQuoteData(result) {
     currency,
     history,
     previousClose: Number(previousClose.toFixed(4)),
+    // 프리마켓 데이터
+    preMarketPrice: preMarketPrice !== null ? Number(preMarketPrice.toFixed(4)) : null,
+    preMarketChange: preMarketChange !== null ? Number(preMarketChange.toFixed(4)) : null,
+    preMarketChangePercent: preMarketChangePercent !== null ? Number(preMarketChangePercent.toFixed(2)) : null,
+    // 애프터마켓 데이터
+    postMarketPrice: postMarketPrice !== null ? Number(postMarketPrice.toFixed(4)) : null,
+    postMarketChange: postMarketChange !== null ? Number(postMarketChange.toFixed(4)) : null,
+    postMarketChangePercent: postMarketChangePercent !== null ? Number(postMarketChangePercent.toFixed(2)) : null,
+    // 마켓 상태: PRE, REGULAR, POST, CLOSED
+    marketState,
   };
 }
 

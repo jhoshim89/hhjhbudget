@@ -643,7 +643,42 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                             className="text-amber-600 dark:text-amber-400"
                           />
                         </td>
-                        <td className="p-3 md:p-4 text-right text-zinc-800 dark:text-white font-mono whitespace-nowrap">{formatUSD(price)}</td>
+                        <td className="p-3 md:p-4 text-right text-zinc-800 dark:text-white font-mono whitespace-nowrap">
+                          <div>{formatUSD(price)}</div>
+                          {(() => {
+                            const stock = data.yahooData?.[s.ticker];
+                            if (!stock) return null;
+                            
+                            const { marketState, preMarketPrice, preMarketChangePercent, postMarketPrice, postMarketChangePercent } = stock;
+                            
+                            if (marketState === 'PRE' && preMarketPrice) {
+                              const isUp = preMarketChangePercent >= 0;
+                              return (
+                                <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] leading-none animate-enter">
+                                  <span className="font-bold text-[9px] text-zinc-500 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px] tracking-wider">PRE</span>
+                                  <span className="text-zinc-600 dark:text-zinc-400">{formatUSD(preMarketPrice)}</span>
+                                  <span className={isUp ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}>
+                                    {isUp ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
+                                  </span>
+                                </div>
+                              );
+                            }
+                            
+                            if (marketState === 'POST' && postMarketPrice) {
+                              const isUp = postMarketChangePercent >= 0;
+                              return (
+                                <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] leading-none animate-enter">
+                                  <span className="font-bold text-[9px] text-zinc-500 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px] tracking-wider">POST</span>
+                                  <span className="text-zinc-600 dark:text-zinc-400">{formatUSD(postMarketPrice)}</span>
+                                  <span className={isUp ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}>
+                                    {isUp ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%
+                                  </span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </td>
                         <td className="p-3 md:p-4 text-right text-zinc-800 dark:text-white font-bold font-mono whitespace-nowrap">{formatUSD(valUSD)}</td>
                         <td className="p-3 md:p-4 text-right text-violet-600 dark:text-violet-400 font-mono whitespace-nowrap">{formatKRW(valKRW, true)}</td>
                         <td className={`p-3 md:p-4 text-right font-mono whitespace-nowrap ${profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>

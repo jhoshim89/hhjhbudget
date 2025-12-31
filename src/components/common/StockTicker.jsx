@@ -37,7 +37,7 @@ export default function StockTicker({ stocks = [], priceData = {} }) {
 
   // 티커 아이템 생성 (관심종목 + 기본 인덱스)
   const tickerItems = useMemo(() => {
-    const baseIndices = ['SPY', 'QQQ', 'TQQQ', 'BTC-KRW', 'ETH-KRW'];
+    const baseIndices = ['SPY', 'QQQ', 'TQQQ'];
     const items = [];
 
     // 기본 인덱스 추가
