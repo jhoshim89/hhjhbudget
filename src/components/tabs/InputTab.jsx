@@ -132,14 +132,25 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
   };
 
   return (
-    <div className={`group flex items-center justify-between p-2 rounded-xl border transition-all ${expense.checked ? 'bg-rose-500/10 border-rose-500/30' : 'opacity-40 grayscale hover:opacity-70 border-zinc-800 dark:border-zinc-700'}`}>
-      <span
-        onClick={onToggle}
-        className="text-[10px] font-semibold text-foreground truncate cursor-pointer min-w-0 flex-shrink"
-      >
-        {expense.name}
-      </span>
-      <div className="flex items-center gap-1 flex-shrink-0">
+    <div
+      className={`group p-2.5 rounded-xl border transition-all cursor-pointer ${expense.checked ? 'bg-rose-500/10 border-rose-500/30' : 'opacity-40 grayscale hover:opacity-70 border-zinc-800 dark:border-zinc-700'}`}
+      onClick={onToggle}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <span
+          className="text-[11px] font-semibold text-foreground leading-tight"
+          title={expense.name}
+        >
+          {expense.name}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
+          className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-500 transition p-0.5 -mt-0.5 -mr-0.5"
+        >
+          <Trash2 size={10} />
+        </button>
+      </div>
+      <div className="mt-1">
         {isEditing ? (
           <input
             type="text"
@@ -148,24 +159,17 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             onFocus={(e) => e.target.select()}
+            onClick={(e) => e.stopPropagation()}
             autoFocus
-            className="w-24 text-xs font-bold text-foreground bg-surface border border-blue-500 rounded-lg px-2 py-1.5 text-right outline-none font-mono"
+            className="w-full text-sm font-bold text-foreground bg-surface border border-blue-500 rounded-lg px-2 py-1 outline-none font-mono"
           />
         ) : (
-          <>
-            <button
-              onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-              className="text-[10px] font-bold text-foreground font-mono px-1.5 py-0.5 rounded-lg hover:bg-blue-500/20 hover:text-blue-400 transition"
-            >
-              {formatKRW(expense.amount, true)}
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
-              className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-500 transition p-1"
-            >
-              <Trash2 size={10} />
-            </button>
-          </>
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+            className="text-sm font-bold text-foreground font-mono hover:text-blue-400 transition"
+          >
+            {formatKRW(expense.amount, true)}
+          </button>
         )}
       </div>
     </div>
@@ -500,7 +504,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {[...data.fixedExpenses]
                 .map((e, originalIndex) => ({ ...e, originalIndex }))
                 .sort((a, b) => b.amount - a.amount)
@@ -532,23 +536,21 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
               compact
               disabled={isReadOnly}
             />
-            <div className="flex gap-2 items-end">
-              <div className="flex-1">
-                <CalcInputField
-                  label="적금 (주택청약+저금)"
-                  value={formatKRW(data.assets.적금).replace('원', '')}
-                  onChange={(e) => onAssetChange('적금', e.target.value)}
-                  compact
-                  disabled={isReadOnly}
-                />
-              </div>
+            <div className="col-span-2">
+              <CalcInputField
+                label="적금 (주택청약+저금)"
+                value={formatKRW(data.assets.적금).replace('원', '')}
+                onChange={(e) => onAssetChange('적금', e.target.value)}
+                compact
+                disabled={isReadOnly}
+              />
               {!isReadOnly && (
                 <button
                   onClick={() => {
                     const newAmount = (data.assets.적금 || 0) + 120000;
                     onAssetChange('적금', newAmount.toLocaleString());
                   }}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2.5 rounded-xl font-semibold text-xs transition-all whitespace-nowrap"
+                  className="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl font-semibold text-xs transition-all"
                 >
                   +12만
                 </button>
