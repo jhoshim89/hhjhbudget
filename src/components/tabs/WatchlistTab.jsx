@@ -55,6 +55,13 @@ function SortableStockItem({ stock, stockData, isSelected, onSelect, onRemove, e
   const isPositive = changePercent >= 0;
   const isCrypto = stock.ticker === 'BTC-USD' || stock.ticker === 'ETH-USD';
   const isExchange = stock.ticker === 'KRW=X';
+  
+  // 프리/애프터마켓 데이터
+  const marketState = stockData?.marketState;
+  const preMarketPrice = stockData?.preMarketPrice;
+  const preMarketChangePercent = stockData?.preMarketChangePercent;
+  const postMarketPrice = stockData?.postMarketPrice;
+  const postMarketChangePercent = stockData?.postMarketChangePercent;
 
   return (
     <div
@@ -95,6 +102,25 @@ function SortableStockItem({ stock, stockData, isSelected, onSelect, onRemove, e
             </span>
           )}
         </div>
+        {/* 프리마켓/애프터마켓 표시 */}
+        {marketState === 'PRE' && preMarketPrice && (
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+            <span className="font-bold text-[9px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px]">PRE</span>
+            <span className="text-zinc-500 font-mono">{formatUSD(preMarketPrice)}</span>
+            <span className={preMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
+              {preMarketChangePercent >= 0 ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
+            </span>
+          </div>
+        )}
+        {marketState === 'POST' && postMarketPrice && (
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+            <span className="font-bold text-[9px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px]">POST</span>
+            <span className="text-zinc-500 font-mono">{formatUSD(postMarketPrice)}</span>
+            <span className={postMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
+              {postMarketChangePercent >= 0 ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 변동률 */}
