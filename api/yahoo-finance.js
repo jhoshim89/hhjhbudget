@@ -5,6 +5,7 @@
 const cache = {
   quotes: new Map(),  // ticker -> { data, timestamp }
   history: new Map(), // ticker -> { data, timestamp }
+  prePost: new Map(), // ticker -> { preMarket, postMarket } - 프리/애프터 가격 장기 캐시
 };
 
 // 캐시 TTL (밀리초)
@@ -179,9 +180,20 @@ async function getTickerData(ticker, range) {
   // 1. 캐시 확인
   const cachedQuote = getCached('quotes', ticker);
   const cachedHistory = getCached('history', `${ticker}_${range}`);
+  const cachedPrePost = cache.prePost.get(ticker) || {};
 
   if (cachedQuote && cachedHistory) {
-    return { ...cachedQuote, history: cachedHistory };
+    // 캐시된 프리/애프터 가격 병합
+    return { 
+      ...cachedQuote, 
+      history: cachedHistory,
+      preMarketPrice: cachedQuote.preMarketPrice || cachedPrePost.preMarketPrice || null,
+      preMarketChange: cachedQuote.preMarketChange || cachedPrePost.preMarketChange || null,
+      preMarketChangePercent: cachedQuote.preMarketChangePercent || cachedPrePost.preMarketChangePercent || null,
+      postMarketPrice: cachedQuote.postMarketPrice || cachedPrePost.postMarketPrice || null,
+      postMarketChange: cachedQuote.postMarketChange || cachedPrePost.postMarketChange || null,
+      postMarketChangePercent: cachedQuote.postMarketChangePercent || cachedPrePost.postMarketChangePercent || null,
+    };
   }
 
   // 2. Yahoo Finance API 호출
@@ -189,24 +201,49 @@ async function getTickerData(ticker, range) {
     const result = await fetchYahooFinance(ticker, range);
     const parsed = parseQuoteData(result);
 
-    // 캐시 저장 (프리/애프터마켓 데이터 포함)
-    setCache('quotes', ticker, {
-      price: parsed.price,
-      change: parsed.change,
-      changePercent: parsed.changePercent,
-      currency: parsed.currency,
-      previousClose: parsed.previousClose,
-      preMarketPrice: parsed.preMarketPrice,
-      preMarketChange: parsed.preMarketChange,
-      preMarketChangePercent: parsed.preMarketChangePercent,
-      postMarketPrice: parsed.postMarketPrice,
-      postMarketChange: parsed.postMarketChange,
-      postMarketChangePercent: parsed.postMarketChangePercent,
-      marketState: parsed.marketState,
-    });
-    setCache('history', `${ticker}_${range}`, parsed.history);
+    // 프리/애프터 가격이 있으면 장기 캐시에 저장 (null이 아닐 때만 업데이트)
+    if (parsed.preMarketPrice !== null || parsed.postMarketPrice !== null) {
+      const existingPrePost = cache.prePost.get(ticker) || {};
+      cache.prePost.set(ticker, {
+        preMarketPrice: parsed.preMarketPrice ?? existingPrePost.preMarketPrice,
+        preMarketChange: parsed.preMarketChange ?? existingPrePost.preMarketChange,
+        preMarketChangePercent: parsed.preMarketChangePercent ?? existingPrePost.preMarketChangePercent,
+        postMarketPrice: parsed.postMarketPrice ?? existingPrePost.postMarketPrice,
+        postMarketChange: parsed.postMarketChange ?? existingPrePost.postMarketChange,
+        postMarketChangePercent: parsed.postMarketChangePercent ?? existingPrePost.postMarketChangePercent,
+      });
+    }
 
-    return parsed;
+    // 현재 프리/애프터가 null이면 캐시된 값 사용
+    const finalPrePost = cache.prePost.get(ticker) || {};
+    const finalData = {
+      ...parsed,
+      preMarketPrice: parsed.preMarketPrice ?? finalPrePost.preMarketPrice ?? null,
+      preMarketChange: parsed.preMarketChange ?? finalPrePost.preMarketChange ?? null,
+      preMarketChangePercent: parsed.preMarketChangePercent ?? finalPrePost.preMarketChangePercent ?? null,
+      postMarketPrice: parsed.postMarketPrice ?? finalPrePost.postMarketPrice ?? null,
+      postMarketChange: parsed.postMarketChange ?? finalPrePost.postMarketChange ?? null,
+      postMarketChangePercent: parsed.postMarketChangePercent ?? finalPrePost.postMarketChangePercent ?? null,
+    };
+
+    // 캐시 저장
+    setCache('quotes', ticker, {
+      price: finalData.price,
+      change: finalData.change,
+      changePercent: finalData.changePercent,
+      currency: finalData.currency,
+      previousClose: finalData.previousClose,
+      preMarketPrice: finalData.preMarketPrice,
+      preMarketChange: finalData.preMarketChange,
+      preMarketChangePercent: finalData.preMarketChangePercent,
+      postMarketPrice: finalData.postMarketPrice,
+      postMarketChange: finalData.postMarketChange,
+      postMarketChangePercent: finalData.postMarketChangePercent,
+      marketState: finalData.marketState,
+    });
+    setCache('history', `${ticker}_${range}`, finalData.history);
+
+    return finalData;
   } catch (error) {
     console.error(`Failed to fetch ${ticker}:`, error.message);
 
@@ -215,6 +252,12 @@ async function getTickerData(ticker, range) {
       return {
         ...cachedQuote,
         history: cachedHistory || [],
+        preMarketPrice: cachedQuote.preMarketPrice || cachedPrePost.preMarketPrice || null,
+        preMarketChange: cachedQuote.preMarketChange || cachedPrePost.preMarketChange || null,
+        preMarketChangePercent: cachedQuote.preMarketChangePercent || cachedPrePost.preMarketChangePercent || null,
+        postMarketPrice: cachedQuote.postMarketPrice || cachedPrePost.postMarketPrice || null,
+        postMarketChange: cachedQuote.postMarketChange || cachedPrePost.postMarketChange || null,
+        postMarketChangePercent: cachedQuote.postMarketChangePercent || cachedPrePost.postMarketChangePercent || null,
         stale: true,
       };
     }

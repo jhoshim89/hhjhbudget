@@ -102,25 +102,37 @@ function SortableStockItem({ stock, stockData, isSelected, onSelect, onRemove, e
             </span>
           )}
         </div>
-        {/* 프리마켓/애프터마켓 표시 */}
-        {marketState === 'PRE' && preMarketPrice && (
-          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
-            <span className="font-bold text-[9px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px]">PRE</span>
-            <span className="text-zinc-500 font-mono">{formatUSD(preMarketPrice)}</span>
-            <span className={preMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
-              {preMarketChangePercent >= 0 ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
-            </span>
-          </div>
-        )}
-        {marketState === 'POST' && postMarketPrice && (
-          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
-            <span className="font-bold text-[9px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px]">POST</span>
-            <span className="text-zinc-500 font-mono">{formatUSD(postMarketPrice)}</span>
-            <span className={postMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
-              {postMarketChangePercent >= 0 ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%
-            </span>
-          </div>
-        )}
+        {/* 시장 상태 + 프리/애프터 가격 (항상 표시) */}
+        <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+          {/* 시장 상태 라벨 */}
+          <span className={`font-bold text-[9px] px-1 rounded-[2px] ${
+            marketState === 'REGULAR' 
+              ? 'text-green-600 bg-green-100 dark:bg-green-900/30' 
+              : 'text-zinc-500 bg-zinc-100 dark:bg-zinc-800'
+          }`}>
+            {marketState === 'REGULAR' ? 'OPEN' : 'CLOSED'}
+          </span>
+          {/* 프리마켓 가격 */}
+          {preMarketPrice && (
+            <>
+              <span className="text-zinc-400 text-[9px]">PRE</span>
+              <span className="text-zinc-500 font-mono">{formatUSD(preMarketPrice)}</span>
+              <span className={preMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
+                {preMarketChangePercent >= 0 ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
+              </span>
+            </>
+          )}
+          {/* 애프터마켓 가격 */}
+          {postMarketPrice && (
+            <>
+              <span className="text-zinc-400 text-[9px] ml-1">POST</span>
+              <span className="text-zinc-500 font-mono">{formatUSD(postMarketPrice)}</span>
+              <span className={postMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
+                {postMarketChangePercent >= 0 ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%
+              </span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 변동률 */}

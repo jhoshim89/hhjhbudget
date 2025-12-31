@@ -651,32 +651,38 @@ export default function InvestmentTab({ data, handlers, selectedMonth, onMonthCh
                             
                             const { marketState, preMarketPrice, preMarketChangePercent, postMarketPrice, postMarketChangePercent } = stock;
                             
-                            if (marketState === 'PRE' && preMarketPrice) {
-                              const isUp = preMarketChangePercent >= 0;
-                              return (
-                                <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] leading-none animate-enter">
-                                  <span className="font-bold text-[9px] text-zinc-500 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px] tracking-wider">PRE</span>
-                                  <span className="text-zinc-600 dark:text-zinc-400">{formatUSD(preMarketPrice)}</span>
-                                  <span className={isUp ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}>
-                                    {isUp ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
-                                  </span>
-                                </div>
-                              );
-                            }
-                            
-                            if (marketState === 'POST' && postMarketPrice) {
-                              const isUp = postMarketChangePercent >= 0;
-                              return (
-                                <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] leading-none animate-enter">
-                                  <span className="font-bold text-[9px] text-zinc-500 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 rounded-[2px] tracking-wider">POST</span>
-                                  <span className="text-zinc-600 dark:text-zinc-400">{formatUSD(postMarketPrice)}</span>
-                                  <span className={isUp ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}>
-                                    {isUp ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%
-                                  </span>
-                                </div>
-                              );
-                            }
-                            return null;
+                            return (
+                              <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] leading-none">
+                                {/* 시장 상태 */}
+                                <span className={`font-bold text-[9px] px-1 rounded-[2px] ${
+                                  marketState === 'REGULAR' 
+                                    ? 'text-green-600 bg-green-100 dark:bg-green-900/30' 
+                                    : 'text-zinc-500 bg-zinc-100 dark:bg-zinc-800'
+                                }`}>
+                                  {marketState === 'REGULAR' ? 'OPEN' : 'CLOSED'}
+                                </span>
+                                {/* 프리마켓 */}
+                                {preMarketPrice && (
+                                  <>
+                                    <span className="text-zinc-400 text-[9px]">PRE</span>
+                                    <span className="text-zinc-500">{formatUSD(preMarketPrice)}</span>
+                                    <span className={preMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
+                                      {preMarketChangePercent >= 0 ? '+' : ''}{preMarketChangePercent?.toFixed(2)}%
+                                    </span>
+                                  </>
+                                )}
+                                {/* 애프터마켓 */}
+                                {postMarketPrice && (
+                                  <>
+                                    <span className="text-zinc-400 text-[9px] ml-1">POST</span>
+                                    <span className="text-zinc-500">{formatUSD(postMarketPrice)}</span>
+                                    <span className={postMarketChangePercent >= 0 ? 'text-green-500' : 'text-rose-500'}>
+                                      {postMarketChangePercent >= 0 ? '+' : ''}{postMarketChangePercent?.toFixed(2)}%
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            );
                           })()}
                         </td>
                         <td className="p-3 md:p-4 text-right text-zinc-800 dark:text-white font-bold font-mono whitespace-nowrap">{formatUSD(valUSD)}</td>
