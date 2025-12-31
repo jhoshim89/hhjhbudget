@@ -1,5 +1,44 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  
+  // 100% 자동 승인 모드 (Claude Code --dangerously-skip-permissions 완전 동일)
+  "permission": {
+    "edit": "allow",
+    "bash": "allow",
+    "skill": "allow",
+    "webfetch": "allow",
+    "doom_loop": "allow",
+    "external_directory": "allow"
+  },
+  
+  // 🚨 중요: 절대 금지 작업
+  "rules": {
+    "forbidden_operations": [
+      "데이터베이스 전체 삭제 (DROP DATABASE, TRUNCATE ALL 등)",
+      "데이터베이스 완전 리셋/초기화",
+      "모든 테이블 동시 삭제",
+      "전체 데이터 일괄 삭제 (DELETE FROM * 등)",
+      "백업 없이 대량 데이터 삭제"
+    ],
+    "allowed_operations": [
+      "개별 레코드 삭제 (WHERE 조건 포함)",
+      "특정 테이블 데이터 삭제",
+      "조건부 데이터 정리"
+    ]
+  },
+  
+  // DPC (Dynamic Context Pruning) - 토큰 절약 & 캐싱 최적화
+  "plugins": [
+    "@tarquinen/opencode-dcp"
+  ],
+  
+  "dpc": {
+    "strategy": "aggressive",
+    "maxContextTokens": 8000,
+    "minRetentionScore": 0.7,
+    "preserveSystemPrompt": true
+  },
+  
   "mcp": {
     "shadcn": {
       "type": "local",
