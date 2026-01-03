@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { PenTool, Heart, User, ChevronLeft, ChevronRight, Plus, Check, RefreshCw, Trash2, Lock } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { PenTool, Heart, User, ChevronLeft, ChevronRight, Plus, Check, RefreshCw, Trash2, Lock, Save } from 'lucide-react';
 import { formatKRW, evaluateExpression } from '../../utils/formatters';
 import { isLegacyMonth, LEGACY_CUTOFF } from '../../services/sheetsApi';
 
@@ -19,43 +19,41 @@ const SectionHeader = ({ title, icon: Icon, theme, action }) => (
 const formatWithCommas = (num) => {
   if (num === '' || num === null || num === undefined) return '';
   const numStr = String(num).replace(/,/g, '');
-  const parsed = parseFloat(numStr);
+  const parsed = parseInt(numStr, 10);
   if (isNaN(parsed)) return numStr;
   return parsed.toLocaleString('ko-KR');
 };
 
-// 계산기 기능이 있는 입력 필드 (원 단위 입력)
+// 콤마 제거하고 숫자로 변환
+const parseNumber = (str) => {
+  if (!str) return 0;
+  const cleaned = String(str).replace(/,/g, '');
+  return parseInt(cleaned, 10) || 0;
+};
+
+// 계산기 기능이 있는 입력 필드 (원 단위 입력, 로컬 상태만 변경)
 const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", compact = false, disabled = false }) => {
   const [displayValue, setDisplayValue] = useState(formatWithCommas(value));
   const [isExpression, setIsExpression] = useState(false);
-  const [isDirty, setIsDirty] = useState(false); // 사용자가 값을 변경했는지 추적
   const [isFocused, setIsFocused] = useState(false);
 
-  // value prop이 변경되면 displayValue 업데이트 (포커스 안됐을 때만 콤마 포맷)
-  React.useEffect(() => {
+  // value prop이 변경되면 displayValue 업데이트 (포커스 안됐을 때만)
+  useEffect(() => {
     if (!isFocused) {
       setDisplayValue(formatWithCommas(value));
     }
-    setIsDirty(false); // 외부 값 변경 시 dirty 리셋
   }, [value, isFocused]);
 
   const handleChange = (e) => {
     const val = e.target.value;
     setDisplayValue(val);
-    setIsDirty(true); // 사용자가 입력함
-    // 수식 포함 여부 확인 (/ 도 더하기로 처리)
+    // 수식 포함 여부 확인
     setIsExpression(/[+\-*/]/.test(val.replace(/,/g, '')));
   };
 
   const handleBlur = () => {
     setIsFocused(false);
     
-    // 값이 변경되지 않았으면 변환하지 않음 (기존 값 유지)
-    if (!isDirty) {
-      setDisplayValue(formatWithCommas(value));
-      return;
-    }
-
     // 원 단위 입력 (자동 변환 없음)
     const cleaned = String(displayValue).replace(/,/g, '').replace(/\//g, '+').replace(/\s/g, '');
     let result = null;
@@ -71,12 +69,13 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
     }
 
     if (result !== null) {
-      // 원 단위 그대로 저장 (× 1000 변환 제거)
       const finalValue = Math.round(result);
       setDisplayValue(formatWithCommas(finalValue));
       setIsExpression(false);
-      setIsDirty(false);
-      onChange({ target: { value: String(finalValue) } });
+      onChange(finalValue); // 숫자로 전달
+    } else if (displayValue === '' || displayValue === '0') {
+      setDisplayValue(formatWithCommas(0));
+      onChange(0);
     } else {
       // 결과가 없으면 기존 값으로 복원
       setDisplayValue(formatWithCommas(value));
@@ -92,20 +91,19 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
 
   const handleFocus = (e) => {
     setIsFocused(true);
-    // 값이 0이면 빈 칸으로 표시, 아니면 콤마 제거한 숫자로 표시
-    const rawValue = String(value).replace(/,/g, '');
-    if (rawValue === '0' || rawValue === '') {
+    // 값이 0이면 빈 칸으로, 아니면 콤마 있는 상태로 표시
+    const numValue = parseNumber(value);
+    if (numValue === 0) {
       setDisplayValue('');
     } else {
-      setDisplayValue(rawValue);
+      setDisplayValue(formatWithCommas(numValue));
     }
-    // 전체 선택
     setTimeout(() => e.target.select(), 0);
   };
 
   return (
     <div className="min-w-0">
-      <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block mb-1.5 truncate">{label}</label>
+      {label && <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block mb-1.5 truncate">{label}</label>}
       <div className="relative">
         <span className="absolute left-3 top-2.5 text-zinc-500 font-semibold text-xs">{prefix}</span>
         <input
@@ -141,17 +139,17 @@ const Divider = ({ label }) => (
 // 고정지출 항목 (토글 + 금액 수정 + 삭제 가능)
 const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(String(expense.amount));
+  const [editValue, setEditValue] = useState(formatWithCommas(expense.amount));
 
-  React.useEffect(() => {
-    setEditValue(String(expense.amount));
+  useEffect(() => {
+    setEditValue(formatWithCommas(expense.amount));
   }, [expense.amount]);
 
   const handleSave = () => {
     const result = evaluateExpression(editValue);
     if (result !== null) {
       onAmountChange(result);
-      setEditValue(String(result));
+      setEditValue(formatWithCommas(result));
     }
     setIsEditing(false);
   };
@@ -160,7 +158,7 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
-      setEditValue(String(expense.amount));
+      setEditValue(formatWithCommas(expense.amount));
       setIsEditing(false);
     }
   };
@@ -217,8 +215,28 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
 export default function InputTab({ data, handlers, selectedMonth, onMonthChange }) {
   const {
     onManualAccountChange, onAssetChange, onFixedIncomeChange, onCardExpenseChange,
-    onToggleFixedExpense, onAddVariableIncome, onDeleteFixedIncome, onReload
+    onToggleFixedExpense, onAddVariableIncome, onDeleteFixedIncome, onReload,
+    onBulkSave // 새로운 일괄 저장 핸들러
   } = handlers;
+
+  // === 로컬 상태 (수정 사항을 저장 버튼 누를 때까지 보관) ===
+  const [localManualAccounts, setLocalManualAccounts] = useState({});
+  const [localAssets, setLocalAssets] = useState({});
+  const [localFixedIncomes, setLocalFixedIncomes] = useState([]);
+  const [localCardExpense, setLocalCardExpense] = useState(0);
+  const [localFixedExpenses, setLocalFixedExpenses] = useState([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSavingAll, setIsSavingAll] = useState(false);
+
+  // 데이터가 변경되면 로컬 상태 초기화
+  useEffect(() => {
+    setLocalManualAccounts({ ...data.manualAccounts });
+    setLocalAssets({ ...data.assets });
+    setLocalFixedIncomes([...data.fixedIncomes]);
+    setLocalCardExpense(data.cardExpense || 0);
+    setLocalFixedExpenses([...data.fixedExpenses]);
+    setHasChanges(false);
+  }, [data, selectedMonth]);
 
   // 기본 4개 항목 (삭제 불가)
   const DEFAULT_INCOME_NAMES = ['학교월급', '연구비', '월세', '추가수입'];
@@ -227,7 +245,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   const LEGACY_INCOME_NAMES = ['고정수입', '변동수입'];
 
   // 표시할 수입 항목 필터링 (고정수입, 변동수입 이름 제외)
-  const displayedFixedIncomes = data.fixedIncomes.filter(
+  const displayedFixedIncomes = localFixedIncomes.filter(
     income => !LEGACY_INCOME_NAMES.includes(income.name)
   );
 
@@ -256,6 +274,102 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [newExpense, setNewExpense] = useState({ name: '', amount: '' });
   const [isSavingExpense, setIsSavingExpense] = useState(false);
+
+  // === 로컬 상태 변경 핸들러 ===
+  const handleLocalManualAccountChange = (key, value) => {
+    setLocalManualAccounts(prev => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
+
+  const handleLocalAssetChange = (key, value) => {
+    setLocalAssets(prev => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
+
+  const handleLocalFixedIncomeChange = (index, value) => {
+    setLocalFixedIncomes(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], amount: value };
+      return updated;
+    });
+    setHasChanges(true);
+  };
+
+  const handleLocalCardExpenseChange = (value) => {
+    setLocalCardExpense(value);
+    setHasChanges(true);
+  };
+
+  const handleLocalFixedExpenseToggle = (index) => {
+    setLocalFixedExpenses(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], checked: !updated[index].checked };
+      return updated;
+    });
+    setHasChanges(true);
+  };
+
+  const handleLocalFixedExpenseAmountChange = (index, value) => {
+    setLocalFixedExpenses(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], amount: value };
+      return updated;
+    });
+    setHasChanges(true);
+  };
+
+  // === 저장 버튼 핸들러 ===
+  const handleSaveAll = async () => {
+    if (!hasChanges || isReadOnly) return;
+    
+    setIsSavingAll(true);
+    try {
+      // 개별 핸들러들을 순차적으로 호출
+      // ManualAccounts
+      for (const [key, value] of Object.entries(localManualAccounts)) {
+        if (data.manualAccounts[key] !== value) {
+          await onManualAccountChange(key, String(value));
+        }
+      }
+      
+      // Assets
+      for (const [key, value] of Object.entries(localAssets)) {
+        if (data.assets[key] !== value) {
+          await onAssetChange(key, String(value));
+        }
+      }
+      
+      // Fixed Incomes
+      for (let i = 0; i < localFixedIncomes.length; i++) {
+        if (data.fixedIncomes[i]?.amount !== localFixedIncomes[i]?.amount) {
+          await onFixedIncomeChange(i, String(localFixedIncomes[i].amount));
+        }
+      }
+      
+      // Card Expense
+      if (data.cardExpense !== localCardExpense) {
+        await onCardExpenseChange(String(localCardExpense));
+      }
+      
+      // Fixed Expenses (toggle & amount)
+      for (let i = 0; i < localFixedExpenses.length; i++) {
+        const orig = data.fixedExpenses[i];
+        const local = localFixedExpenses[i];
+        if (orig?.checked !== local?.checked) {
+          await onToggleFixedExpense(i);
+        }
+        if (orig?.amount !== local?.amount) {
+          await handlers.onFixedExpenseAmountChange(i, local.amount);
+        }
+      }
+
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Save failed:', error);
+    } finally {
+      setIsSavingAll(false);
+    }
+  };
 
   const handleAddIncome = async () => {
     if (!newIncome.name || !newIncome.amount) return;
@@ -337,15 +451,15 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           <div className="grid grid-cols-2 gap-4 px-2">
             <CalcInputField
               label="향화 카카오 (원화)"
-              value={String(data.manualAccounts.향화카카오 || 0)}
-              onChange={(e) => onManualAccountChange('향화카카오', e.target.value)}
+              value={localManualAccounts.향화카카오 || 0}
+              onChange={(val) => handleLocalManualAccountChange('향화카카오', val)}
               compact
               disabled={isReadOnly}
             />
             <CalcInputField
               label="향화 잔고 (신한)"
-              value={String(data.assets.향화잔고 || 0)}
-              onChange={(e) => onAssetChange('향화잔고', e.target.value)}
+              value={localAssets.향화잔고 || 0}
+              onChange={(val) => handleLocalAssetChange('향화잔고', val)}
               compact
               disabled={isReadOnly}
             />
@@ -400,7 +514,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
                 <CalcInputField
                   label=""
                   value={newIncome.amount}
-                  onChange={(e) => setNewIncome(prev => ({ ...prev, amount: e.target.value }))}
+                  onChange={(val) => setNewIncome(prev => ({ ...prev, amount: val }))}
                   placeholder="금액 (500+100)"
                   compact
                 />
@@ -427,14 +541,14 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           <div className="grid grid-cols-2 gap-4">
             {displayedFixedIncomes.map((income) => {
               // 원본 인덱스 찾기 (삭제/수정용)
-              const originalIndex = data.fixedIncomes.findIndex(i => i.name === income.name);
+              const originalIndex = localFixedIncomes.findIndex(i => i.name === income.name);
               const isDefaultItem = DEFAULT_INCOME_NAMES.includes(income.name);
               return (
                 <div key={income.name} className="relative group">
                   <CalcInputField
                     label={income.name}
-                    value={String(income.amount || 0)}
-                    onChange={(e) => onFixedIncomeChange(originalIndex, e.target.value)}
+                    value={income.amount || 0}
+                    onChange={(val) => handleLocalFixedIncomeChange(originalIndex, val)}
                     compact
                     disabled={isReadOnly}
                   />
@@ -482,8 +596,8 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
             <span className="text-xs font-semibold text-rose-600 dark:text-rose-300 uppercase tracking-wide">Total Expense</span>
             <span className="text-xl font-bold font-mono text-rose-400">
               {formatKRW(
-                (data.fixedExpenses?.filter(e => e.checked).reduce((sum, e) => sum + (e.amount || 0), 0) || 0) +
-                (parseInt(String(data.cardExpense).replace(/,/g, ''), 10) || 0),
+                (localFixedExpenses?.filter(e => e.checked).reduce((sum, e) => sum + (e.amount || 0), 0) || 0) +
+                (parseInt(String(localCardExpense).replace(/,/g, ''), 10) || 0),
                 true
               )}
             </span>
@@ -491,8 +605,8 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
 
           <CalcInputField
             label="이번 달 카드값"
-            value={String(data.cardExpense || 0)}
-            onChange={(e) => onCardExpenseChange(e.target.value)}
+            value={localCardExpense || 0}
+            onChange={(val) => handleLocalCardExpenseChange(val)}
             compact
             disabled={isReadOnly}
           />
@@ -543,15 +657,15 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {[...data.fixedExpenses]
+              {[...localFixedExpenses]
                 .map((e, originalIndex) => ({ ...e, originalIndex }))
                 .sort((a, b) => b.amount - a.amount)
                 .map((e) => (
                 <FixedExpenseItem
                   key={e.name}
                   expense={e}
-                  onToggle={() => onToggleFixedExpense(e.originalIndex)}
-                  onAmountChange={(value) => handlers.onFixedExpenseAmountChange(e.originalIndex, value)}
+                  onToggle={() => handleLocalFixedExpenseToggle(e.originalIndex)}
+                  onAmountChange={(value) => handleLocalFixedExpenseAmountChange(e.originalIndex, value)}
                   onDelete={() => handlers.onDeleteFixedExpense?.(e.originalIndex)}
                 />
               ))}
@@ -562,31 +676,31 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           <div className="grid grid-cols-2 gap-4">
             <CalcInputField
               label="재호 카뱅 잔고"
-              value={String(data.assets.재호잔고 || 0)}
-              onChange={(e) => onAssetChange('재호잔고', e.target.value)}
+              value={localAssets.재호잔고 || 0}
+              onChange={(val) => handleLocalAssetChange('재호잔고', val)}
               compact
               disabled={isReadOnly}
             />
             <CalcInputField
               label="재호 영웅문 (원화)"
-              value={String(data.manualAccounts.재호영웅문 || 0)}
-              onChange={(e) => onManualAccountChange('재호영웅문', e.target.value)}
+              value={localManualAccounts.재호영웅문 || 0}
+              onChange={(val) => handleLocalManualAccountChange('재호영웅문', val)}
               compact
               disabled={isReadOnly}
             />
             <div className="col-span-2">
               <CalcInputField
                 label="적금 (주택청약+저금)"
-                value={String(data.assets.적금 || 0)}
-                onChange={(e) => onAssetChange('적금', e.target.value)}
+                value={localAssets.적금 || 0}
+                onChange={(val) => handleLocalAssetChange('적금', val)}
                 compact
                 disabled={isReadOnly}
               />
               {!isReadOnly && (
                 <button
                   onClick={() => {
-                    const newAmount = (data.assets.적금 || 0) + 120000;
-                    onAssetChange('적금', String(newAmount));
+                    const newAmount = (localAssets.적금 || 0) + 120000;
+                    handleLocalAssetChange('적금', newAmount);
                   }}
                   className="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl font-semibold text-xs transition-all"
                 >
@@ -598,10 +712,35 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-green-400/70 py-2">
-          <Check size={14} />
-          <span className="text-[11px] font-medium">모든 입력은 자동 저장됩니다</span>
-        </div>
+        {/* 저장 버튼 */}
+        {!isReadOnly && (
+          <button
+            onClick={handleSaveAll}
+            disabled={!hasChanges || isSavingAll}
+            className={`w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all ${
+              hasChanges
+                ? 'bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-500 hover:to-teal-500 text-white shadow-lg shadow-blue-500/25'
+                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+            }`}
+          >
+            {isSavingAll ? (
+              <>
+                <RefreshCw size={20} className="animate-spin" />
+                저장 중...
+              </>
+            ) : hasChanges ? (
+              <>
+                <Save size={20} />
+                변경사항 저장
+              </>
+            ) : (
+              <>
+                <Check size={20} />
+                저장됨
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
