@@ -476,6 +476,8 @@ async function fetchAllComplexes() {
           id: complex.id,
           isMine: complex.isMine || false,
           region: complex.region,
+          lat: complex.lat,
+          lon: complex.lon,
         });
       } catch (error) {
         console.error(`[Naver] Failed to process ${complex.name}:`, error.message);
@@ -488,6 +490,8 @@ async function fetchAllComplexes() {
           name: complex.name,
           region: complex.region,
           isMine: complex.isMine || false,
+          lat: complex.lat,
+          lon: complex.lon,
           area,
         });
       }
@@ -524,28 +528,33 @@ async function fetchAllComplexesWithSheetCache() {
       console.log(`[Naver] Sheet cache hit! ${cachedData.length} records found`);
 
       // 시트 데이터를 API 응답 형식으로 변환
-      const data = cachedData.map(record => ({
-        id: record.complexId,
-        name: record.complexName,
-        area: record.area,
-        isMine: TARGET_COMPLEXES.find(c => c.id === record.complexId)?.isMine || false,
-        region: TARGET_COMPLEXES.find(c => c.id === record.complexId)?.region || '',
-        sale: {
-          count: record.saleCount,
-          minPrice: record.saleMin,
-          maxPrice: record.saleMax,
-        },
-        jeonse: {
-          count: record.jeonseCount,
-          minPrice: record.jeonseMin,
-          maxPrice: record.jeonseMax,
-        },
-        monthly: {
-          count: record.monthlyCount,
-        },
-        updatedAt: record.updatedAt,
-        fromCache: true,
-      }));
+      const data = cachedData.map(record => {
+        const complexInfo = TARGET_COMPLEXES.find(c => c.id === record.complexId);
+        return {
+          id: record.complexId,
+          name: record.complexName,
+          area: record.area,
+          isMine: complexInfo?.isMine || false,
+          region: complexInfo?.region || '',
+          lat: complexInfo?.lat,
+          lon: complexInfo?.lon,
+          sale: {
+            count: record.saleCount,
+            minPrice: record.saleMin,
+            maxPrice: record.saleMax,
+          },
+          jeonse: {
+            count: record.jeonseCount,
+            minPrice: record.jeonseMin,
+            maxPrice: record.jeonseMax,
+          },
+          monthly: {
+            count: record.monthlyCount,
+          },
+          updatedAt: record.updatedAt,
+          fromCache: true,
+        };
+      });
 
       return {
         data,

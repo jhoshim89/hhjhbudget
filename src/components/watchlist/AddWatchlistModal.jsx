@@ -38,6 +38,7 @@ const STOCK_DATABASE = [
   { ticker: 'VTI', name: 'Vanguard Total Market', nameEn: 'VTI' },
   { ticker: 'SCHD', name: '슈왑 배당 ETF', nameEn: 'Schwab Dividend' },
   { ticker: 'ARKK', name: 'ARK Innovation', nameEn: 'ARKK' },
+  { ticker: 'SGOV', name: '미국 단기국채 ETF', nameEn: 'iShares 0-3 Month Treasury Bond' },
   // === 기타 성장주 ===
   { ticker: 'PLTR', name: '팔란티어', nameEn: 'Palantir' },
   { ticker: 'COIN', name: '코인베이스', nameEn: 'Coinbase' },
@@ -73,6 +74,7 @@ export const DEFAULT_WATCHLIST = [
   { ticker: 'TSM', name: 'TSMC' },
   { ticker: 'PLTR', name: '팔란티어' },
   { ticker: 'SPY', name: 'S&P 500 ETF' },
+  { ticker: 'SGOV', name: '미국 단기국채 ETF' },
 ];
 
 export default function AddWatchlistModal({ isOpen, onClose, onAdd, existingStocks = [] }) {

@@ -90,6 +90,8 @@ export function useNaverRealestate() {
         name: item.name,
         region: item.region,
         isMine: item.isMine,
+        lat: item.lat,
+        lon: item.lon,
         areas: {},
       };
     }
