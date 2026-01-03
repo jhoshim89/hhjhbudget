@@ -46,6 +46,7 @@ const DefaultLoader = () => (
 function Map({
   children,
   styles,
+  className,
   ...props
 }) {
   const containerRef = useRef(null);
@@ -113,7 +114,7 @@ function Map({
         map: mapRef.current,
         isLoaded: isMounted && isLoaded && isStyleLoaded,
       }}>
-      <div ref={containerRef} className="relative w-full h-full">
+      <div ref={containerRef} className={cn("relative w-full h-full", className)}>
         {isLoading && <DefaultLoader />}
         {/* guard against hydration error */}
         {isMounted && children}

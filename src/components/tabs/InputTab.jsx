@@ -696,17 +696,22 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
                 compact
                 disabled={isReadOnly}
               />
-              {!isReadOnly && (
-                <button
-                  onClick={() => {
-                    const newAmount = (localAssets.적금 || 0) + 120000;
-                    handleLocalAssetChange('적금', newAmount);
-                  }}
-                  className="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl font-semibold text-xs transition-all"
-                >
-                  +12만
-                </button>
-              )}
+              <div className="mt-2 flex items-center gap-3">
+                {!isReadOnly && (
+                  <button
+                    onClick={() => {
+                      const newAmount = (localAssets.적금 || 0) + 120000;
+                      handleLocalAssetChange('적금', newAmount);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl font-semibold text-xs transition-all"
+                  >
+                    +12만
+                  </button>
+                )}
+                <span className="text-sm text-zinc-400">
+                  현재: <span className="text-emerald-400 font-bold">{formatKRW(localAssets.적금 || 0, true)}</span>
+                </span>
+              </div>
             </div>
           </div>
           </div>

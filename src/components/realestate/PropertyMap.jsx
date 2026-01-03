@@ -98,6 +98,7 @@ export default function PropertyMap({ complexes = [], selectedId, onSelectComple
           zoom={12}
           maxZoom={18}
           minZoom={8}
+          className="h-[400px]"
         >
           <MapControls 
             position="bottom-right" 

@@ -1,6 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ArrowUpDown, RefreshCw, Loader2, X, Plus, ChevronDown, ChevronRight, Home, Building2, Wallet } from 'lucide-react';
 import { formatPrice, formatPriceRange, fetchArticleDetails } from '../../services/naverRealestateApi';
+
+// 프론트엔드 캐시 (세션 동안 유지)
+const articleCache = new Map();
 
 /**
  * 월 실질비용 계산 (보증금 기회비용 포함)
@@ -50,15 +53,28 @@ function ExpandedRowContent({ complex, areaKey, colSpan }) {
   const loadArticles = async () => {
     if (!complex?.id) return;
 
+    const cacheKey = `${complex.id}_${areaKey}`;
+    const targetArea = parseFloat(areaKey) || 0;
+
+    // 캐시 확인
+    const cached = articleCache.get(cacheKey);
+    if (cached) {
+      setArticles(cached);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const result = await fetchArticleDetails(complex.id, null, 1);
-      const targetArea = parseFloat(areaKey) || 0;
       const filtered = result.data.filter(article => {
         return Math.abs(article.area - targetArea) <= 3;
       });
+      
+      // 캐시 저장
+      articleCache.set(cacheKey, filtered);
       setArticles(filtered);
     } catch (err) {
       console.error('[ExpandedRow] Error:', err);
@@ -424,133 +440,147 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
             </tr>
           </thead>
           <tbody className="text-sm">
-            {sortedData.map((complex) => {
+            {sortedData.map((complex, complexIdx) => {
               const areas = Object.keys(complex.areas || {}).sort((a, b) => Number(a) - Number(b));
-
-              return areas.flatMap((areaKey, idx) => {
+              const complexTotalCount = areas.reduce((sum, areaKey) => {
                 const areaData = complex.areas[areaKey];
-                const isFirst = idx === 0;
-                const totalCount = (areaData.sale?.count || 0) + (areaData.jeonse?.count || 0) + (areaData.monthly?.count || 0);
-                const rowKey = `${complex.id}-${areaKey}`;
-                const isExpanded = expandedRows.has(rowKey);
+                return sum + (areaData.sale?.count || 0) + (areaData.jeonse?.count || 0) + (areaData.monthly?.count || 0);
+              }, 0);
 
-                const rows = [
-                  <tr
-                    key={rowKey}
-                    onClick={() => toggleExpand(rowKey)}
-                    className={`border-b border-zinc-200 dark:border-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer ${
-                      complex.isMine ? 'bg-teal-500/5' : ''
-                    } ${isExpanded ? 'bg-zinc-100 dark:bg-zinc-800/40' : ''}`}
-                  >
-                    {/* 제외 버튼 (편집 모드, 첫 행에만) */}
-                    {editMode && isFirst && (
-                      <td className="py-3 pr-2" rowSpan={areas.length}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleExclude(complex.id); }}
-                          className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                          title="비교에서 제외"
-                        >
-                          <X size={14} />
-                        </button>
-                      </td>
-                    )}
-
-                    {/* 단지명 (첫 행에만) */}
-                    {isFirst && (
-                      <td className="py-3 pr-4" rowSpan={areas.length}>
-                        <div className="flex items-center gap-2">
+              return (
+                <React.Fragment key={complex.id}>
+                  {/* 단지 헤더 행 */}
+                  <tr className={`${complexIdx > 0 ? 'border-t-4 border-zinc-300 dark:border-zinc-700' : ''}`}>
+                    <td colSpan={colCount} className={`py-4 px-4 ${complex.isMine ? 'bg-teal-500/10' : 'bg-zinc-100 dark:bg-zinc-800/60'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {editMode && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleExclude(complex.id); }}
+                              className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                              title="비교에서 제외"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
                           {complex.isMine && (
-                            <span className="px-1.5 py-0.5 bg-teal-500/20 text-teal-600 dark:text-teal-400 text-[10px] rounded">
+                            <span className="px-2 py-1 bg-teal-500/20 text-teal-600 dark:text-teal-400 text-xs font-medium rounded-lg">
                               내 집
                             </span>
                           )}
                           <div>
-                            <p className="font-medium text-zinc-800 dark:text-white">{complex.name}</p>
-                            <p className="text-xs text-zinc-500">{complex.region}</p>
+                            <p className="font-bold text-lg text-zinc-800 dark:text-white">{complex.name}</p>
+                            <p className="text-sm text-zinc-500">{complex.region}</p>
                           </div>
                         </div>
-                      </td>
-                    )}
-
-                    {/* 평형 + 확장 인디케이터 */}
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-1">
-                        {isExpanded ? (
-                          <ChevronDown size={14} className="text-teal-400" />
-                        ) : (
-                          <ChevronRight size={14} className="text-zinc-400" />
-                        )}
-                        <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs rounded">
-                          {areaKey}㎡
-                        </span>
+                        <div className="text-right">
+                          <span className={`text-lg font-bold ${complexTotalCount > 10 ? 'text-emerald-500' : 'text-zinc-400'}`}>
+                            {complexTotalCount}건
+                          </span>
+                          <p className="text-xs text-zinc-500">총 매물</p>
+                        </div>
                       </div>
                     </td>
-
-                    {/* 매매 */}
-                    <td className="py-3 pr-4">
-                      {areaData.sale?.count > 0 ? (
-                        <div>
-                          <p className="font-medium text-zinc-800 dark:text-white">
-                            {formatPriceRange(areaData.sale.minPrice, areaData.sale.maxPrice)}
-                          </p>
-                          <p className="text-xs text-zinc-500">{areaData.sale.count}건</p>
-                        </div>
-                      ) : (
-                        <span className="text-zinc-600">-</span>
-                      )}
-                    </td>
-
-                    {/* 전세 */}
-                    <td className="py-3 pr-4">
-                      {areaData.jeonse?.count > 0 ? (
-                        <div>
-                          <p className="font-medium text-blue-400">
-                            {formatPriceRange(areaData.jeonse.minPrice, areaData.jeonse.maxPrice)}
-                          </p>
-                          <p className="text-xs text-zinc-500">{areaData.jeonse.count}건</p>
-                        </div>
-                      ) : (
-                        <span className="text-zinc-600">-</span>
-                      )}
-                    </td>
-
-                    {/* 월세 - count만 표시 (avgDeposit/avgRent가 없으므로) */}
-                    <td className="py-3 pr-4">
-                      {areaData.monthly?.count > 0 ? (
-                        <div>
-                          <p className="font-medium text-amber-400">
-                            {areaData.monthly.count}건
-                          </p>
-                          <p className="text-xs text-zinc-500">클릭하여 상세보기</p>
-                        </div>
-                      ) : (
-                        <span className="text-zinc-600">-</span>
-                      )}
-                    </td>
-
-                    {/* 총 매물 수 */}
-                    <td className="py-3">
-                      <span className={`font-medium ${totalCount > 10 ? 'text-emerald-400' : totalCount > 0 ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                        {totalCount > 0 ? `${totalCount}건` : '-'}
-                      </span>
-                    </td>
                   </tr>
-                ];
 
-                // 확장된 행 추가
-                if (isExpanded) {
-                  rows.push(
-                    <ExpandedRowContent
-                      key={`${rowKey}-expanded`}
-                      complex={complex}
-                      areaKey={areaKey}
-                      colSpan={colCount}
-                    />
-                  );
-                }
+                  {/* 평형별 행 */}
+                  {areas.map((areaKey) => {
+                    const areaData = complex.areas[areaKey];
+                    const totalCount = (areaData.sale?.count || 0) + (areaData.jeonse?.count || 0) + (areaData.monthly?.count || 0);
+                    const rowKey = `${complex.id}-${areaKey}`;
+                    const isExpanded = expandedRows.has(rowKey);
 
-                return rows;
-              });
+                    return (
+                      <React.Fragment key={rowKey}>
+                        <tr
+                          onClick={() => toggleExpand(rowKey)}
+                          className={`border-b border-zinc-200 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer ${
+                            isExpanded ? 'bg-zinc-50 dark:bg-zinc-800/40' : ''
+                          }`}
+                        >
+                          {/* 편집 모드 빈 셀 */}
+                          {editMode && <td></td>}
+
+                          {/* 단지명 빈 셀 */}
+                          <td></td>
+
+                          {/* 평형 + 확장 인디케이터 */}
+                          <td className="py-3 pr-4">
+                            <div className="flex items-center gap-1">
+                              {isExpanded ? (
+                                <ChevronDown size={14} className="text-teal-400" />
+                              ) : (
+                                <ChevronRight size={14} className="text-zinc-400" />
+                              )}
+                              <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs rounded font-medium">
+                                {areaKey}㎡
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* 매매 */}
+                          <td className="py-3 pr-4">
+                            {areaData.sale?.count > 0 ? (
+                              <div>
+                                <p className="font-medium text-zinc-800 dark:text-white">
+                                  {formatPriceRange(areaData.sale.minPrice, areaData.sale.maxPrice)}
+                                </p>
+                                <p className="text-xs text-zinc-500">{areaData.sale.count}건</p>
+                              </div>
+                            ) : (
+                              <span className="text-zinc-400">-</span>
+                            )}
+                          </td>
+
+                          {/* 전세 */}
+                          <td className="py-3 pr-4">
+                            {areaData.jeonse?.count > 0 ? (
+                              <div>
+                                <p className="font-medium text-blue-500 dark:text-blue-400">
+                                  {formatPriceRange(areaData.jeonse.minPrice, areaData.jeonse.maxPrice)}
+                                </p>
+                                <p className="text-xs text-zinc-500">{areaData.jeonse.count}건</p>
+                              </div>
+                            ) : (
+                              <span className="text-zinc-400">-</span>
+                            )}
+                          </td>
+
+                          {/* 월세 */}
+                          <td className="py-3 pr-4">
+                            {areaData.monthly?.count > 0 ? (
+                              <div>
+                                <p className="font-medium text-amber-500 dark:text-amber-400">
+                                  {areaData.monthly.count}건
+                                </p>
+                                <p className="text-xs text-zinc-500">클릭하여 상세</p>
+                              </div>
+                            ) : (
+                              <span className="text-zinc-400">-</span>
+                            )}
+                          </td>
+
+                          {/* 총 매물 수 */}
+                          <td className="py-3">
+                            <span className={`font-medium ${totalCount > 10 ? 'text-emerald-500' : totalCount > 0 ? 'text-zinc-600 dark:text-zinc-300' : 'text-zinc-400'}`}>
+                              {totalCount > 0 ? `${totalCount}건` : '-'}
+                            </span>
+                          </td>
+                        </tr>
+
+                        {/* 확장된 행 */}
+                        {isExpanded && (
+                          <ExpandedRowContent
+                            complex={complex}
+                            areaKey={areaKey}
+                            colSpan={colCount}
+                          />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </React.Fragment>
+              );
             })}
           </tbody>
         </table>
