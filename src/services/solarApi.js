@@ -1,8 +1,8 @@
 // Solar Pro API 연동 (Upstage)
 // 3월까지 무료
 
-// 환경변수 또는 하드코딩 폴백 (프론트엔드에서는 환경변수 접근 불가하므로)
-const SOLAR_API_KEY = import.meta.env?.VITE_SOLAR_API_KEY || 'up_okBtD33BeWAXvpbucOIVXfO71Bi7c';
+// 환경변수에서 API 키 로드 (보안을 위해 하드코딩 금지)
+const SOLAR_API_KEY = import.meta.env?.VITE_SOLAR_API_KEY;
 const API_URL = 'https://api.upstage.ai/v1/solar/chat/completions';
 
 /**
@@ -12,6 +12,14 @@ const API_URL = 'https://api.upstage.ai/v1/solar/chat/completions';
  * @returns {Promise<Object>} API 응답
  */
 export async function chatWithSolar(messages, context = null) {
+  if (!SOLAR_API_KEY) {
+    return {
+      success: false,
+      error: 'API key not configured',
+      content: 'AI 기능을 사용하려면 환경변수(VITE_SOLAR_API_KEY)를 설정하세요.',
+    };
+  }
+
   const systemPrompt = buildSystemPrompt(context);
 
   try {
