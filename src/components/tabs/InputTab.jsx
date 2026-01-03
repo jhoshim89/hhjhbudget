@@ -15,17 +15,29 @@ const SectionHeader = ({ title, icon: Icon, theme, action }) => (
   </div>
 );
 
+// 숫자에 천 단위 콤마 추가
+const formatWithCommas = (num) => {
+  if (num === '' || num === null || num === undefined) return '';
+  const numStr = String(num).replace(/,/g, '');
+  const parsed = parseFloat(numStr);
+  if (isNaN(parsed)) return numStr;
+  return parsed.toLocaleString('ko-KR');
+};
+
 // 계산기 기능이 있는 입력 필드 (천원 단위 입력)
 const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", compact = false, disabled = false }) => {
-  const [displayValue, setDisplayValue] = useState(value);
+  const [displayValue, setDisplayValue] = useState(formatWithCommas(value));
   const [isExpression, setIsExpression] = useState(false);
   const [isDirty, setIsDirty] = useState(false); // 사용자가 값을 변경했는지 추적
+  const [isFocused, setIsFocused] = useState(false);
 
-  // value prop이 변경되면 displayValue 업데이트
+  // value prop이 변경되면 displayValue 업데이트 (포커스 안됐을 때만 콤마 포맷)
   React.useEffect(() => {
-    setDisplayValue(value);
+    if (!isFocused) {
+      setDisplayValue(formatWithCommas(value));
+    }
     setIsDirty(false); // 외부 값 변경 시 dirty 리셋
-  }, [value]);
+  }, [value, isFocused]);
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -36,8 +48,13 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
   };
 
   const handleBlur = () => {
+    setIsFocused(false);
+    
     // 값이 변경되지 않았으면 변환하지 않음 (기존 값 유지)
-    if (!isDirty) return;
+    if (!isDirty) {
+      setDisplayValue(formatWithCommas(value));
+      return;
+    }
 
     // 천원 단위 입력: 항상 × 1000 적용
     const cleaned = String(displayValue).replace(/,/g, '').replace(/\//g, '+').replace(/\s/g, '');
@@ -56,10 +73,13 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
     if (result !== null) {
       // 원 단위 그대로 저장 (× 1000 변환 제거)
       const finalValue = Math.round(result);
-      setDisplayValue(String(finalValue));
+      setDisplayValue(formatWithCommas(finalValue));
       setIsExpression(false);
       setIsDirty(false);
       onChange({ target: { value: String(finalValue) } });
+    } else {
+      // 결과가 없으면 기존 값으로 복원
+      setDisplayValue(formatWithCommas(value));
     }
   };
 
@@ -71,12 +91,16 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
   };
 
   const handleFocus = (e) => {
-    // 값이 0이면 빈 칸으로 표시
-    if (displayValue === '0' || displayValue === '') {
+    setIsFocused(true);
+    // 값이 0이면 빈 칸으로 표시, 아니면 콤마 제거한 숫자로 표시
+    const rawValue = String(value).replace(/,/g, '');
+    if (rawValue === '0' || rawValue === '') {
       setDisplayValue('');
+    } else {
+      setDisplayValue(rawValue);
     }
     // 전체 선택
-    e.target.select();
+    setTimeout(() => e.target.select(), 0);
   };
 
   return (
