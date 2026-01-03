@@ -56,11 +56,12 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
     if (result !== null) {
       // 천원 단위: 입력값 × 1000
       const finalValue = Math.round(result) * 1000;
-      const formatted = finalValue.toLocaleString();
-      setDisplayValue(formatted);
+      // 표시는 콤마 없이 순수 숫자로 (천 단위 구분자 제거)
+      setDisplayValue(String(finalValue));
       setIsExpression(false);
       setIsDirty(false);
-      onChange({ target: { value: formatted } });
+      // 부모에게도 순수 숫자 전달
+      onChange({ target: { value: String(finalValue) } });
     }
   };
 
@@ -107,17 +108,17 @@ const Divider = ({ label }) => (
 // 고정지출 항목 (토글 + 금액 수정 + 삭제 가능)
 const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(expense.amount.toLocaleString());
+  const [editValue, setEditValue] = useState(String(expense.amount));
 
   React.useEffect(() => {
-    setEditValue(expense.amount.toLocaleString());
+    setEditValue(String(expense.amount));
   }, [expense.amount]);
 
   const handleSave = () => {
     const result = evaluateExpression(editValue, { autoConvertUnit: true });
     if (result !== null) {
       onAmountChange(result);
-      setEditValue(result.toLocaleString());
+      setEditValue(String(result));
     }
     setIsEditing(false);
   };
@@ -126,7 +127,7 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
     if (e.key === 'Enter') {
       handleSave();
     } else if (e.key === 'Escape') {
-      setEditValue(expense.amount.toLocaleString());
+      setEditValue(String(expense.amount));
       setIsEditing(false);
     }
   };
@@ -299,14 +300,14 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           <div className="grid grid-cols-2 gap-4 px-2">
             <CalcInputField
               label="향화 카카오 (원화)"
-              value={formatKRW(data.manualAccounts.향화카카오).replace('원', '')}
+              value={String(data.manualAccounts.향화카카오 || 0)}
               onChange={(e) => onManualAccountChange('향화카카오', e.target.value)}
               compact
               disabled={isReadOnly}
             />
             <CalcInputField
               label="향화 잔고 (신한)"
-              value={formatKRW(data.assets.향화잔고).replace('원', '')}
+              value={String(data.assets.향화잔고 || 0)}
               onChange={(e) => onAssetChange('향화잔고', e.target.value)}
               compact
               disabled={isReadOnly}
@@ -395,7 +396,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
                 <div key={income.name} className="relative group">
                   <CalcInputField
                     label={income.name}
-                    value={formatKRW(income.amount).replace('원', '')}
+                    value={String(income.amount || 0)}
                     onChange={(e) => onFixedIncomeChange(originalIndex, e.target.value)}
                     compact
                     disabled={isReadOnly}
@@ -453,7 +454,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
 
           <CalcInputField
             label="이번 달 카드값"
-            value={formatKRW(data.cardExpense).replace('원', '')}
+            value={String(data.cardExpense || 0)}
             onChange={(e) => onCardExpenseChange(e.target.value)}
             compact
             disabled={isReadOnly}
@@ -524,14 +525,14 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
           <div className="grid grid-cols-2 gap-4">
             <CalcInputField
               label="재호 카뱅 잔고"
-              value={formatKRW(data.assets.재호잔고).replace('원', '')}
+              value={String(data.assets.재호잔고 || 0)}
               onChange={(e) => onAssetChange('재호잔고', e.target.value)}
               compact
               disabled={isReadOnly}
             />
             <CalcInputField
               label="재호 영웅문 (원화)"
-              value={formatKRW(data.manualAccounts.재호영웅문).replace('원', '')}
+              value={String(data.manualAccounts.재호영웅문 || 0)}
               onChange={(e) => onManualAccountChange('재호영웅문', e.target.value)}
               compact
               disabled={isReadOnly}
@@ -539,7 +540,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
             <div className="col-span-2">
               <CalcInputField
                 label="적금 (주택청약+저금)"
-                value={formatKRW(data.assets.적금).replace('원', '')}
+                value={String(data.assets.적금 || 0)}
                 onChange={(e) => onAssetChange('적금', e.target.value)}
                 compact
                 disabled={isReadOnly}
@@ -548,7 +549,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
                 <button
                   onClick={() => {
                     const newAmount = (data.assets.적금 || 0) + 120000;
-                    onAssetChange('적금', newAmount.toLocaleString());
+                    onAssetChange('적금', String(newAmount));
                   }}
                   className="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl font-semibold text-xs transition-all"
                 >
