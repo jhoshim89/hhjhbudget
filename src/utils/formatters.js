@@ -91,9 +91,7 @@ export const numberToHangul = (value) => {
  * @param {string} expression
  * @returns {number|null}
  */
-export function evaluateExpression(expression, options = {}) {
-  const { autoConvertUnit = false } = options;
-
+export function evaluateExpression(expression) {
   if (!expression) return null;
 
   // 콤마 제거 (천 단위 구분자), /를 +로 변환, 공백 제거
@@ -101,13 +99,7 @@ export function evaluateExpression(expression, options = {}) {
 
   // 숫자만 있으면 바로 반환
   if (/^\d+$/.test(cleaned)) {
-    let value = parseInt(cleaned, 10);
-    // 입력 탭에서만: 100만 미만이면 천원 단위로 인식 (3900 → 3,900,000)
-    // 100만 이상이면 이미 원 단위로 입력된 것으로 간주
-    if (autoConvertUnit && value > 0 && value < 1000000) {
-      value = value * 1000;
-    }
-    return value;
+    return parseInt(cleaned, 10);
   }
 
   // 허용된 문자만 포함하는지 확인 (숫자, +, -, *, /, 괄호, 소수점)
@@ -119,12 +111,7 @@ export function evaluateExpression(expression, options = {}) {
     // eval 대신 Function 사용 (약간 더 안전)
     const result = new Function(`return (${cleaned})`)();
     if (typeof result === 'number' && isFinite(result)) {
-      let value = Math.round(result);
-      // 입력 탭에서만: 100만 미만이면 천원 단위로 인식
-      if (autoConvertUnit && value > 0 && value < 1000000) {
-        value = value * 1000;
-      }
-      return value;
+      return Math.round(result);
     }
     return null;
   } catch {

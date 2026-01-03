@@ -24,7 +24,7 @@ const formatWithCommas = (num) => {
   return parsed.toLocaleString('ko-KR');
 };
 
-// 계산기 기능이 있는 입력 필드 (천원 단위 입력)
+// 계산기 기능이 있는 입력 필드 (원 단위 입력)
 const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", compact = false, disabled = false }) => {
   const [displayValue, setDisplayValue] = useState(formatWithCommas(value));
   const [isExpression, setIsExpression] = useState(false);
@@ -56,7 +56,7 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
       return;
     }
 
-    // 천원 단위 입력: 항상 × 1000 적용
+    // 원 단위 입력 (자동 변환 없음)
     const cleaned = String(displayValue).replace(/,/g, '').replace(/\//g, '+').replace(/\s/g, '');
     let result = null;
 
@@ -148,7 +148,7 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
   }, [expense.amount]);
 
   const handleSave = () => {
-    const result = evaluateExpression(editValue, { autoConvertUnit: true });
+    const result = evaluateExpression(editValue);
     if (result !== null) {
       onAmountChange(result);
       setEditValue(String(result));
@@ -260,7 +260,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   const handleAddIncome = async () => {
     if (!newIncome.name || !newIncome.amount) return;
 
-    const amount = evaluateExpression(newIncome.amount, { autoConvertUnit: true });
+    const amount = evaluateExpression(newIncome.amount);
     if (amount === null || amount <= 0) return;
 
     setIsSaving(true);
@@ -280,7 +280,7 @@ export default function InputTab({ data, handlers, selectedMonth, onMonthChange 
   const handleAddExpense = async () => {
     if (!newExpense.name || !newExpense.amount) return;
 
-    const amount = evaluateExpression(newExpense.amount, { autoConvertUnit: true });
+    const amount = evaluateExpression(newExpense.amount);
     if (amount === null || amount <= 0) return;
 
     setIsSavingExpense(true);
