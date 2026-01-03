@@ -54,13 +54,11 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
     }
 
     if (result !== null) {
-      // 천원 단위: 입력값 × 1000
-      const finalValue = Math.round(result) * 1000;
-      // 표시는 콤마 없이 순수 숫자로 (천 단위 구분자 제거)
+      // 원 단위 그대로 저장 (× 1000 변환 제거)
+      const finalValue = Math.round(result);
       setDisplayValue(String(finalValue));
       setIsExpression(false);
       setIsDirty(false);
-      // 부모에게도 순수 숫자 전달
       onChange({ target: { value: String(finalValue) } });
     }
   };
@@ -87,7 +85,7 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
           className={`w-full bg-surface border text-foreground font-semibold pl-7 pr-2 rounded-xl outline-none transition-all font-mono ${
             isExpression ? 'border-amber-500 bg-amber-500/5 ring-2 ring-amber-500/20' : 'border-zinc-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
           } ${compact ? 'py-2.5 text-sm' : 'py-3 text-base'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-          placeholder={placeholder || "천원 단위 (예: 3900=390만)"}
+          placeholder={placeholder || "금액 (원 단위)"}
         />
         {isExpression && (
           <span className="absolute right-2 top-2.5 text-amber-400 text-[9px] font-bold bg-amber-500/20 px-1.5 py-0.5 rounded">=계산</span>
