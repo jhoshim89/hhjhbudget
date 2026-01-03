@@ -70,6 +70,15 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
     }
   };
 
+  const handleFocus = (e) => {
+    // 값이 0이면 빈 칸으로 표시
+    if (displayValue === '0' || displayValue === '') {
+      setDisplayValue('');
+    }
+    // 전체 선택
+    e.target.select();
+  };
+
   return (
     <div className="min-w-0">
       <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block mb-1.5 truncate">{label}</label>
@@ -77,9 +86,11 @@ const CalcInputField = ({ label, value, onChange, placeholder, prefix = "₩", c
         <span className="absolute left-3 top-2.5 text-zinc-500 font-semibold text-xs">{prefix}</span>
         <input
           type="text"
+          inputMode="numeric"
           value={displayValue}
           onChange={handleChange}
           onBlur={handleBlur}
+          onFocus={handleFocus}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           className={`w-full bg-surface border text-foreground font-semibold pl-7 pr-2 rounded-xl outline-none transition-all font-mono ${
@@ -153,11 +164,15 @@ const FixedExpenseItem = ({ expense, onToggle, onAmountChange, onDelete }) => {
         {isEditing ? (
           <input
             type="text"
+            inputMode="numeric"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
-            onFocus={(e) => e.target.select()}
+            onFocus={(e) => {
+              if (editValue === '0') setEditValue('');
+              e.target.select();
+            }}
             onClick={(e) => e.stopPropagation()}
             autoFocus
             className="w-full text-sm font-bold text-foreground bg-surface border border-blue-500 rounded-lg px-2 py-1 outline-none font-mono"
