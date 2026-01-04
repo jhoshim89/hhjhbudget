@@ -37,7 +37,9 @@ export default function PropertySummaryCard({ complex, onSelect }) {
           )}
           <div>
             <h4 className="font-semibold text-zinc-800 dark:text-white text-sm">{complex.name}</h4>
-            <p className="text-[10px] text-zinc-500">{complex.region}</p>
+            <p className="text-[10px] text-zinc-500">
+              {complex.region}{complex.householdCount ? ` · ${complex.householdCount.toLocaleString()}세대` : ''}
+            </p>
           </div>
         </div>
         {hasMultipleAreas && (

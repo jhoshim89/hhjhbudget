@@ -74,8 +74,8 @@ const TARGET_COMPLEXES = [
     name: '더비치푸르지오써밋',
     complexNo: '161501',
     region: '부산 남구 대연동',
-    lat: 35.1347,   // 황령대로 504, 대연동 1808
-    lon: 129.0878,
+    lat: 35.153,    // 황령대로 504, 대연동 1946 (수정된 좌표)
+    lon: 129.056,
     areas: [84],
     householdCount: 1384
   },

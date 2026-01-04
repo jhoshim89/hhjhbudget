@@ -92,6 +92,7 @@ export function useNaverRealestate() {
         isMine: item.isMine,
         lat: item.lat,
         lon: item.lon,
+        householdCount: item.householdCount,
         areas: {},
       };
     }

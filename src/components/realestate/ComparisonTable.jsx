@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { ArrowUpDown, RefreshCw, Loader2, X, Plus, ChevronDown, ChevronRight, Home, Building2, Wallet } from 'lucide-react';
+import { ArrowUpDown, RefreshCw, Loader2, X, Plus, ChevronDown, ChevronRight, Home, Building2, Wallet, BarChart3 } from 'lucide-react';
 import { formatPrice, formatPriceRange, fetchArticleDetails } from '../../services/naverRealestateApi';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, ZAxis } from 'recharts';
 
 // 프론트엔드 캐시 (세션 동안 유지)
 const articleCache = new Map();
@@ -11,7 +12,7 @@ const articleCache = new Map();
  * @param {number} rent - 월세 (만원)
  * @param {number} rate - 기회비용률 (기본 5%)
  */
-const calcMonthlyCost = (deposit, rent, rate = 0.05) => {
+const calcMonthlyCost = (deposit, rent, rate = 0.04) => {
   return rent + (deposit * rate / 12);
 };
 
@@ -282,6 +283,7 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
   const [excludedIds, setExcludedIds] = useState(new Set());
   const [editMode, setEditMode] = useState(false);
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [showChart, setShowChart] = useState(true);
 
   // 행 확장 토글
   const toggleExpand = (rowKey) => {
@@ -342,9 +344,95 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
           return 0;
       }
 
-      return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+    return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
     });
   }, [includedData, sortKey, sortOrder]);
+
+  // 매물 상세 데이터 로드 상태
+  const [articleDetails, setArticleDetails] = useState([]);
+  const [loadingArticles, setLoadingArticles] = useState(false);
+
+  // 차트가 보일 때 모든 매물 데이터 로드
+  useEffect(() => {
+    if (!showChart || includedData.length === 0) return;
+    
+    const loadAllArticles = async () => {
+      setLoadingArticles(true);
+      const allPoints = [];
+      
+      for (let idx = 0; idx < includedData.length; idx++) {
+        const complex = includedData[idx];
+        // 84㎡ 기준 (없으면 80㎡)
+        const targetArea = complex.areas?.[84] ? 84 : complex.areas?.[80] ? 80 : null;
+        if (!targetArea) continue;
+        
+        const cacheKey = `${complex.id}_${targetArea}`;
+        let articles = articleCache.get(cacheKey);
+        
+        if (!articles) {
+          try {
+            const result = await fetchArticleDetails(complex.id, null, 1);
+            articles = result.data.filter(article => Math.abs(article.area - targetArea) <= 3);
+            articleCache.set(cacheKey, articles);
+          } catch (err) {
+            console.error(`[Chart] Failed to load articles for ${complex.name}:`, err);
+            continue;
+          }
+        }
+        
+        // 각 매물을 점으로 변환
+        articles.forEach(article => {
+          const shortName = complex.name.length > 8 
+            ? complex.name.substring(0, 7) + '…' 
+            : complex.name;
+          
+          if (article.tradeType === '전세' && article.deposit) {
+            // 전세: 보증금의 월이자 (4%)
+            const monthlyCost = calcJeonseMonthlyInterest(article.deposit);
+            allPoints.push({
+              x: idx,
+              y: Math.round(monthlyCost * 10) / 10,
+              type: 'jeonse',
+              complexName: complex.name,
+              shortName,
+              deposit: article.deposit,
+              isMine: complex.isMine,
+            });
+          } else if (article.tradeType === '월세' && article.deposit !== undefined) {
+            // 월세: 월세 + 보증금 월이자 (4%)
+            const monthlyCost = calcMonthlyCost(article.deposit, article.monthlyRent || 0);
+            allPoints.push({
+              x: idx,
+              y: Math.round(monthlyCost * 10) / 10,
+              type: 'monthly',
+              complexName: complex.name,
+              shortName,
+              deposit: article.deposit,
+              rent: article.monthlyRent,
+              isMine: complex.isMine,
+            });
+          }
+        });
+      }
+      
+      setArticleDetails(allPoints);
+      setLoadingArticles(false);
+    };
+    
+    loadAllArticles();
+  }, [showChart, includedData]);
+
+  // 산점도용 데이터 분리 (전세/월세)
+  const scatterData = useMemo(() => {
+    const jeonsePoints = articleDetails.filter(p => p.type === 'jeonse');
+    const monthlyPoints = articleDetails.filter(p => p.type === 'monthly');
+    return { jeonse: jeonsePoints, monthly: monthlyPoints };
+  }, [articleDetails]);
+
+  // X축 라벨용 단지명 목록
+  const complexNames = useMemo(() => {
+    return includedData.map(c => c.name.length > 8 ? c.name.substring(0, 7) + '…' : c.name);
+  }, [includedData]);
 
   // 정렬 토글
   const toggleSort = (key) => {
@@ -390,7 +478,18 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+<div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+          <button
+            onClick={() => setShowChart(!showChart)}
+            className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm whitespace-nowrap transition-colors ${
+              showChart
+                ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+            }`}
+          >
+            <BarChart3 size={14} />
+            <span className="hidden sm:inline">차트</span>
+          </button>
           <button
             onClick={() => setEditMode(!editMode)}
             className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm whitespace-nowrap transition-colors ${
@@ -414,8 +513,157 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
 
       {/* 공식 설명 */}
       <div className="text-[10px] text-zinc-500 px-1">
-        💡 월비용 = 월세 + (보증금 × 5% ÷ 12) | 전세 월이자 = 전세금 × 4% ÷ 12
+        💡 월비용 = 월세 + (보증금 × 4% ÷ 12) | 전세 월이자 = 전세금 × 4% ÷ 12
       </div>
+
+      {/* 월비용 비교 산점도 */}
+      {showChart && (
+        <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700/50">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              매물별 월비용 비교 (84㎡ 기준, 4% 이율)
+            </h4>
+            {loadingArticles && (
+              <div className="flex items-center gap-1 text-xs text-zinc-500">
+                <Loader2 size={12} className="animate-spin" />
+                매물 데이터 로딩...
+              </div>
+            )}
+          </div>
+          
+          {articleDetails.length > 0 ? (
+            <div className="h-96">
+              {/* 아웃라이어 표시 (300만 초과) */}
+              {(() => {
+                const outliers = articleDetails.filter(d => d.y > 300);
+                if (outliers.length === 0) return null;
+                return (
+                  <div className="text-xs text-zinc-500 mb-2 flex flex-wrap gap-2">
+                    <span className="text-zinc-400">⚠️ 300만↑:</span>
+                    {outliers.map((o, i) => (
+                      <span key={i} className={o.type === 'jeonse' ? 'text-amber-400' : 'text-blue-400'}>
+                        {o.shortName} {o.y.toFixed(0)}만
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 10, right: 60, left: 0, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                  <XAxis 
+                    type="number"
+                    dataKey="x"
+                    domain={[-0.5, includedData.length - 0.5]}
+                    ticks={includedData.map((_, i) => i)}
+                    tickFormatter={(idx) => complexNames[idx] || ''}
+                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                    interval={0}
+                  />
+                  <YAxis 
+                    yAxisId="left"
+                    type="number"
+                    dataKey="y"
+                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                    tickFormatter={(v) => `${v}만`}
+                    width={55}
+                    domain={[50, 300]}
+                    ticks={[50, 100, 150, 200, 250, 300]}
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    type="number"
+                    tick={{ fontSize: 10, fill: '#F59E0B' }}
+                    tickFormatter={(v) => `${(v * 12 / 0.04 / 10000).toFixed(1)}억`}
+                    width={50}
+                    domain={[50, 300]}
+                    ticks={[50, 100, 150, 200, 250, 300]}
+                    label={{ value: '전세금', angle: 90, position: 'insideRight', fill: '#F59E0B', fontSize: 10 }}
+                  />
+                  <ZAxis range={[80, 80]} />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-xs shadow-xl">
+                          <p className="font-bold text-white mb-2">{d.complexName}</p>
+                          {d.type === 'jeonse' ? (
+                            <p className="text-amber-400">
+                              전세 월이자: {d.y}만원/월
+                              <br />
+                              <span className="text-zinc-400">전세금: {formatPriceMan(d.deposit)}</span>
+                            </p>
+                          ) : (
+                            <p className="text-blue-400">
+                              월세 월납입금: {d.y}만원/월
+                              <br />
+                              <span className="text-zinc-400">
+                                보증금: {formatPriceMan(d.deposit)} / 월세: {d.rent}만
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                  />
+                  <Scatter 
+                    name="전세 월이자" 
+                    data={scatterData.jeonse.filter(d => d.y <= 300)} 
+                    fill="#F59E0B"
+                    yAxisId="left"
+                  >
+                    {scatterData.jeonse.filter(d => d.y <= 300).map((entry, index) => (
+                      <Cell 
+                        key={`jeonse-${index}`} 
+                        fill={entry.isMine ? '#14B8A6' : '#F59E0B'} 
+                      />
+                    ))}
+                  </Scatter>
+                  <Scatter 
+                    name="월세 월납입금" 
+                    data={scatterData.monthly.filter(d => d.y <= 300)} 
+                    fill="#3B82F6"
+                    yAxisId="left"
+                  >
+                    {scatterData.monthly.filter(d => d.y <= 300).map((entry, index) => (
+                      <Cell 
+                        key={`monthly-${index}`} 
+                        fill={entry.isMine ? '#14B8A6' : '#3B82F6'} 
+                      />
+                    ))}
+                  </Scatter>
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          ) : !loadingArticles ? (
+            <div className="h-32 flex items-center justify-center text-zinc-500 text-sm">
+              데이터가 없습니다
+            </div>
+          ) : null}
+          
+          {/* 통계 요약 */}
+          {articleDetails.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700/50 text-xs text-zinc-500">
+              <div className="flex gap-4">
+                <span>
+                  전세 매물: <span className="text-amber-400 font-medium">{scatterData.jeonse.length}건</span>
+                </span>
+                <span>
+                  월세 매물: <span className="text-blue-400 font-medium">{scatterData.monthly.length}건</span>
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 테이블 */}
       <div className="overflow-x-auto">
@@ -470,7 +718,9 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                           )}
                           <div>
                             <p className="font-bold text-lg text-zinc-800 dark:text-white">{complex.name}</p>
-                            <p className="text-sm text-zinc-500">{complex.region}</p>
+                            <p className="text-sm text-zinc-500">
+                              {complex.region}{complex.householdCount ? ` · ${complex.householdCount.toLocaleString()}세대` : ''}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
