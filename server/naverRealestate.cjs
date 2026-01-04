@@ -558,7 +558,7 @@ async function fetchAllComplexesWithSheetCache() {
         const complexInfo = TARGET_COMPLEXES.find(c => c.id === record.complexId);
         return {
           id: record.complexId,
-          name: record.complexName,
+          name: complexInfo?.name || record.complexName,  // TARGET_COMPLEXES 이름 우선 사용
           area: record.area,
           isMine: complexInfo?.isMine || false,
           region: complexInfo?.region || '',
