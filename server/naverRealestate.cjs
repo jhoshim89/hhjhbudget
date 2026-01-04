@@ -56,14 +56,14 @@ function getHeaders() {
 }
 
 // 대상 단지 목록 (좌표 정보 포함)
-// 좌표는 네이버 부동산/위키백과에서 확인 (lat: 위도, lon: 경도)
+// 좌표는 사용자 제공 값 사용 (lat: 위도, lon: 경도)
 const TARGET_COMPLEXES = [
   {
     id: 'forena-songpa',
     name: '포레나송파',
     complexNo: '139917',
     region: '서울 송파구 거여동',
-    lat: 37.4833,   // 위례송파로 123 (위례신도시)
+    lat: 37.4833,
     lon: 127.1453,
     areas: [80, 84],
     householdCount: 1282,
@@ -74,18 +74,18 @@ const TARGET_COMPLEXES = [
     name: '더비치푸르지오써밋',
     complexNo: '161501',
     region: '부산 남구 대연동',
-    lat: 35.153,    // 황령대로 504, 대연동 1946 (수정된 좌표)
-    lon: 129.056,
+    lat: 35.136872,
+    lon: 129.108246,
     areas: [84],
     householdCount: 1384
   },
   {
     id: 'daeyeon-lotte-castle',
-    name: '대연롯데캐슬레전드',  // 정확한 이름 (3,149세대 대단지)
+    name: '대연롯데캐슬레전드',
     complexNo: '109359',
     region: '부산 남구 대연동',
-    lat: 35.136369,   // 네이버 부동산 좌표 (수영로 135, 대연동 1872)
-    lon: 129.081142,
+    lat: 35.136817,
+    lon: 129.081902,
     areas: [84],
     householdCount: 3149
   },
@@ -94,8 +94,8 @@ const TARGET_COMPLEXES = [
     name: '더샵남천프레스티지',
     complexNo: '127133',
     region: '부산 수영구 남천동',
-    lat: 35.1355,   // 수영로 389, 남천동 599
-    lon: 129.1095,
+    lat: 35.141537,
+    lon: 129.106423,
     areas: [84],
     householdCount: 975
   },
@@ -104,10 +104,30 @@ const TARGET_COMPLEXES = [
     name: '대연힐스테이트푸르지오',
     complexNo: '105323',
     region: '부산 남구 대연동',
-    lat: 35.1408222,  // 위키백과 좌표 (수영로 345, 대연동 1858)
-    lon: 129.1005639,
+    lat: 35.142480,
+    lon: 129.101968,
     areas: [84],
     householdCount: 2100
+  },
+  {
+    id: 'daeyeon-diel',
+    name: '대연디아이엘',
+    complexNo: null,  // 2027년 입주 예정, 네이버 매물 없음
+    region: '부산 남구 대연동',
+    lat: 35.133252,
+    lon: 129.081951,
+    areas: [84],
+    householdCount: 4488
+  },
+  {
+    id: 'doosan-weave-zenith-ocean',
+    name: '두산위브더제니스오션시티',
+    complexNo: null,  // 2026년 1월 입주 예정
+    region: '부산 남구 우암동',
+    lat: 35.127286,
+    lon: 129.075915,
+    areas: [84],
+    householdCount: 3048
   },
 ];
 

@@ -49,6 +49,24 @@ export const TARGET_COMPLEXES = [
     isMine: false,
     complexNo: null,
   },
+  {
+    id: 'daeyeon-diel',
+    name: '대연디아이엘',
+    region: '부산 남구 대연동',
+    regionCode: '26290',
+    areas: [84],
+    isMine: false,
+    complexNo: null, // 2027년 입주 예정
+  },
+  {
+    id: 'doosan-weave-zenith-ocean',
+    name: '두산위브더제니스오션시티',
+    region: '부산 남구 우암동',
+    regionCode: '26290',
+    areas: [84],
+    isMine: false,
+    complexNo: null, // 2026년 1월 입주 예정
+  },
 ];
 
 // 거래 유형 코드
