@@ -14,28 +14,19 @@ import PriceInputModal from '../realestate/PriceInputModal';
 import ComparisonTable from '../realestate/ComparisonTable';
 import PropertySummaryCard from '../realestate/PropertySummaryCard';
 import PriceTrendChart from '../realestate/PriceTrendChart';
+import AllComplexesTrendChart from '../realestate/AllComplexesTrendChart';
 import PropertyMap from '../realestate/PropertyMap';
-
-// 훅
-import { useNaverRealestate } from '../../hooks/useNaverRealestate';
 
 /**
  * 부동산 탭
  */
+
 export default function RealEstateTab({ data, handlers }) {
   const [activeSubTab, setActiveSubTab] = useState('market');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [priceModalProperty, setPriceModalProperty] = useState(null);
   const [marketViewMode, setMarketViewMode] = useState('table'); // 'card' | 'table'
   const [selectedChartComplex, setSelectedChartComplex] = useState(null); // 차트용 단지 선택
-
-  // 네이버 부동산 데이터
-  const {
-    groupedByComplex: naverData,
-    loading: naverLoading,
-    lastUpdated: naverLastUpdated,
-    refetch: refetchNaver,
-  } = useNaverRealestate();
 
   const {
     watchProperties = [],
@@ -46,6 +37,10 @@ export default function RealEstateTab({ data, handlers }) {
     totalDebt = 0,
     netWorth = 0,
     monthlyInterest = 0,
+    // 네이버 부동산 데이터 (props에서 수신)
+    naverData = [],
+    naverLoading = false,
+    naverLastUpdated = null,
   } = data || {};
 
   const {
@@ -58,7 +53,10 @@ export default function RealEstateTab({ data, handlers }) {
     updateLoan,
     removeLoan,
     addPrice,
+    // 네이버 부동산 핸들러 (props에서 수신)
+    refetchNaver,
   } = handlers || {};
+
 
   // 서브탭 정의
   const subTabs = [
@@ -242,40 +240,12 @@ export default function RealEstateTab({ data, handlers }) {
               />
             </div>
 
-            {/* 시세 동향 그래프 */}
+            {/* 전체 단지 시세 추이 그래프 */}
             <div className="bento-card p-4">
-              {/* 단지 선택 드롭다운 */}
-              <div className="flex items-center gap-3 mb-4">
-                <select
-                  value={selectedChartComplex?.id || ''}
-                  onChange={(e) => {
-                    const complex = naverData.find(c => c.id === e.target.value);
-                    setSelectedChartComplex(complex || null);
-                  }}
-                  className="flex-1 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/50"
-                >
-                  <option value="">단지 선택 (시세 추이 보기)</option>
-                  {naverData.map(complex => (
-                    <option key={complex.id} value={complex.id}>
-                      {complex.name} {complex.isMine ? '(내 집)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 차트 */}
-              {selectedChartComplex ? (
-                <PriceTrendChart
-                  complexId={selectedChartComplex.id}
-                  complexName={selectedChartComplex.name}
-                  area={84}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-sm text-zinc-500">단지를 선택하면 시세 추이 그래프가 표시됩니다</p>
-                  <p className="text-xs text-zinc-600 mt-1">매일 데이터가 수집되며, 일정 기간 후 그래프가 채워집니다</p>
-                </div>
-              )}
+              <AllComplexesTrendChart
+                complexes={naverData}
+                area={84}
+              />
             </div>
           </div>
         )}
