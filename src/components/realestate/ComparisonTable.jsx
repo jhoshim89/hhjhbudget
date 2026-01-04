@@ -532,14 +532,14 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
           </div>
           
           {articleDetails.length > 0 ? (
-            <div className="h-96">
-              {/* 아웃라이어 표시 (300만 초과) */}
+            <div className="h-[750px]">
+              {/* 아웃라이어 표시 (350만 초과) */}
               {(() => {
-                const outliers = articleDetails.filter(d => d.y > 300);
+                const outliers = articleDetails.filter(d => d.y > 350);
                 if (outliers.length === 0) return null;
                 return (
                   <div className="text-xs text-zinc-500 mb-2 flex flex-wrap gap-2">
-                    <span className="text-zinc-400">⚠️ 300만↑:</span>
+                    <span className="text-zinc-400">⚠️ 350만↑:</span>
                     {outliers.map((o, i) => (
                       <span key={i} className={o.type === 'jeonse' ? 'text-amber-400' : 'text-blue-400'}>
                         {o.shortName} {o.y.toFixed(0)}만
@@ -570,8 +570,8 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                     tick={{ fontSize: 10, fill: '#9CA3AF' }}
                     tickFormatter={(v) => `${v}만`}
                     width={55}
-                    domain={[50, 300]}
-                    ticks={[50, 100, 150, 200, 250, 300]}
+                    domain={[100, 350]}
+                    ticks={[100, 150, 200, 250, 300, 350]}
                   />
                   <YAxis 
                     yAxisId="right"
@@ -580,8 +580,8 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                     tick={{ fontSize: 10, fill: '#F59E0B' }}
                     tickFormatter={(v) => `${(v * 12 / 0.04 / 10000).toFixed(1)}억`}
                     width={50}
-                    domain={[50, 300]}
-                    ticks={[50, 100, 150, 200, 250, 300]}
+                    domain={[100, 350]}
+                    ticks={[100, 150, 200, 250, 300, 350]}
                     label={{ value: '전세금', angle: 90, position: 'insideRight', fill: '#F59E0B', fontSize: 10 }}
                   />
                   <ZAxis range={[80, 80]} />
@@ -616,11 +616,11 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                   />
                   <Scatter 
                     name="전세 월이자" 
-                    data={scatterData.jeonse.filter(d => d.y <= 300)} 
+                    data={scatterData.jeonse.filter(d => d.y <= 350)} 
                     fill="#F59E0B"
                     yAxisId="left"
                   >
-                    {scatterData.jeonse.filter(d => d.y <= 300).map((entry, index) => (
+                    {scatterData.jeonse.filter(d => d.y <= 350).map((entry, index) => (
                       <Cell 
                         key={`jeonse-${index}`} 
                         fill={entry.isMine ? '#14B8A6' : '#F59E0B'} 
@@ -629,11 +629,11 @@ export default function ComparisonTable({ data, loading, onRefresh, lastUpdated 
                   </Scatter>
                   <Scatter 
                     name="월세 월납입금" 
-                    data={scatterData.monthly.filter(d => d.y <= 300)} 
+                    data={scatterData.monthly.filter(d => d.y <= 350)} 
                     fill="#3B82F6"
                     yAxisId="left"
                   >
-                    {scatterData.monthly.filter(d => d.y <= 300).map((entry, index) => (
+                    {scatterData.monthly.filter(d => d.y <= 350).map((entry, index) => (
                       <Cell 
                         key={`monthly-${index}`} 
                         fill={entry.isMine ? '#14B8A6' : '#3B82F6'} 

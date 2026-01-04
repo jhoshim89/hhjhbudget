@@ -564,6 +564,7 @@ async function fetchAllComplexesWithSheetCache() {
           region: complexInfo?.region || '',
           lat: complexInfo?.lat,
           lon: complexInfo?.lon,
+          householdCount: complexInfo?.householdCount,
           sale: {
             count: record.saleCount,
             minPrice: record.saleMin,
