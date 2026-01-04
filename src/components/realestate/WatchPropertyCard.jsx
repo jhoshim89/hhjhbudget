@@ -52,7 +52,9 @@ export default function WatchPropertyCard({ property, priceHistory = [], onRemov
           </div>
           <div>
             <h4 className="font-semibold text-zinc-800 dark:text-white text-sm">{property.name}</h4>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-500">{property.area}㎡</p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-500">
+              {property.area}㎡{property.householdCount ? ` · ${property.householdCount.toLocaleString()}세대` : ''}
+            </p>
           </div>
         </div>
 

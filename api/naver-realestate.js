@@ -22,35 +22,40 @@ const TARGET_COMPLEXES = [
     complexNo: '139917',
     region: '서울 송파구 거여동',
     areas: [80, 84],
-    isMine: true
+    isMine: true,
+    householdCount: 1282,
   },
   {
     id: 'the-beach-prugio-summit',
     name: '더비치푸르지오써밋',
     complexNo: '161501',
     region: '부산 남구 대연동',
-    areas: [84]
+    areas: [84],
+    householdCount: 1384,
   },
   {
     id: 'daeyeon-lotte-castle',
     name: '대연롯데캐슬레전드',
     complexNo: '109359',
     region: '부산 남구 대연동',
-    areas: [84]
+    areas: [84],
+    householdCount: 3149,
   },
   {
     id: 'the-sharp-namcheon',
-    name: '더샵남천',
+    name: '더샵남천프레스티지',
     complexNo: '127133',
     region: '부산 수영구 남천동',
-    areas: [84]
+    areas: [84],
+    householdCount: 975,
   },
   {
     id: 'daeyeon-hillstate-prugio',
     name: '대연힐스테이트푸르지오',
     complexNo: '105323',
     region: '부산 남구 대연동',
-    areas: [84]
+    areas: [84],
+    householdCount: 2100,
   },
 ];
 

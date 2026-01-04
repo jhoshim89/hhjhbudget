@@ -56,17 +56,17 @@ function getHeaders() {
 }
 
 // 대상 단지 목록 (좌표 정보 포함)
-// 좌표는 네이버 지도에서 확인 (lat: 위도, lon: 경도)
-// 좌표가 정확하지 않으면 주변 매물이 표시될 수 있음
+// 좌표는 네이버 부동산/위키백과에서 확인 (lat: 위도, lon: 경도)
 const TARGET_COMPLEXES = [
   {
     id: 'forena-songpa',
     name: '포레나송파',
     complexNo: '139917',
     region: '서울 송파구 거여동',
-    lat: 37.4920,  // 거여동 일대
-    lon: 127.1440,
+    lat: 37.4833,   // 위례송파로 123 (위례신도시)
+    lon: 127.1453,
     areas: [80, 84],
+    householdCount: 1282,
     isMine: true
   },
   {
@@ -74,36 +74,40 @@ const TARGET_COMPLEXES = [
     name: '더비치푸르지오써밋',
     complexNo: '161501',
     region: '부산 남구 대연동',
-    lat: 35.1365,
-    lon: 129.0895,
-    areas: [84]
+    lat: 35.1347,   // 황령대로 504, 대연동 1808
+    lon: 129.0878,
+    areas: [84],
+    householdCount: 1384
   },
   {
     id: 'daeyeon-lotte-castle',
-    name: '대연롯데캐슬',  // 짧은 이름으로 매칭 확률 높임
+    name: '대연롯데캐슬레전드',  // 정확한 이름 (3,149세대 대단지)
     complexNo: '109359',
     region: '부산 남구 대연동',
-    lat: 35.1340,
-    lon: 129.0870,
-    areas: [84]
+    lat: 35.136369,   // 네이버 부동산 좌표 (수영로 135, 대연동 1872)
+    lon: 129.081142,
+    areas: [84],
+    householdCount: 3149
   },
   {
     id: 'the-sharp-namcheon',
-    name: '더샵남천',  // 짧은 이름으로 매칭 확률 높임
+    name: '더샵남천프레스티지',
     complexNo: '127133',
     region: '부산 수영구 남천동',
-    lat: 35.1380,
-    lon: 129.1100,
-    areas: [84]
+    lat: 35.1355,   // 수영로 389, 남천동 599
+    lon: 129.1095,
+    areas: [84],
+    householdCount: 975
   },
   {
     id: 'daeyeon-hillstate-prugio',
-    name: '대연힐스테이트',  // 짧은 이름으로 매칭 확률 높임
+    name: '대연힐스테이트푸르지오',
     complexNo: '105323',
     region: '부산 남구 대연동',
-    lat: 35.1355,
-    lon: 129.0850,
-    areas: [84]
+    lat: 35.1408222,  // 위키백과 좌표 (수영로 345, 대연동 1858)
+    lon: 129.1005639,
+    areas: [84],
+    householdCount: 2100
   },
 ];
 
@@ -478,6 +482,7 @@ async function fetchAllComplexes() {
           region: complex.region,
           lat: complex.lat,
           lon: complex.lon,
+          householdCount: complex.householdCount,
         });
       } catch (error) {
         console.error(`[Naver] Failed to process ${complex.name}:`, error.message);
@@ -492,6 +497,7 @@ async function fetchAllComplexes() {
           isMine: complex.isMine || false,
           lat: complex.lat,
           lon: complex.lon,
+          householdCount: complex.householdCount,
           area,
         });
       }
