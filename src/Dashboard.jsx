@@ -26,6 +26,7 @@ import { useWatchlist } from './hooks/useWatchlist';
 
 // Real Estate Integration
 import { useRealEstate } from './hooks/useRealEstate';
+import { useNaverRealestate } from './hooks/useNaverRealestate';
 
 // Holdings Integration
 import { useHoldings } from './hooks/useHoldings';
@@ -75,6 +76,14 @@ export default function Dashboard() {
 
   // --- Real Estate (별도 시트) ---
   const realEstateData = useRealEstate();
+
+  // --- Naver 부동산 시세 ---
+  const {
+    data: naverData,
+    loading: naverLoading,
+    lastUpdated: naverLastUpdated,
+    refetch: refetchNaver,
+  } = useNaverRealestate();
 
   // 탭에서 사용할 월 객체 형식 변환
   const selectedMonthObj = useMemo(() => {
@@ -1045,6 +1054,9 @@ export default function Dashboard() {
                     totalDebt: realEstateData.totalDebt,
                     netWorth: realEstateData.netWorth,
                     monthlyInterest: realEstateData.monthlyInterest,
+                    naverData,
+                    naverLoading,
+                    naverLastUpdated,
                   }}
                   handlers={{
                     addWatch: realEstateData.addWatch,
@@ -1056,6 +1068,7 @@ export default function Dashboard() {
                     updateLoan: realEstateData.updateLoan,
                     removeLoan: realEstateData.removeLoan,
                     addPrice: realEstateData.addPrice,
+                    refetchNaver,
                   }}
                 />
               )}
