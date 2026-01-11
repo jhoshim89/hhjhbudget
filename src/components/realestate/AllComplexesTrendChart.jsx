@@ -62,6 +62,9 @@ export default function AllComplexesTrendChart({ complexes = [], area = 84 }) {
   useEffect(() => {
     if (validComplexes.length > 0) {
       loadAllData();
+    } else {
+      // 데이터가 없으면 로딩 해제
+      setLoading(false);
     }
   }, [validComplexes, area, period]);
 
