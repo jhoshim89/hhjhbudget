@@ -3,6 +3,15 @@ import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Responsive
 import { Loader2, TrendingUp, Calendar } from 'lucide-react';
 import { fetchArticleDetails } from '../../services/naverRealestateApi';
 
+// 기본 단지 목록 (naverData가 없을 때 사용)
+const DEFAULT_COMPLEXES = [
+  { id: 'forena-songpa', name: '포레나송파', isMine: true },
+  { id: 'the-beach-prugio-summit', name: '더비치푸르지오써밋' },
+  { id: 'daeyeon-lotte-castle', name: '대연롯데캐슬레전드' },
+  { id: 'the-sharp-namcheon', name: '더샵남천프레스티지' },
+  { id: 'daeyeon-hillstate-prugio', name: '대연힐스테이트푸르지오' },
+];
+
 // 단지별 색상
 const COMPLEX_COLORS = {
   'forena-songpa': '#14B8A6',           // teal (내집)
@@ -54,18 +63,14 @@ export default function AllComplexesTrendChart({ complexes = [], area = 84 }) {
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState(30);
 
-  // complexNo가 있는 단지만 필터링
+  // complexNo가 있는 단지만 필터링 (없으면 기본 목록 사용)
   const validComplexes = useMemo(() => {
-    return complexes.filter(c => c.id && c.name);
+    const filtered = complexes.filter(c => c.id && c.name);
+    return filtered.length > 0 ? filtered : DEFAULT_COMPLEXES;
   }, [complexes]);
 
   useEffect(() => {
-    if (validComplexes.length > 0) {
-      loadAllData();
-    } else {
-      // 데이터가 없으면 로딩 해제
-      setLoading(false);
-    }
+    loadAllData();
   }, [validComplexes, area, period]);
 
   const loadAllData = async () => {
