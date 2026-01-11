@@ -534,11 +534,41 @@ async function fetchAllComplexes() {
 
   const results = await Promise.all(complexPromises);
 
+  // Group by complex ID to match frontend structure (and sheet cache structure)
+  const groupedResults = results.reduce((acc, match) => {
+    // If error/filtered, match might be null or simplified error object
+    if (!match) return acc;
+
+    const { id, area, ...rest } = match;
+
+    if (!acc[id]) {
+      acc[id] = {
+        id,
+        name: match.name,
+        region: match.region,
+        isMine: match.isMine,
+        lat: match.lat,
+        lon: match.lon,
+        householdCount: match.householdCount,
+        areas: {}
+      };
+    }
+
+    // Add area-specific data
+    if (area) {
+      acc[id].areas[area] = rest;
+    }
+
+    return acc;
+  }, {});
+
+  const finalData = Object.values(groupedResults);
+
   // 전체 결과 캐시
-  cache.set(cacheKey, { data: results, timestamp: Date.now() });
+  cache.set(cacheKey, { data: finalData, timestamp: Date.now() });
 
   return {
-    data: results,
+    data: finalData,
     cachedAt: Date.now(),
     isStale: false,
     hasError,
