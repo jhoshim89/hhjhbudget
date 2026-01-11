@@ -140,7 +140,7 @@ const DataItem = ({ name, amount, subtext, colorClass = "text-white", highlight 
   </div>
 );
 
-export default function OverviewTab({ stats, selectedMonth, onMonthChange, monthlyHistory = [], cardHistory = [], data }) {
+export default function OverviewTab({ stats, selectedMonth, onMonthChange, monthlyHistory = [], cardHistory = [], balanceHistory = {}, data }) {
   const [isFixedExpenseOpen, setIsFixedExpenseOpen] = useState(false);
   const today = new Date();
   const isCurrentMonth = selectedMonth?.year === today.getFullYear() && selectedMonth?.month === today.getMonth() + 1;
@@ -182,6 +182,32 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
     if (cardChartData.length === 0) return 0;
     return cardChartData[0]?.avg || 0;
   }, [cardChartData]);
+
+  // Balance chart data (총 잔고 = 재호잔고 + 향화잔고)
+  const balanceChartData = useMemo(() => {
+    if (!balanceHistory || Object.keys(balanceHistory).length === 0) return [];
+
+    let prevYear = null;
+    return Object.entries(balanceHistory)
+      .map(([month, data]) => {
+        const total = (data.재호잔고 || 0) + (data.향화잔고 || 0);
+        const separator = month.includes('.') ? '.' : '-';
+        const [year, monthNum] = month.split(separator);
+        const shortYear = year.slice(2);
+        const isYearStart = prevYear !== null && prevYear !== year;
+        prevYear = year;
+
+        return {
+          month,
+          name: isYearStart ? `'${shortYear}` : `${parseInt(monthNum)}`,
+          displayMonth: `${year}.${monthNum}`,
+          total,
+          isYearStart,
+        };
+      })
+      .filter(d => d.total > 0)
+      .sort((a, b) => a.month.localeCompare(b.month));
+  }, [balanceHistory]);
 
   // Chart data transformation
   const chartData = useMemo(() => {
@@ -532,6 +558,97 @@ export default function OverviewTab({ stats, selectedMonth, onMonthChange, month
                   ))}
                 </Bar>
               </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Balance Chart (총 잔고 추이) */}
+      {balanceChartData.length > 0 && (
+        <div className="glass-card p-4 md:p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                총 잔고 추이
+              </h3>
+              {balanceChartData.length > 0 && (
+                <span className="text-xs text-zinc-500 font-mono">
+                  {balanceChartData[0]?.displayMonth} — {balanceChartData[balanceChartData.length - 1]?.displayMonth}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-zinc-500">현재</span>
+              <span className="text-blue-400 font-mono font-semibold">
+                {formatKRW(balanceChartData[balanceChartData.length - 1]?.total || 0, true)}
+              </span>
+            </div>
+          </div>
+
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={balanceChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    <stop offset="100%" stopColor="#3B82F6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+
+                <XAxis
+                  dataKey="name"
+                  stroke="transparent"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#a1a1aa' }}
+                />
+
+                <YAxis
+                  stroke="transparent"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => `${Math.round(v/10000)}만`}
+                  width={50}
+                  tick={{ fill: '#a1a1aa' }}
+                />
+
+                <Tooltip
+                  cursor={{ stroke: '#3B82F6', strokeWidth: 1, strokeDasharray: '4 4', strokeOpacity: 0.4 }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || !payload[0]) return null;
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white dark:bg-zinc-900 backdrop-blur-xl border border-zinc-200 dark:border-white/10 rounded-xl p-3 shadow-2xl">
+                        <div className="text-zinc-800 dark:text-white font-semibold text-xs mb-2">{data.displayMonth}</div>
+                        <div className="flex justify-between items-center gap-4">
+                          <span className="text-zinc-400 text-xs">총 잔고</span>
+                          <span className="text-blue-400 font-mono font-semibold text-sm">{formatKRW(data.total, true)}</span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#3B82F6"
+                  strokeWidth={2}
+                  fill="url(#balanceGradient)"
+                  dot={false}
+                  activeDot={{
+                    r: 5,
+                    fill: '#3B82F6',
+                    stroke: '#09090B',
+                    strokeWidth: 2
+                  }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>

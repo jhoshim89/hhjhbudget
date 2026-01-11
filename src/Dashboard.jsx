@@ -982,6 +982,7 @@ export default function Dashboard() {
                   onMonthChange={handleMonthChange}
                   monthlyHistory={monthlyHistory}
                   cardHistory={cardHistory}
+                  balanceHistory={balanceHistory}
                   data={statusData}
                 />
               )}
