@@ -148,7 +148,7 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3) {
       return response;
     } catch (error) {
       const isRateLimit = error.response?.status === 429 ||
-                          error.response?.data?.code === 'TOO_MANY_REQUESTS';
+        error.response?.data?.code === 'TOO_MANY_REQUESTS';
 
       console.log(`[Naver] Attempt ${attempt}/${maxRetries} failed: ${error.message}`);
 
@@ -158,7 +158,7 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3) {
 
       // Exponential backoff: 2초, 4초, 8초... + 랜덤 지연
       const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-      console.log(`[Naver] Retrying in ${Math.round(delay/1000)}s...`);
+      console.log(`[Naver] Retrying in ${Math.round(delay / 1000)}s...`);
       await sleep(delay);
     }
   }
@@ -296,7 +296,7 @@ async function fetchArticlesByCluster(complex, tradeType = 'A1') {
       if (!article.atclNm) return false;
       // 단지명 매칭 (예: "포레나" → "포레나송파" 또는 "더비치" → "더비치푸르지오써밋")
       return article.atclNm.includes(namePrefix) ||
-             complex.name.includes(article.atclNm.substring(0, 4));
+        complex.name.includes(article.atclNm.substring(0, 4));
     });
 
     // 필터링된 결과가 없으면 전체 결과 사용 (단지명 필터 실패 시 fallback)
@@ -422,14 +422,19 @@ async function fetchComplexSummary(complex, area = 84) {
   try {
     console.log(`[Naver] Fetching summary for ${complex.name} (${area}㎡)...`);
 
-    // 매매/전세/월세 순차 조회 (병렬하면 차단될 수 있음) - 평형 필터링 적용
-    const sale = await fetchArticles(complex, 'A1', area);
-    await sleep(3000 + Math.random() * 2000); // 3~5초 대기 (Rate limit 방지)
+    // 병렬 조회 (Parallel Fetching)
+    // 약간의 랜덤 지연을 두어 기계적인 동시 요청 패턴 방지
+    const fetchWithDelay = async (tradeType) => {
+      const delay = Math.random() * 500; // 0~500ms 랜덤 지연
+      await sleep(delay);
+      return fetchArticles(complex, tradeType, area);
+    };
 
-    const jeonse = await fetchArticles(complex, 'B1', area);
-    await sleep(3000 + Math.random() * 2000);
-
-    const monthly = await fetchArticles(complex, 'B2', area);
+    const [sale, jeonse, monthly] = await Promise.all([
+      fetchWithDelay('A1'),
+      fetchWithDelay('B1'),
+      fetchWithDelay('B2')
+    ]);
 
     const result = {
       success: true,
@@ -485,17 +490,21 @@ async function fetchAllComplexes() {
     };
   }
 
-  const results = [];
   let hasError = false;
 
-  for (const complex of TARGET_COMPLEXES) {
-    for (const area of complex.areas) {
+  // 병렬 처리로 변경 (Promise.all)
+  // 단지별로 약간의 시차를 두고 시작 (200~500ms 간격)
+  const complexPromises = TARGET_COMPLEXES.flatMap((complex, index) =>
+    complex.areas.map(async (area) => {
+      // 순차적 지연 추가 (한꺼번에 확 몰리지 않게)
+      const staggerDelay = index * 300 + Math.random() * 200;
+      await sleep(staggerDelay);
+
       console.log(`[Naver] Processing ${complex.name} (${area}㎡)...`);
 
       try {
         const summary = await fetchComplexSummary(complex, area);
-
-        results.push({
+        return {
           ...summary,
           id: complex.id,
           isMine: complex.isMine || false,
@@ -503,12 +512,11 @@ async function fetchAllComplexes() {
           lat: complex.lat,
           lon: complex.lon,
           householdCount: complex.householdCount,
-        });
+        };
       } catch (error) {
         console.error(`[Naver] Failed to process ${complex.name}:`, error.message);
         hasError = true;
-
-        results.push({
+        return {
           success: false,
           error: error.message,
           id: complex.id,
@@ -519,13 +527,12 @@ async function fetchAllComplexes() {
           lon: complex.lon,
           householdCount: complex.householdCount,
           area,
-        });
+        };
       }
+    })
+  );
 
-      // 단지 간 대기 (차단 방지) - 2~3초
-      await sleep(2000 + Math.random() * 1000);
-    }
-  }
+  const results = await Promise.all(complexPromises);
 
   // 전체 결과 캐시
   cache.set(cacheKey, { data: results, timestamp: Date.now() });
